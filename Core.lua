@@ -649,10 +649,21 @@ end
 ------------------------------------------------------------
 
 local SOURCE_PINS = {
-    -- Запределье, Аукиндон (Терокарский лес)
-    ["Сетеккские залы"]  = { 108, 44.7, 65.4 },
-    ["Темный лабиринт"]  = { 108, 39.7, 73.2 },
-    -- ["Источник из Data.lua"] = { uiMapID, x, y },
+    -- Запределье, Полуостров Адского Пламени (Цитадель Адского Пламени)
+    ["Кузня Крови"]        = { 100, 46.1, 51.9 },
+    ["Разрушенные залы"]   = { 100, 48.2, 51.8 },
+    -- Запределье, Терокарский лес (Аукиндон)
+    ["Аукенайские гробницы"] = { 101, 44.6, 79.0 },
+    ["Гробницы маны"]        = { 101, 46.1, 76.6 },
+    ["Сетеккские залы"]      = { 101, 47.7, 79.0 },
+    ["Темный лабиринт"]      = { 101, 46.1, 81.2 },
+    -- Запределье, Зангартопь (Дол Заррахем)
+    ["Нижетопь"]           = { 102, 54.2, 34.7 },
+    ["Паровое подземелье"] = { 102, 50.4, 33.3 },
+    ["Узилище"]            = { 102, 49.0, 35.9 },
+    -- Запределье, Пустоверть (Крепость Бурь)
+    ["Ботаника"]           = { 109, 71.7, 55.1 },
+    ["Механар"]            = { 109, 70.6, 69.7 },
 }
 
 -- The same clickable link the game itself posts for a map pin: clicking it sets
@@ -1327,6 +1338,46 @@ SlashCmdList["TWINKGEARFINDER"] = function(msg)
         end
         return
     end
+    -- /tgf pin            - what waypoint does the addon actually see right now
+    -- /tgf pin сетекк     - bind that waypoint to the source matching "сетекк"
+    local pinName = msg:match("^pin%s*(.*)$")
+    if pinName then
+        local point = C_Map.GetUserWaypoint()
+        if not point then
+            print("|cFFFFD100[TGF]|r Метки на карте нет. Поставь её Ctrl+щелчком по карте и повтори.")
+            return
+        end
+
+        local mapID = point.uiMapID
+        local x, y = point.position.x * 100, point.position.y * 100
+
+        if pinName == "" then
+            print(string.format("|cFFFFD100[TGF]|r Текущая метка: карта %d, %.1f, %.1f", mapID, x, y))
+            print("|cFFFFD100[TGF]|r Привязать: /tgf pin <часть названия подземелья>")
+            return
+        end
+
+        -- Partial match, so "/tgf pin сетекк" is enough - no typing exact names.
+        local needle = FoldCase(pinName)
+        local matched
+        for _, item in ipairs(ns.Items) do
+            if item.source and FoldCase(item.source):find(needle, 1, true) then
+                matched = item.source
+                break
+            end
+        end
+        if not matched then
+            print(string.format("|cFFFFD100[TGF]|r Источник со словом «%s» в базе не найден.", pinName))
+            return
+        end
+
+        TwinkGearFinderDB = TwinkGearFinderDB or {}
+        TwinkGearFinderDB.pins = TwinkGearFinderDB.pins or {}
+        TwinkGearFinderDB.pins[matched] = { mapID, x, y }
+        print(string.format("|cFFFFD100[TGF]|r Запомнено: %s = карта %d, %.1f, %.1f", matched, mapID, x, y))
+        return
+    end
+
     if msg == "scan" then
         ScanOwnedItems()
         return
