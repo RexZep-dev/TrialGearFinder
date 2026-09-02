@@ -652,7 +652,8 @@ local SOURCE_PINS = {
     -- Восточные королевства
     ["Ульдаман"]               = { 15, 42.2, 11.7 },   -- Бесплодные земли
     ["Залы Алого ордена"]      = { 18, 85.3, 32.5 },   -- Тирисфальские леса
-    ["Стратхольм - Чёрный ход"] = { 23, 43.2, 17.5 },  -- Восточные Чумные земли
+    ["Стратхольм"]             = { 23, 27.1, 11.5 },   -- Восточные Чумные земли
+    ["Стратхольм - Чёрный ход"] = { 23, 43.2, 17.5 },
     ["Глубины Черной горы"]    = { 36, 21.0, 38.6 },   -- Пылающие степи
     -- Калимдор
     ["Мародон"]                = { 66, 29.3, 62.7 },   -- Пустоши
@@ -683,6 +684,8 @@ local SOURCE_PINS = {
     ["Крепость Чёрной Ладьи"]  = { 641, 37.3, 50.2 },  -- Вальшара
     ["Чаща Тёмного Сердца"]    = { 641, 59.2, 31.4 },
     ["Собор Вечной Ночи"]      = { 646, 64.9, 16.8 },  -- Расколотый берег
+    -- Тёмные земли
+    ["Мгла Тирна Скитта"]      = { 1565, 35.6, 54.2 }, -- Арденвельд
 }
 
 -- The same clickable link the game itself posts for a map pin: clicking it sets
@@ -1378,19 +1381,37 @@ SlashCmdList["TWINKGEARFINDER"] = function(msg)
             return
         end
 
-        -- Partial match, so "/tgf pin сетекк" is enough - no typing exact names.
+        -- Partial match, so "/tgf pin сетекк" is enough. But "стратхольм" matches
+        -- three different dungeons, and silently taking the first one wrote the
+        -- wrong coordinates once already - so ask instead of guessing.
         local needle = FoldCase(pinName)
-        local matched
+        local matches, seen = {}, {}
         for _, item in ipairs(ns.Items) do
-            if item.source and FoldCase(item.source):find(needle, 1, true) then
-                matched = item.source
+            local src = item.source
+            if src and not seen[src] and FoldCase(src):find(needle, 1, true) then
+                seen[src] = true
+                table.insert(matches, src)
+            end
+        end
+
+        -- An exact name always wins over the ones merely containing it.
+        for _, src in ipairs(matches) do
+            if FoldCase(src) == needle then
+                matches = { src }
                 break
             end
         end
-        if not matched then
+
+        if #matches == 0 then
             print(string.format("|cFFFFD100[TGF]|r Источник со словом «%s» в базе не найден.", pinName))
             return
         end
+        if #matches > 1 then
+            print(string.format("|cFFFFD100[TGF]|r Подходит несколько, уточни (%d):", #matches))
+            for _, src in ipairs(matches) do print("    " .. src) end
+            return
+        end
+        local matched = matches[1]
 
         TwinkGearFinderDB = TwinkGearFinderDB or {}
         TwinkGearFinderDB.pins = TwinkGearFinderDB.pins or {}
