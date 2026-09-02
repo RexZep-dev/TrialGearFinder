@@ -9,24 +9,54 @@ local TWINK_LEVEL = 20
 -- off for now. Flip back to true once it's solid.
 local ENABLE_COMPARISON = false
 
-local SLOT_DEFS = {
-    { key = "HEAD",     label = _G.INVTYPE_HEAD,     invTypes = { INVTYPE_HEAD = true } },
-    { key = "NECK",     label = _G.INVTYPE_NECK,     invTypes = { INVTYPE_NECK = true } },
-    { key = "SHOULDER", label = _G.INVTYPE_SHOULDER, invTypes = { INVTYPE_SHOULDER = true } },
-    { key = "BACK",     label = _G.INVTYPE_CLOAK,    invTypes = { INVTYPE_CLOAK = true } },
-    { key = "CHEST",    label = _G.INVTYPE_CHEST,    invTypes = { INVTYPE_CHEST = true, INVTYPE_ROBE = true } },
-    { key = "WRIST",    label = _G.INVTYPE_WRIST,    invTypes = { INVTYPE_WRIST = true } },
-    { key = "HANDS",    label = _G.INVTYPE_HAND,     invTypes = { INVTYPE_HAND = true } },
-    { key = "WAIST",    label = _G.INVTYPE_WAIST,    invTypes = { INVTYPE_WAIST = true } },
-    { key = "LEGS",     label = _G.INVTYPE_LEGS,     invTypes = { INVTYPE_LEGS = true } },
-    { key = "FEET",     label = _G.INVTYPE_FEET,     invTypes = { INVTYPE_FEET = true } },
-    { key = "FINGER",   label = _G.INVTYPE_FINGER,   invTypes = { INVTYPE_FINGER = true } },
-    { key = "TRINKET",  label = _G.INVTYPE_TRINKET,  invTypes = { INVTYPE_TRINKET = true } },
-    { key = "MAINHAND", label = _G.INVTYPE_WEAPONMAINHAND, invTypes = { INVTYPE_WEAPONMAINHAND = true, INVTYPE_WEAPON = true } },
-    { key = "OFFHAND",  label = _G.INVTYPE_WEAPONOFFHAND,  invTypes = { INVTYPE_WEAPONOFFHAND = true, INVTYPE_HOLDABLE = true, INVTYPE_SHIELD = true } },
-    { key = "TWOHAND",  label = _G.INVTYPE_2HWEAPON,       invTypes = { INVTYPE_2HWEAPON = true } },
-    { key = "RANGED",   label = _G.INVTYPE_RANGED,         invTypes = { INVTYPE_RANGED = true, INVTYPE_RANGEDRIGHT = true } },
+-- Slot names come from the CLIENT (_G.INVTYPE_*), so on an English client the
+-- whole addon showed "Cloth (Head)" instead of "Ткань (Голова)". These are ours,
+-- so the window reads the same whatever language the game is installed in.
+local INVTYPE_RU = {
+    INVTYPE_HEAD = "Голова",           INVTYPE_NECK = "Шея",
+    INVTYPE_SHOULDER = "Плечи",        INVTYPE_CLOAK = "Спина",
+    INVTYPE_CHEST = "Грудь",           INVTYPE_ROBE = "Грудь",
+    INVTYPE_WRIST = "Запястья",        INVTYPE_HAND = "Кисти рук",
+    INVTYPE_WAIST = "Пояс",            INVTYPE_LEGS = "Ноги",
+    INVTYPE_FEET = "Ступни",           INVTYPE_FINGER = "Палец",
+    INVTYPE_TRINKET = "Аксессуар",     INVTYPE_SHIELD = "Щит",
+    INVTYPE_WEAPON = "Одноручное",     INVTYPE_2HWEAPON = "Двуручное",
+    INVTYPE_WEAPONMAINHAND = "Правая рука",
+    INVTYPE_WEAPONOFFHAND = "Левая рука",
+    INVTYPE_HOLDABLE = "Левая рука",
+    INVTYPE_RANGED = "Дальнобойное",   INVTYPE_RANGEDRIGHT = "Дальнобойное",
 }
+
+local SLOT_DEFS = {
+    { key = "HEAD",     label = INVTYPE_RU.INVTYPE_HEAD,     invTypes = { INVTYPE_HEAD = true } },
+    { key = "NECK",     label = INVTYPE_RU.INVTYPE_NECK,     invTypes = { INVTYPE_NECK = true }, hidden = true },
+    { key = "SHOULDER", label = INVTYPE_RU.INVTYPE_SHOULDER, invTypes = { INVTYPE_SHOULDER = true } },
+    { key = "BACK",     label = INVTYPE_RU.INVTYPE_CLOAK,    invTypes = { INVTYPE_CLOAK = true } },
+    { key = "CHEST",    label = INVTYPE_RU.INVTYPE_CHEST,    invTypes = { INVTYPE_CHEST = true, INVTYPE_ROBE = true } },
+    { key = "WRIST",    label = INVTYPE_RU.INVTYPE_WRIST,    invTypes = { INVTYPE_WRIST = true } },
+    { key = "HANDS",    label = INVTYPE_RU.INVTYPE_HAND,     invTypes = { INVTYPE_HAND = true } },
+    { key = "WAIST",    label = INVTYPE_RU.INVTYPE_WAIST,    invTypes = { INVTYPE_WAIST = true } },
+    { key = "LEGS",     label = INVTYPE_RU.INVTYPE_LEGS,     invTypes = { INVTYPE_LEGS = true } },
+    { key = "FEET",     label = INVTYPE_RU.INVTYPE_FEET,     invTypes = { INVTYPE_FEET = true } },
+    { key = "FINGER",   label = INVTYPE_RU.INVTYPE_FINGER,   invTypes = { INVTYPE_FINGER = true }, hidden = true },
+    { key = "TRINKET",  label = INVTYPE_RU.INVTYPE_TRINKET,  invTypes = { INVTYPE_TRINKET = true } },
+    { key = "MAINHAND", label = INVTYPE_RU.INVTYPE_WEAPONMAINHAND, invTypes = { INVTYPE_WEAPONMAINHAND = true, INVTYPE_WEAPON = true } },
+    { key = "OFFHAND",  label = INVTYPE_RU.INVTYPE_WEAPONOFFHAND,  invTypes = { INVTYPE_WEAPONOFFHAND = true, INVTYPE_HOLDABLE = true, INVTYPE_SHIELD = true } },
+    { key = "TWOHAND",  label = INVTYPE_RU.INVTYPE_2HWEAPON,       invTypes = { INVTYPE_2HWEAPON = true } },
+    { key = "RANGED",   label = INVTYPE_RU.INVTYPE_RANGED,         invTypes = { INVTYPE_RANGED = true, INVTYPE_RANGEDRIGHT = true } },
+}
+
+-- Slots marked hidden are still ranked and sorted below (SlotRank walks the full
+-- list), they just do not appear in the window or in the Слот dropdown - drop the
+-- hidden flag to bring a category back once its data is finished.
+local VISIBLE_SLOT_DEFS, HIDDEN_INVTYPES = {}, {}
+for _, d in ipairs(SLOT_DEFS) do
+    if d.hidden then
+        for invType in pairs(d.invTypes) do HIDDEN_INVTYPES[invType] = true end
+    else
+        table.insert(VISIBLE_SLOT_DEFS, d)
+    end
+end
 
 -- Standard (no column clicked) row order: head/neck/shoulder/.../trinket first
 -- in that fixed sequence, then weapons, matching SLOT_DEFS's own order.
@@ -48,6 +78,18 @@ local ARMOR_SUBCLASSES = {
     { id = 3, label = "Кольчуга" },
     { id = 4, label = "Латы" },
 }
+-- Same reason as INVTYPE_RU: LOCALIZED_CLASS_NAMES_MALE is whatever language the
+-- client is installed in. Keys match the class tokens used in Data.lua.
+local CLASS_RU = {
+    WARRIOR = "Воин",             PALADIN = "Паладин",
+    HUNTER = "Охотник",           ROGUE = "Разбойник",
+    PRIEST = "Жрец",              DEATHKNIGHT = "Рыцарь смерти",
+    SHAMAN = "Шаман",             MAGE = "Маг",
+    WARLOCK = "Чернокнижник",     MONK = "Монах",
+    DRUID = "Друид",              DEMONHUNTER = "Охотник на демонов",
+    EVOKER = "Пробудитель",
+}
+
 -- key stays in English - it's compared against item.sourceType from Data.lua.
 local SOURCE_TYPES = {
     { key = "Dungeon", label = "Подземелье" },
@@ -116,12 +158,12 @@ frame:Hide()
 frame.titleBg = frame:CreateTexture(nil, "ARTWORK")
 frame.titleBg:SetPoint("TOPLEFT", frame, "TOPLEFT", 10, -4)
 frame.titleBg:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -28, -4)
-frame.titleBg:SetHeight(48)
+frame.titleBg:SetHeight(76) -- covers both the centred title and the search box under it
 frame.titleBg:SetColorTexture(0.05, 0.04, 0.03, 0.6)
 
 frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-frame.title:SetPoint("TOPLEFT", frame, "TOPLEFT", 40, -26)
-frame.title:SetText("Поиск шмота для твинка (20 ур.)")
+frame.title:SetPoint("TOP", frame, "TOP", 0, -26)
+frame.title:SetText("Поиск шмота для триала")
 
 ------------------------------------------------------------
 -- Search box: matches item name OR the note text (what the item actually does -
@@ -137,7 +179,7 @@ local RefreshResults -- forward declare, the search box and dropdowns call it
 -- alongside that instead of replacing it.
 local searchBox = CreateFrame("EditBox", nil, frame, "SearchBoxTemplate")
 searchBox:SetSize(300, 20)
-searchBox:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -34, -30)
+searchBox:SetPoint("TOP", frame.title, "BOTTOM", 0, -10)
 searchBox:SetAutoFocus(false)
 searchBox.Instructions:SetText("Поиск")
 searchBox:SetScript("OnEscapePressed", searchBox.ClearFocus)
@@ -190,13 +232,13 @@ local function CreateFilterDropdown(name, anchorTo, label, options, getKey, getL
     return drop
 end
 
-local slotDrop = CreateFilterDropdown("TwinkGearFinderSlotDrop", nil, "Слот", SLOT_DEFS,
+local slotDrop = CreateFilterDropdown("TwinkGearFinderSlotDrop", nil, "Слот", VISIBLE_SLOT_DEFS,
     function(o) return o.key end, function(o) return o.label end,
     function(key) filters.slot = key; RefreshResults() end)
 
 local classDrop = CreateFilterDropdown("TwinkGearFinderClassDrop", slotDrop, "Класс", CLASS_SORT_ORDER,
     function(c) return c end,
-    function(c) return LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[c] or c end,
+    function(c) return CLASS_RU[c] or (LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[c]) or c end,
     function(key) filters.class = key; RefreshResults() end)
 
 local armorDrop = CreateFilterDropdown("TwinkGearFinderArmorDrop", classDrop, "Броня", ARMOR_SUBCLASSES,
@@ -323,7 +365,7 @@ AddHeaderLabel(COL_CRIT_X, COL_STAT_W, "Крит", "CENTER", "crit", "Крити
 AddHeaderLabel(COL_HASTE_X, COL_STAT_W, "Скор", "CENTER", "haste", "Скорость")
 AddHeaderLabel(COL_ISKUS_X, COL_STAT_W, "Иск", "CENTER", "iskus", "Искусность")
 AddHeaderLabel(COL_VERS_X, COL_STAT_W, "Уни", "CENTER", "vers", "Универсальность")
-AddHeaderLabel(COL_SOURCE_X, COL_SOURCE_W, "Источник", "LEFT", "source")
+AddHeaderLabel(COL_SOURCE_X, COL_SOURCE_W, "Источник", "CENTER", "source")
 
 ------------------------------------------------------------
 -- Scroll area + rows
@@ -595,6 +637,78 @@ local function FindOwnedLink(itemID)
     return nil
 end
 
+------------------------------------------------------------
+-- Map pin on the source. Clicking a row's source drops the same gold diamond
+-- waypoint you get from Ctrl-clicking the world map, with the navigation arrow
+-- pointing at the dungeon entrance. The game only keeps ONE user waypoint, so
+-- each click replaces the previous one.
+--
+-- Coordinates are entered as they read in game (49.8, not 0.498). Anything not
+-- listed here simply says so instead of dropping a pin in the wrong place -
+-- a wrong waypoint is worse than none.
+------------------------------------------------------------
+
+local SOURCE_PINS = {
+    -- Запределье, Аукиндон (Терокарский лес)
+    ["Сетеккские залы"]  = { 108, 44.7, 65.4 },
+    ["Темный лабиринт"]  = { 108, 39.7, 73.2 },
+    -- ["Источник из Data.lua"] = { uiMapID, x, y },
+}
+
+-- The same clickable link the game itself posts for a map pin: clicking it sets
+-- the waypoint, and the map id and coordinates are readable right in the link.
+local function WaypointLink(uiMapID, x, y, label)
+    return string.format("|cffffff00|Hworldmap:%d:%d:%d|h[|A:Waypoint-MapPin-ChatIcon:13:13:0:0|a %s]|h|r",
+        uiMapID, math.floor(x * 100 + 0.5), math.floor(y * 100 + 0.5), label)
+end
+
+local function SetSourceWaypoint(sourceName)
+    if not sourceName or sourceName == "" then return end
+
+    -- Pins captured in game (Ctrl-click) win over the ones baked into this file.
+    local saved = TwinkGearFinderDB and TwinkGearFinderDB.pins
+    local pin = (saved and saved[sourceName]) or SOURCE_PINS[sourceName]
+    if not pin then
+        print(string.format("|cFFFFD100[TGF]|r Координаты для «%s» ещё не заданы.", sourceName))
+        return
+    end
+
+    local uiMapID, x, y = pin[1], pin[2], pin[3]
+    if not C_Map.CanSetUserWaypointOnMap(uiMapID) then
+        print("|cFFFFD100[TGF]|r На этой карте игра не разрешает ставить метку.")
+        return
+    end
+
+    C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(uiMapID, x / 100, y / 100))
+    C_SuperTrack.SetSuperTrackedUserWaypoint(true)
+
+    -- Open the map on that zone too, so the pin is on screen straight away
+    -- instead of only as an arrow somewhere off to the side.
+    if OpenWorldMap then OpenWorldMap(uiMapID) end
+    print("|cFFFFD100[TGF]|r " .. sourceName .. ": " .. WaypointLink(uiMapID, x, y, "метка на карте"))
+end
+
+-- Ctrl-click on a source stores whatever user waypoint is currently on the map
+-- for that source. Point being: you place the pin yourself where it actually
+-- belongs, so the coordinates are right by construction - no external lists.
+local function SaveSourceWaypoint(sourceName)
+    if not sourceName or sourceName == "" then return end
+
+    local point = C_Map.GetUserWaypoint()
+    if not point then
+        print("|cFFFFD100[TGF]|r Сначала поставь метку на карте (Ctrl+щелчок по карте), потом Ctrl+щелчок по источнику.")
+        return
+    end
+
+    TwinkGearFinderDB = TwinkGearFinderDB or {}
+    TwinkGearFinderDB.pins = TwinkGearFinderDB.pins or {}
+    TwinkGearFinderDB.pins[sourceName] = { point.uiMapID, point.position.x * 100, point.position.y * 100 }
+    print(string.format("|cFFFFD100[TGF]|r Запомнено: %s = %s", sourceName,
+        WaypointLink(point.uiMapID, point.position.x * 100, point.position.y * 100,
+            string.format("карта %d: %.1f, %.1f", point.uiMapID,
+                point.position.x * 100, point.position.y * 100))))
+end
+
 local function CreateRow(index)
     local row = CreateFrame("Frame", "TwinkGearFinderRow" .. index, frame)
     row:SetSize(ROW_WIDTH, ROW_HEIGHT)
@@ -625,6 +739,7 @@ local function CreateRow(index)
     -- fix those one at a time as wrong ones turn up in-game (like 24395,
     -- 28229, 17943 already were), there's no manual-tooltip fallback anymore.
     function row:ShowItemTooltip()
+        if not frame:IsShown() then return end -- window closed: nothing to describe
         if not self.hyperlink then return end
         GameTooltip:SetOwner(self.iconFrame, "ANCHOR_RIGHT")
         GameTooltip:SetHyperlink(self.hyperlink)
@@ -635,6 +750,9 @@ local function CreateRow(index)
         if self.fullNote and self.fullNote ~= "" then
             GameTooltip:AddLine(self.fullNote, 1, 1, 1, true)
         end
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine("Щелчок - поставить метку на карте", 0.6, 0.6, 0.6)
+        GameTooltip:AddLine("Ctrl+щелчок - запомнить текущую метку для этого источника", 0.6, 0.6, 0.6)
         GameTooltip:Show()
     end
 
@@ -692,14 +810,24 @@ local function CreateRow(index)
     row.sourceHitbox:SetSize(COL_SOURCE_W, ROW_HEIGHT)
     row.sourceHitbox:EnableMouse(true)
     function row:ShowSourceTooltip()
+        if not frame:IsShown() then return end -- window closed: nothing to describe
         if not self.fullSource then return end
         GameTooltip:SetOwner(self.sourceHitbox, "ANCHOR_TOPLEFT")
         GameTooltip:AddLine(self.fullSource, 0.6, 0.85, 1, true)
         if self.fullNote and self.fullNote ~= "" then
             GameTooltip:AddLine(self.fullNote, 1, 1, 1, true)
         end
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine("Щелчок - поставить метку на карте", 0.6, 0.6, 0.6)
         GameTooltip:Show()
     end
+    row.sourceHitbox:SetScript("OnMouseUp", function()
+        if IsControlKeyDown() then
+            SaveSourceWaypoint(row.fullSource)
+        else
+            SetSourceWaypoint(row.fullSource)
+        end
+    end)
     row.sourceHitbox:SetScript("OnEnter", function() row:ShowSourceTooltip() end)
     row.sourceHitbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
@@ -745,12 +873,114 @@ local rows = {}
 for i = 1, NUM_VISIBLE_ROWS do
     local row = CreateRow(i)
     if i == 1 then
-        row:SetPoint("TOPLEFT", scrollFrame, "TOPLEFT", 0, 0)
+        row:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -6)
     else
         row:SetPoint("TOPLEFT", rows[i - 1], "BOTTOMLEFT", 0, -ROW_SPACING)
     end
     rows[i] = row
 end
+------------------------------------------------------------
+-- "Мин-Макс" toggle: off = plain list (item + source only), on = the full stat
+-- table. The stat block is 339px wide, but the four filter dropdowns underneath
+-- need ~640, so 660 is as narrow as the window usefully gets.
+------------------------------------------------------------
+
+local FRAME_WIDTH_FULL, FRAME_WIDTH_NARROW = 880, 660
+-- Simple mode keeps only Слот and Класс; these two are for the full table.
+local FULL_MODE_DROPS = { armorDrop, sourceDrop }
+-- Rows shrink by exactly as much as the window does, so the list still fills it
+-- edge to edge instead of leaving a dead strip on the right.
+local ROW_WIDTH_NARROW = ROW_WIDTH - (FRAME_WIDTH_FULL - FRAME_WIDTH_NARROW)
+local STAT_COLS = { "str", "agi", "int", "stam", "crit", "haste", "iskus", "vers" }
+
+-- Label above, checkbox under it, top-right corner of the window.
+local statsToggle = CreateFrame("CheckButton", "TwinkGearFinderStatsToggle", frame, "UICheckButtonTemplate")
+statsToggle:SetSize(24, 24)
+statsToggle:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -20, -62)
+
+statsToggle.label = statsToggle:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+statsToggle.label:SetPoint("BOTTOM", statsToggle, "TOP", 0, 2)
+statsToggle.label:SetText("Мин-Макс")
+
+local function UpdateToggleVisual(on)
+    statsToggle:SetChecked(on)
+end
+
+-- Source column slides left into the freed space and takes the extra width;
+-- everything else keeps its position, so only these three move.
+local function ApplyStatsLayout()
+    local show = TwinkGearFinderDB and TwinkGearFinderDB.showStats or false
+    local sourceX = show and COL_SOURCE_X or COL_STR_X
+    local rowWidth = show and ROW_WIDTH or ROW_WIDTH_NARROW
+    local sourceW = rowWidth - sourceX - 10
+
+    frame:SetWidth(show and FRAME_WIDTH_FULL or FRAME_WIDTH_NARROW)
+
+    -- Header carries the rows with it (row 1 anchors to it), so centring the
+    -- header centres the whole list: equal margin left and right.
+    header:ClearAllPoints()
+    header:SetPoint("TOP", frame, "TOP", 0, -106)
+    header:SetWidth(rowWidth)
+    for _, drop in ipairs(FULL_MODE_DROPS) do drop:SetShown(show) end
+    if not show then
+        -- Hiding a dropdown that still has a selection would filter the list with
+        -- no visible reason, so reset both back to Все.
+        filters.armor, filters.sourceType = "ALL", "ALL"
+        UIDropDownMenu_SetText(armorDrop, "Броня: Все")
+        UIDropDownMenu_SetText(sourceDrop, "Источник: Все")
+    end
+    -- Filters are centred as a group: width is measured from the actual dropdowns
+    -- so it works for two of them as well as four. The rest chain off the first.
+    local groupWidth = slotDrop:GetWidth() + classDrop:GetWidth() + 4
+    if show then
+        groupWidth = groupWidth + armorDrop:GetWidth() + sourceDrop:GetWidth() + 8
+    end
+    slotDrop:ClearAllPoints()
+    slotDrop:SetPoint("LEFT", footer, "CENTER", -groupWidth / 2, 0)
+
+    UpdateToggleVisual(show)
+
+    for _, key in ipairs(STAT_COLS) do
+        local entry = headerLabels[key]
+        if entry then entry.fs:SetShown(show) end
+    end
+    local srcEntry = headerLabels.source
+    if srcEntry then
+        srcEntry.fs:ClearAllPoints()
+        srcEntry.fs:SetPoint("TOPLEFT", header, "TOPLEFT", sourceX, 0)
+        srcEntry.fs:SetWidth(sourceW)
+    end
+
+    for _, row in ipairs(rows) do
+        row:SetWidth(rowWidth)
+        for _, key in ipairs(STAT_COLS) do
+            if row[key] then row[key]:SetShown(show) end
+        end
+        row.source:ClearAllPoints()
+        row.source:SetPoint("TOPLEFT", row, "TOPLEFT", sourceX, -4)
+        row.source:SetWidth(sourceW)
+        row.sourceboss:SetWidth(sourceW)
+        row.sourceHitbox:ClearAllPoints()
+        row.sourceHitbox:SetPoint("TOPLEFT", row, "TOPLEFT", sourceX, 0)
+        row.sourceHitbox:SetWidth(sourceW)
+    end
+end
+
+statsToggle:SetScript("OnClick", function(self)
+    TwinkGearFinderDB.showStats = not TwinkGearFinderDB.showStats
+    if not TwinkGearFinderDB.showStats then
+        -- With the columns gone a stat filter would silently keep filtering the
+        -- list with no visible reason, so drop it along with its sort.
+        wipe(statFilter)
+        if sortState.key and sortState.key ~= "source" then
+            sortState.key, sortState.dir = nil, "DESC"
+        end
+        UpdateHeaderSortIndicators()
+    end
+    ApplyStatsLayout()
+    RefreshResults()
+end)
+
 
 ------------------------------------------------------------
 -- Filtering + rendering
@@ -814,6 +1044,10 @@ local function BuildRowData(item)
         return nil
     end
 
+    -- Categories still being worked on (neck, rings) are kept out of the list
+    -- entirely, not just out of the Слот dropdown.
+    if HIDDEN_INVTYPES[equipLoc] then return false end
+
     if filters.search ~= "" then
         local haystack = FoldCase(name) .. " " .. FoldCase(item.note or "")
         if not haystack:find(filters.search, 1, true) then return false end
@@ -843,8 +1077,16 @@ local function BuildRowData(item)
     end
 
     local qualityHex = select(4, C_Item.GetItemQualityColor(quality))
-    local typeLabel = (classID == ARMOR_CLASS_ID and itemSubType ~= "") and
-        string.format("%s (%s)", itemSubType, _G[equipLoc] or equipLoc) or (_G[equipLoc] or equipLoc)
+    -- Armor material by numeric subclassID, slot by our own table: itemSubType and
+    -- _G[equipLoc] are both client-localized and came out English on an EN client.
+    local slotLabel = INVTYPE_RU[equipLoc] or _G[equipLoc] or equipLoc
+    local materialLabel
+    if classID == ARMOR_CLASS_ID then
+        for _, sub in ipairs(ARMOR_SUBCLASSES) do
+            if sub.id == subclassID then materialLabel = sub.label break end
+        end
+    end
+    local typeLabel = materialLabel and string.format("%s (%s)", materialLabel, slotLabel) or slotLabel
     if item.ilvl then
         typeLabel = typeLabel .. string.format(" | %d ур.", item.ilvl)
     end
@@ -946,9 +1188,24 @@ scrollFrame:SetScript("OnMouseWheel", function(self, delta)
 end)
 
 frame:RegisterEvent("GET_ITEM_INFO_RECEIVED")
-frame:SetScript("OnEvent", RefreshResults)
+frame:RegisterEvent("ADDON_LOADED") -- SavedVariables only exist by the time this fires
+frame:SetScript("OnEvent", function(self, event, addonName)
+    if event == "ADDON_LOADED" then
+        if addonName ~= "TwinkGearFinder" then return end
+        TwinkGearFinderDB = TwinkGearFinderDB or {}
+        if TwinkGearFinderDB.showStats == nil then TwinkGearFinderDB.showStats = false end
+        ApplyStatsLayout()
+        return
+    end
+    RefreshResults()
+end)
 
 frame:SetScript("OnShow", RefreshResults)
+
+-- Rows show the tooltip on OnEnter and hide it on OnLeave. Close the window while
+-- the cursor sits on a row (Escape, /tgf, the X button) and OnLeave never fires,
+-- leaving the tooltip stranded on screen with nothing under it.
+frame:SetScript("OnHide", function() GameTooltip:Hide() end)
 
 ------------------------------------------------------------
 -- /tgf scan: same ground-truth check as ShowItemTooltip above, run over every
@@ -1053,6 +1310,23 @@ end
 
 SLASH_TWINKGEARFINDER1 = "/tgf"
 SlashCmdList["TWINKGEARFINDER"] = function(msg)
+    -- Dumps everything captured with Ctrl-click, ready to paste into SOURCE_PINS
+    -- so the pins become part of the addon instead of one character's saved vars.
+    if msg == "pins" then
+        local saved = TwinkGearFinderDB and TwinkGearFinderDB.pins
+        if not saved or not next(saved) then
+            print("|cFFFFD100[TGF]|r Меток пока не запомнено.")
+            return
+        end
+        local names = {}
+        for name in pairs(saved) do table.insert(names, name) end
+        table.sort(names)
+        for _, name in ipairs(names) do
+            local p = saved[name]
+            print(string.format('    ["%s"] = { %d, %.1f, %.1f },', name, p[1], p[2], p[3]))
+        end
+        return
+    end
     if msg == "scan" then
         ScanOwnedItems()
         return
