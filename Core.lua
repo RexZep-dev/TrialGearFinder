@@ -698,12 +698,21 @@ local function WaypointLink(uiMapID, x, y, label)
         uiMapID, math.floor(x * 100 + 0.5), math.floor(y * 100 + 0.5), label)
 end
 
-local function SetSourceWaypoint(sourceName)
+-- Rare mobs all share one source string ("Кул-Тирас/Зандалар (рарники...)"), so a
+-- pin per source would be useless there: every item drops from its own mob in its
+-- own spot. Those are keyed by item instead - "item:158583".
+local function PinKey(sourceType, itemID, source)
+    if sourceType == "World" and itemID then return "item:" .. itemID end
+    return source
+end
+
+local function SetSourceWaypoint(sourceName, sourceType, itemID)
     if not sourceName or sourceName == "" then return end
+    local key = PinKey(sourceType, itemID, sourceName)
 
     -- Pins captured in game (Ctrl-click) win over the ones baked into this file.
     local saved = TwinkGearFinderDB and TwinkGearFinderDB.pins
-    local pin = (saved and saved[sourceName]) or SOURCE_PINS[sourceName]
+    local pin = (saved and saved[key]) or SOURCE_PINS[key]
     if not pin then
         print(string.format("|cFFFFD100[TGF]|r Координаты для «%s» ещё не заданы.", sourceName))
         return
@@ -727,8 +736,9 @@ end
 -- Ctrl-click on a source stores whatever user waypoint is currently on the map
 -- for that source. Point being: you place the pin yourself where it actually
 -- belongs, so the coordinates are right by construction - no external lists.
-local function SaveSourceWaypoint(sourceName)
+local function SaveSourceWaypoint(sourceName, sourceType, itemID)
     if not sourceName or sourceName == "" then return end
+    local key = PinKey(sourceType, itemID, sourceName)
 
     local point = C_Map.GetUserWaypoint()
     if not point then
@@ -738,7 +748,7 @@ local function SaveSourceWaypoint(sourceName)
 
     TwinkGearFinderDB = TwinkGearFinderDB or {}
     TwinkGearFinderDB.pins = TwinkGearFinderDB.pins or {}
-    TwinkGearFinderDB.pins[sourceName] = { point.uiMapID, point.position.x * 100, point.position.y * 100 }
+    TwinkGearFinderDB.pins[key] = { point.uiMapID, point.position.x * 100, point.position.y * 100 }
     print(string.format("|cFFFFD100[TGF]|r Запомнено: %s = %s", sourceName,
         WaypointLink(point.uiMapID, point.position.x * 100, point.position.y * 100,
             string.format("карта %d: %.1f, %.1f", point.uiMapID,
@@ -859,9 +869,9 @@ local function CreateRow(index)
     end
     row.sourceHitbox:SetScript("OnMouseUp", function()
         if IsControlKeyDown() then
-            SaveSourceWaypoint(row.fullSource)
+            SaveSourceWaypoint(row.fullSource, row.sourceType, row.itemID)
         else
-            SetSourceWaypoint(row.fullSource)
+            SetSourceWaypoint(row.fullSource, row.sourceType, row.itemID)
         end
     end)
     row.sourceHitbox:SetScript("OnEnter", function() row:ShowSourceTooltip() end)
@@ -887,6 +897,7 @@ local function CreateRow(index)
         self.source:SetText(data.source or "")
         self.sourceboss:SetText(data.sourceboss or "")
         self.fullSource = data.source
+        self.sourceType = data.sourceType
         self.fullNote = data.sourceboss
         self.hyperlink = data.hyperlink
         self.itemID = data.itemID
@@ -1146,6 +1157,7 @@ local function BuildRowData(item)
         iskus = stats.iskus,
         vers = stats.vers,
         source = item.source,
+        sourceType = item.sourceType,
         sourceboss = item.note,
         hyperlink = link,
         twink = {
@@ -1227,7 +1239,19 @@ end)
 
 frame:RegisterEvent("GET_ITEM_INFO_RECEIVED")
 frame:RegisterEvent("ADDON_LOADED") -- SavedVariables only exist by the time this fires
+frame:RegisterEvent("PLAYER_LOGIN")  -- UnitClass is reliable from here on
 frame:SetScript("OnEvent", function(self, event, addonName)
+    if event == "PLAYER_LOGIN" then
+        -- Preselect the character's own class: on a twink you almost always want
+        -- your own gear, and "Класс: Все" is one click away when you don't.
+        local _, classToken = UnitClass("player")
+        if classToken then
+            filters.class = classToken
+            UIDropDownMenu_SetText(classDrop, "Класс: " .. (CLASS_RU[classToken] or classToken))
+        end
+        return
+    end
+
     if event == "ADDON_LOADED" then
         if addonName ~= "TwinkGearFinder" then return end
         TwinkGearFinderDB = TwinkGearFinderDB or {}
@@ -1361,7 +1385,18 @@ SlashCmdList["TWINKGEARFINDER"] = function(msg)
         table.sort(names)
         for _, name in ipairs(names) do
             local p = saved[name]
-            print(string.format('    ["%s"] = { %d, %.1f, %.1f },', name, p[1], p[2], p[3]))
+            -- item: keys mean nothing on their own, so name the mob next to them
+            local comment = ""
+            local id = name:match("^item:(%d+)$")
+            if id then
+                for _, item in ipairs(ns.Items) do
+                    if tostring(item.itemID) == id and item.note then
+                        comment = " -- " .. item.note
+                        break
+                    end
+                end
+            end
+            print(string.format([[    ["%s"] = { %d, %.1f, %.1f },%s]], name, p[1], p[2], p[3], comment))
         end
         return
     end
@@ -1389,18 +1424,26 @@ SlashCmdList["TWINKGEARFINDER"] = function(msg)
         -- wrong coordinates once already - so ask instead of guessing.
         local needle = FoldCase(pinName)
         local matches, seen = {}, {}
+
+        -- Dungeons match on the source name. Rare mobs have no source of their own
+        -- (all share one category string), so they match on the note instead -
+        -- "/tgf pin дикобраз" finds "падает с Дикобраз-матриарх в Друстваре".
         for _, item in ipairs(ns.Items) do
-            local src = item.source
-            if src and not seen[src] and FoldCase(src):find(needle, 1, true) then
-                seen[src] = true
-                table.insert(matches, src)
+            local src, isRare = item.source, item.sourceType == "World"
+            local label = isRare and item.note or src
+            local key = isRare and ("item:" .. item.itemID) or src
+            local hit = (isRare and item.note and FoldCase(item.note):find(needle, 1, true))
+                or (not isRare and src and FoldCase(src):find(needle, 1, true))
+            if hit and label and not seen[key] then
+                seen[key] = true
+                table.insert(matches, { key = key, label = label })
             end
         end
 
         -- An exact name always wins over the ones merely containing it.
-        for _, src in ipairs(matches) do
-            if FoldCase(src) == needle then
-                matches = { src }
+        for _, m in ipairs(matches) do
+            if FoldCase(m.label) == needle then
+                matches = { m }
                 break
             end
         end
@@ -1411,15 +1454,15 @@ SlashCmdList["TWINKGEARFINDER"] = function(msg)
         end
         if #matches > 1 then
             print(string.format("|cFFFFD100[TGF]|r Подходит несколько, уточни (%d):", #matches))
-            for _, src in ipairs(matches) do print("    " .. src) end
+            for _, m in ipairs(matches) do print("    " .. m.label) end
             return
         end
         local matched = matches[1]
 
         TwinkGearFinderDB = TwinkGearFinderDB or {}
         TwinkGearFinderDB.pins = TwinkGearFinderDB.pins or {}
-        TwinkGearFinderDB.pins[matched] = { mapID, x, y }
-        print(string.format("|cFFFFD100[TGF]|r Запомнено: %s = карта %d, %.1f, %.1f", matched, mapID, x, y))
+        TwinkGearFinderDB.pins[matched.key] = { mapID, x, y }
+        print(string.format("|cFFFFD100[TGF]|r Запомнено: %s = карта %d, %.1f, %.1f", matched.label, mapID, x, y))
         return
     end
 
