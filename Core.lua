@@ -486,10 +486,17 @@ local function ScanItemLink(link)
                 end
             end
 
-            for word, socketType in pairs(REVERSE_SOCKET_LABELS) do
-                if text:find(word .. " гнездо", 1, true) then
-                    table.insert(result.socketTypes, socketType)
+            -- Строка пустого гнезда: ищем слово «гнездо» где угодно в строке, а тип
+            -- определяем по ключевому слову рядом. Раньше требовалось строгое
+            -- «<тип> гнездо», и гнёзда-шестерёнки (инженерные) не находились вовсе -
+            -- в игре они подписаны иначе.
+            local lowered = text:lower()
+            if lowered:find("гнезд", 1, true) then
+                local socketType = "prismatic"
+                for word, key in pairs(REVERSE_SOCKET_LABELS) do
+                    if lowered:find(word:lower(), 1, true) then socketType = key break end
                 end
+                table.insert(result.socketTypes, socketType)
             end
         end
     end
