@@ -440,6 +440,19 @@ local function StemToStatKey(text)
     return nil
 end
 
+-- Вставленные камни считаем по самой ссылке, а не по тексту тултипа: строка
+-- камня приходит без распознаваемой иконки, а C_Item.GetItemGem эти камни
+-- не знает. В item-ссылке поля 3-6 после itemID - это как раз gemID1..gemID4.
+local function CountGemsInLink(link)
+    local parts = { strsplit(":", link) }
+    local n = 0
+    for i = 4, 7 do
+        local gem = tonumber(parts[i])
+        if gem and gem > 0 then n = n + 1 end
+    end
+    return n
+end
+
 local function ScanItemLink(link)
     ScanTooltip:ClearLines()
     ScanTooltip:SetHyperlink(link)
@@ -451,7 +464,7 @@ local function ScanItemLink(link)
     -- own effect line instead (icon + "+N к X и +N к Y") - C_Item.GetItemGem
     -- doesn't recognize these particular gems, so they're counted from the
     -- tooltip text itself, the same way the empty-socket lines are.
-    local filledGems = 0
+    local filledGems = CountGemsInLink(link)
 
     for i = 1, ScanTooltip:NumLines() do
         local fs = _G["TwinkGearFinderScanTooltipTextLeft" .. i]
@@ -459,13 +472,7 @@ local function ScanItemLink(link)
         if text then
             if text:find("соответствии цвета") then inSocketBonusZone = true end
 
-            -- Строка вставленного камня: иконка плюс любой числовой бонус. Раньше
-            -- требовалось строгое «+N к X и +N к Y», но у половины камней вторая
-            -- половина в процентах («и +5% к сопротивлению оглушению»), и такие
-            -- гнёзда не считались вовсе.
-            if text:find("|T", 1, true) and text:find("%+%d") then
-                filledGems = filledGems + 1
-            else
+            do
                 local value, rest = text:match("^%+(%d+)%s+к%s+(.+)$")
                 if value then
                     local key = StemToStatKey(rest)
@@ -487,7 +494,11 @@ local function ScanItemLink(link)
         end
     end
 
-    result.sockets = #result.socketTypes + filledGems
+    -- Гнездо с камнем закрыто, и цвет его по тултипу уже не узнать - считаем
+    -- бесцветным. Иначе заполненные гнёзда не попадали в сравнение вовсе:
+    -- DiffData сверяет socketTypes, а не общее число.
+    for _ = 1, filledGems do table.insert(result.socketTypes, "prismatic") end
+    result.sockets = #result.socketTypes
     return result
 end
 
