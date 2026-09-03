@@ -1477,7 +1477,17 @@ frame:SetScript("OnHide", function() GameTooltip:Hide() end)
 -- Returns "match", "mismatch", or nil (not one of our tracked BiS items).
 local function CompareToLive(itemID, link)
     if not ns_ItemsByID[itemID] then return nil end
-    local diffs = DiffAgainstLive(itemID, ScanItemLink(link))
+
+    -- Уровень и гнёзда не сверяем: в базе вещь отмасштабирована нашей связкой
+    -- bonusIDs, а живая копия считает уровень по уровню персонажа. Значимы
+    -- только характеристики.
+    local diffs = {}
+    for _, d in ipairs(DiffAgainstLive(itemID, ScanItemLink(link))) do
+        if not (d.label or ""):find("уровню предмета", 1, true)
+            and not (d.label or ""):find("гнездо", 1, true) then
+            table.insert(diffs, d)
+        end
+    end
 
     if #diffs > 0 then
         local name = C_Item.GetItemNameByID(itemID) or ("item:" .. itemID)
@@ -1532,10 +1542,9 @@ TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tool
 end)
 
 local function ScanOwnedItems()
-    if not ENABLE_COMPARISON then
-        print("|cFFFFD100[TGF]|r Сравнение с базой временно отключено.")
-        return
-    end
+    -- Разовый прогон по надетому и сумкам: печатает в чат всё, что расходится
+    -- с базой. Не зависит от ENABLE_COMPARISON - тот отключает хук на чужие
+    -- тултипы, а это ручная команда, лишнего никому не показывает.
     local checked, mismatched = 0, 0
 
     for slot = INVSLOT_FIRST_EQUIPPED, INVSLOT_LAST_EQUIPPED do
