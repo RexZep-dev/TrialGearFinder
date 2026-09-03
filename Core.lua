@@ -972,13 +972,23 @@ local function CreateRow(index)
         self.vers:SetText(ColorStat(data.vers))
         self.source:SetText(data.source or "")
         self.sourceboss:SetText(data.sourceboss or "")
-        -- Галочка стоит, если вещь уже есть у персонажа ИЛИ отмечена руками.
-        -- Автоматическую снять нельзя: она отражает факт, а не пометку.
-        local manual = TwinkGearFinderDB and TwinkGearFinderDB.done and TwinkGearFinderDB.done[data.itemID]
-        local done = data.owned or manual
-        self.owned = data.owned
-        self.done:SetChecked(done and true or false)
-        self:SetAlpha(done and 0.45 or 1)
+        -- Галочка только у рарников и сокровищ (sourceType == "World"): они берутся
+        -- раз в день или раз на персонажа, и есть смысл помнить, где уже был.
+        -- Подземелья ходятся сколько угодно, там отмечать нечего.
+        local trackable = data.sourceType == "World"
+        self.done:SetShown(trackable)
+        if not trackable then
+            self.owned = nil
+            self:SetAlpha(1)
+        else
+            -- Стоит, если вещь уже у персонажа ИЛИ отмечена руками. Автоматическую
+            -- снять нельзя: она отражает факт, а не пометку.
+            local manual = TwinkGearFinderDB and TwinkGearFinderDB.done and TwinkGearFinderDB.done[data.itemID]
+            local done = data.owned or manual
+            self.owned = data.owned
+            self.done:SetChecked(done and true or false)
+            self:SetAlpha(done and 0.45 or 1)
+        end
 
         self.fullSource = data.source
         self.sourceType = data.sourceType
