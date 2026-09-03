@@ -442,11 +442,14 @@ end
 
 -- Вставленные камни считаем по самой ссылке, а не по тексту тултипа: строка
 -- камня приходит без распознаваемой иконки, а C_Item.GetItemGem эти камни
--- не знает. В item-ссылке поля 3-6 после itemID - это как раз gemID1..gemID4.
+-- не знает.
+-- Разбивка ссылки: [1] префикс с |Hitem, [2] itemID, [3] пусто, [4] чары,
+-- [5..8] камни. Проверено диагностикой: в поле 4 у вещей стояли разные числа
+-- (чары), а в 5-8 повторялся один и тот же id камня.
 local function CountGemsInLink(link)
     local parts = { strsplit(":", link) }
     local n = 0
-    for i = 4, 7 do
+    for i = 5, 8 do
         local gem = tonumber(parts[i])
         if gem and gem > 0 then n = n + 1 end
     end
