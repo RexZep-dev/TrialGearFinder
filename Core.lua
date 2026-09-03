@@ -1479,11 +1479,14 @@ SlashCmdList["TWINKGEARFINDER"] = function(msg)
         -- (all share one category string), so they match on the note instead -
         -- "/tgf pin дикобраз" finds "падает с Дикобраз-матриарх в Друстваре".
         for _, item in ipairs(ns.Items) do
-            local src, isRare = item.source, item.sourceType == "World"
-            local label = isRare and item.note or src
-            local key = isRare and ("item:" .. item.itemID) or src
-            local hit = (isRare and item.note and FoldCase(item.note):find(needle, 1, true))
-                or (not isRare and src and FoldCase(src):find(needle, 1, true))
+            local src, isDungeon = item.source, item.sourceType == "Dungeon"
+            -- Dungeons are named by their source; everything else (rares, treasures,
+            -- quest drops) is recognised by its note, which is where the actual
+            -- spot is written.
+            local label = isDungeon and src or (item.note or src)
+            local key = PinKey(item.sourceType, item.itemID, src)
+            local hit = (src and FoldCase(src):find(needle, 1, true))
+                or (item.note and FoldCase(item.note):find(needle, 1, true))
             if hit and label and not seen[key] then
                 seen[key] = true
                 table.insert(matches, { key = key, label = label })
