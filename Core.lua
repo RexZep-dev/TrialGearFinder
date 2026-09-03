@@ -1410,6 +1410,16 @@ SLASH_TWINKGEARFINDER1 = "/tgf"
 SlashCmdList["TWINKGEARFINDER"] = function(msg)
     -- Dumps everything captured with Ctrl-click, ready to paste into SOURCE_PINS
     -- so the pins become part of the addon instead of one character's saved vars.
+    -- Data.lua stores no item names - they come from the client at display time.
+    -- This dumps id + name so they can be referred to by name outside the game.
+    if msg == "names" then
+        for _, item in ipairs(ns.Items) do
+            print(string.format("%d = %s", item.itemID,
+                C_Item.GetItemNameByID(item.itemID) or "?"))
+        end
+        return
+    end
+
     if msg == "pins" then
         local saved = TwinkGearFinderDB and TwinkGearFinderDB.pins
         if not saved or not next(saved) then
