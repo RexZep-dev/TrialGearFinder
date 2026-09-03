@@ -1401,19 +1401,29 @@ scrollFrame:SetScript("OnMouseWheel", function(self, delta)
 end)
 
 -- Автоотметка «был здесь». Скрытый квестовый флаг рарника знал бы это точно, но
--- его id в базе нет ни для одного моба. Поэтому проще: когда рарник лежит мёртвым
--- в цели (или с него открыт лут), ищем его имя в заметках и ставим жёлтую метку.
--- Имя цели и note - оба на языке клиента, так что сравнение прямое.
-local function MarkKilledTarget()
-    local name = UnitName("target")
-    if not name or not UnitIsDead("target") then return end
+-- его id в базе нет ни для одного моба. Поэтому ловим смерть моба в боевом логе:
+-- цель после смерти рарника обычно уже сброшена, а лог называет погибшего прямо.
+-- Имя из лога и note - оба на языке клиента, так что сравнение прямое.
+-- Считается один раз: в бою эта функция вызывается на каждую смерть, и перебирать
+-- всю базу из 122 записей там ни к чему - рарников всего два с половиной десятка.
+local rareItems
+local function MarkKilledByName(name)
+    if not name or name == "" then return end
+
+    if not rareItems then
+        rareItems = {}
+        for _, item in ipairs(ns.Items) do
+            if item.sourceType == "World" and item.note then
+                table.insert(rareItems, item)
+            end
+        end
+    end
 
     TwinkGearFinderDB = TwinkGearFinderDB or {}
     TwinkGearFinderDB.done = TwinkGearFinderDB.done or {}
     local marked
-    for _, item in ipairs(ns.Items) do
-        if item.sourceType == "World" and item.note and item.note:find(name, 1, true)
-            and not TwinkGearFinderDB.done[item.itemID] then
+    for _, item in ipairs(rareItems) do
+        if item.note:find(name, 1, true) and not TwinkGearFinderDB.done[item.itemID] then
             TwinkGearFinderDB.done[item.itemID] = true
             marked = name
         end
@@ -1429,8 +1439,7 @@ frame:RegisterEvent("ADDON_LOADED") -- SavedVariables only exist by the time thi
 frame:RegisterEvent("PLAYER_LOGIN")  -- UnitClass is reliable from here on
 frame:RegisterEvent("BAG_UPDATE_DELAYED")     -- picked something up: recheck the "owned" ticks
 frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
-frame:RegisterEvent("LOOT_OPENED")           -- лутаем рарника
-frame:RegisterEvent("PLAYER_REGEN_ENABLED")  -- вышли из боя: цель мертва?
+frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED") -- смерть рарника
 frame:SetScript("OnEvent", function(self, event, addonName)
     if event == "PLAYER_LOGIN" then
         -- Preselect the character's own class: on a twink you almost always want
@@ -1450,8 +1459,10 @@ frame:SetScript("OnEvent", function(self, event, addonName)
         ApplyStatsLayout()
         return
     end
-    if event == "LOOT_OPENED" or event == "PLAYER_REGEN_ENABLED" then
-        MarkKilledTarget()
+    -- Самое частое событие в файле: проверяем и выходим первым делом.
+    if event == "COMBAT_LOG_EVENT_UNFILTERED" then
+        local _, subevent, _, _, _, _, _, _, destName = CombatLogGetCurrentEventInfo()
+        if subevent == "UNIT_DIED" then MarkKilledByName(destName) end
         return
     end
 
