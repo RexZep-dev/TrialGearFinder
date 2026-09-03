@@ -926,8 +926,13 @@ local function CreateRow(index)
     end)
     row.done:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        if row.owned then
-            GameTooltip:AddLine("Вещь уже есть у персонажа", 0.2, 1, 0.2)
+        if row.owned and row.ownedDiffs ~= true then
+            GameTooltip:AddLine("Вещь есть, но отличается от BiS-версии:", 1, 0.2, 0.2)
+            for _, d in ipairs(type(row.ownedDiffs) == "table" and row.ownedDiffs or {}) do
+                GameTooltip:AddLine("  " .. FormatDiffLine(d), 1, 0.6, 0.6)
+            end
+        elseif row.owned then
+            GameTooltip:AddLine("Вещь есть, совпадает с BiS", 0.2, 1, 0.2)
         else
             GameTooltip:AddLine("Отметить: рарник убит, лут не выпал", 1, 0.82, 0)
         end
@@ -991,11 +996,14 @@ local function CreateRow(index)
             local done = data.owned or manual
             self.owned = data.owned
             self.done:SetChecked(done and true or false)
+            self.ownedDiffs = data.ownedDiffs
             if done then
                 local tex = self.done:GetCheckedTexture()
                 if tex then
-                    if data.owned then
-                        tex:SetVertexColor(0.2, 1, 0.2)   -- получил
+                    if data.owned and data.ownedDiffs ~= true then
+                        tex:SetVertexColor(1, 0.2, 0.2)   -- есть, но не BiS-версия
+                    elseif data.owned then
+                        tex:SetVertexColor(0.2, 1, 0.2)   -- получил, всё сходится
                     else
                         tex:SetVertexColor(1, 0.82, 0)    -- убил, не выпало
                     end
@@ -1249,6 +1257,20 @@ local function BuildRowData(item)
         typeLabel = typeLabel .. string.format(" | %d ур.", item.ilvl)
     end
     local stats = item.stats or {}
+
+    -- Вещь на руках сверяем с базой: рарник мог упасть без суффикса или другого
+    -- уровня, и тогда это не тот предмет, который расписан как BiS.
+    -- Считается только для реально имеющихся вещей, поэтому дёшево.
+    local owned = (C_Item.GetItemCount(item.itemID, true, false, true) or 0) > 0
+    local ownedDiffs
+    if owned then
+        local ownedLink = FindOwnedLink(item.itemID)
+        if ownedLink then
+            local diffs = DiffData(item, ScanItemLink(ownedLink))
+            ownedDiffs = (#diffs == 0) and true or diffs
+        end
+    end
+
     return {
         icon = icon,
         name = string.format("|c%s%s|r", qualityHex, name),
@@ -1259,7 +1281,10 @@ local function BuildRowData(item)
         itemID = item.itemID,
         -- Есть в сумках, банке или надета - значит уже забрана.
         -- includeBank/includeReagentBank выставлены, чтобы не пропустить лежащее в банке.
-        owned = (C_Item.GetItemCount(item.itemID, true, false, true) or 0) > 0,
+        owned = owned,
+        -- Совпадает ли выпавшая копия с тем, что записано как BiS. nil - вещи нет,
+        -- true - всё сходится, иначе список расхождений для подсказки.
+        ownedDiffs = ownedDiffs,
         -- Номер карты из метки: по нему рарники группируются по зонам.
         mapID = (function()
             local key = PinKey(item.sourceType, item.itemID, item.source)
