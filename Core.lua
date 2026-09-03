@@ -1295,7 +1295,11 @@ frame:SetScript("OnEvent", function(self, event, addonName)
         ApplyStatsLayout()
         return
     end
-    RefreshResults()
+    -- Only worth rebuilding while the window is up. This event fires whenever the
+    -- client caches any item at all (passing players, auction house, bags), so
+    -- without this the addon rebuilt all 121 rows hundreds of times a second in
+    -- a busy city - top CPU consumer among addons and 199 MB of garbage.
+    if frame:IsShown() then RefreshResults() end
 end)
 
 frame:SetScript("OnShow", RefreshResults)
