@@ -906,6 +906,26 @@ local function CreateRow(index)
     row.sourceHitbox = CreateFrame("Frame", nil, row)
     row.sourceHitbox:SetPoint("TOPLEFT", row, "TOPLEFT", COL_SOURCE_X, 0)
     row.sourceHitbox:SetSize(COL_SOURCE_W, ROW_HEIGHT)
+
+    -- "Уже был" - галочка справа в строке. Держится в SavedVariables по itemID,
+    -- так что переживает перезаход. Отмеченная строка гаснет, чтобы пройденное
+    -- было видно одним взглядом, не вчитываясь.
+    row.done = CreateFrame("CheckButton", nil, row, "UICheckButtonTemplate")
+    row.done:SetSize(22, 22)
+    row.done:SetPoint("RIGHT", row, "RIGHT", -6, 0)
+    row.done:SetScript("OnClick", function(self)
+        if not row.itemID then return end
+        TwinkGearFinderDB = TwinkGearFinderDB or {}
+        TwinkGearFinderDB.done = TwinkGearFinderDB.done or {}
+        TwinkGearFinderDB.done[row.itemID] = self:GetChecked() and true or nil
+        row:SetAlpha(self:GetChecked() and 0.45 or 1)
+    end)
+    row.done:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+        GameTooltip:AddLine("Отметить, что уже забрано")
+        GameTooltip:Show()
+    end)
+    row.done:SetScript("OnLeave", function() GameTooltip:Hide() end)
     row.sourceHitbox:EnableMouse(true)
     function row:ShowSourceTooltip()
         if not frame:IsShown() then return end -- window closed: nothing to describe
@@ -948,6 +968,10 @@ local function CreateRow(index)
         self.vers:SetText(ColorStat(data.vers))
         self.source:SetText(data.source or "")
         self.sourceboss:SetText(data.sourceboss or "")
+        local done = TwinkGearFinderDB and TwinkGearFinderDB.done and TwinkGearFinderDB.done[data.itemID]
+        self.done:SetChecked(done and true or false)
+        self:SetAlpha(done and 0.45 or 1)
+
         self.fullSource = data.source
         self.sourceType = data.sourceType
         self.fullNote = data.sourceboss
@@ -1011,7 +1035,7 @@ local function ApplyStatsLayout()
     local show = TwinkGearFinderDB and TwinkGearFinderDB.showStats or false
     local sourceX = show and COL_SOURCE_X or COL_STR_X
     local rowWidth = show and ROW_WIDTH or ROW_WIDTH_NARROW
-    local sourceW = rowWidth - sourceX - 10
+    local sourceW = rowWidth - sourceX - 34 -- 34: место под галочку «уже был»
 
     frame:SetWidth(show and FRAME_WIDTH_FULL or FRAME_WIDTH_NARROW)
 
