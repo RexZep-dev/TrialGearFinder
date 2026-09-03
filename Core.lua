@@ -925,7 +925,7 @@ local function CreateRow(index)
         row:SetAlpha(self:GetChecked() and 0.45 or 1)
     end)
     row.done:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         if row.owned and row.ownedDiffs ~= true then
             GameTooltip:AddLine("Вещь есть, но отличается от BiS-версии:", 1, 0.2, 0.2)
             for _, d in ipairs(type(row.ownedDiffs) == "table" and row.ownedDiffs or {}) do
@@ -1266,7 +1266,17 @@ local function BuildRowData(item)
     if owned then
         local ownedLink = FindOwnedLink(item.itemID)
         if ownedLink then
-            local diffs = DiffData(item, ScanItemLink(ownedLink))
+            -- Уровень и гнёзда из сравнения выброшены. База хранит вещь, отмасштабированную
+            -- нашей связкой bonusIDs, а копия в сумке считает уровень по уровню персонажа -
+            -- на не-двадцатке расхождение будет всегда и ни о чём не говорит.
+            -- Значимо только то, какие характеристики реально стоят на вещи.
+            local diffs = {}
+            for _, d in ipairs(DiffData(item, ScanItemLink(ownedLink))) do
+                if not (d.label or ""):find("уровню предмета", 1, true)
+                    and not (d.label or ""):find("гнездо", 1, true) then
+                    table.insert(diffs, d)
+                end
+            end
             ownedDiffs = (#diffs == 0) and true or diffs
         end
     end
