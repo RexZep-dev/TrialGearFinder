@@ -1336,6 +1336,10 @@ RefreshResults = function()
             -- own id order already matches that sequence) before by-name.
             local subA, subB = a.subclassID or 99, b.subclassID or 99
             if subA ~= subB then return subA < subB end
+            -- Then by zone, so вещи из одного места стоят рядом и их удобно
+            -- собирать за один заход - иначе Дренор и Кул-Тирас чередуются.
+            local mapA, mapB = a.mapID or 9999, b.mapID or 9999
+            if mapA ~= mapB then return mapA < mapB end
             return (a.rawName or "") < (b.rawName or "")
         end)
     end
