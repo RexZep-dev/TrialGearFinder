@@ -915,6 +915,10 @@ local function CreateRow(index)
     row.done:SetPoint("RIGHT", row, "RIGHT", -6, 0)
     row.done:SetScript("OnClick", function(self)
         if not row.itemID then return end
+        if row.owned then -- вещь на руках: отметка не наша, снять нельзя
+            self:SetChecked(true)
+            return
+        end
         TwinkGearFinderDB = TwinkGearFinderDB or {}
         TwinkGearFinderDB.done = TwinkGearFinderDB.done or {}
         TwinkGearFinderDB.done[row.itemID] = self:GetChecked() and true or nil
@@ -922,7 +926,7 @@ local function CreateRow(index)
     end)
     row.done:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:AddLine("Отметить, что уже забрано")
+        GameTooltip:AddLine(row.owned and "Вещь уже есть у персонажа" or "Отметить, что уже забрано")
         GameTooltip:Show()
     end)
     row.done:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -968,7 +972,11 @@ local function CreateRow(index)
         self.vers:SetText(ColorStat(data.vers))
         self.source:SetText(data.source or "")
         self.sourceboss:SetText(data.sourceboss or "")
-        local done = TwinkGearFinderDB and TwinkGearFinderDB.done and TwinkGearFinderDB.done[data.itemID]
+        -- Галочка стоит, если вещь уже есть у персонажа ИЛИ отмечена руками.
+        -- Автоматическую снять нельзя: она отражает факт, а не пометку.
+        local manual = TwinkGearFinderDB and TwinkGearFinderDB.done and TwinkGearFinderDB.done[data.itemID]
+        local done = data.owned or manual
+        self.owned = data.owned
         self.done:SetChecked(done and true or false)
         self:SetAlpha(done and 0.45 or 1)
 
@@ -1224,6 +1232,9 @@ local function BuildRowData(item)
         equipLoc = equipLoc,
         subclassID = classID == ARMOR_CLASS_ID and subclassID or nil,
         itemID = item.itemID,
+        -- Есть в сумках, банке или надета - значит уже забрана.
+        -- includeBank/includeReagentBank выставлены, чтобы не пропустить лежащее в банке.
+        owned = (C_Item.GetItemCount(item.itemID, true, false, true) or 0) > 0,
         str = stats.str,
         agi = stats.agi,
         int = stats.int,
@@ -1316,6 +1327,8 @@ end)
 frame:RegisterEvent("GET_ITEM_INFO_RECEIVED")
 frame:RegisterEvent("ADDON_LOADED") -- SavedVariables only exist by the time this fires
 frame:RegisterEvent("PLAYER_LOGIN")  -- UnitClass is reliable from here on
+frame:RegisterEvent("BAG_UPDATE_DELAYED")     -- picked something up: recheck the "owned" ticks
+frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
 frame:SetScript("OnEvent", function(self, event, addonName)
     if event == "PLAYER_LOGIN" then
         -- Preselect the character's own class: on a twink you almost always want
