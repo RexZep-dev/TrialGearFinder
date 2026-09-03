@@ -1390,11 +1390,37 @@ scrollFrame:SetScript("OnMouseWheel", function(self, delta)
     scrollBar:SetValue(scrollBar:GetValue() - delta * ROW_HEIGHT)
 end)
 
+-- Автоотметка «был здесь». Скрытый квестовый флаг рарника знал бы это точно, но
+-- его id в базе нет ни для одного моба. Поэтому проще: когда рарник лежит мёртвым
+-- в цели (или с него открыт лут), ищем его имя в заметках и ставим жёлтую метку.
+-- Имя цели и note - оба на языке клиента, так что сравнение прямое.
+local function MarkKilledTarget()
+    local name = UnitName("target")
+    if not name or not UnitIsDead("target") then return end
+
+    TwinkGearFinderDB = TwinkGearFinderDB or {}
+    TwinkGearFinderDB.done = TwinkGearFinderDB.done or {}
+    local marked
+    for _, item in ipairs(ns.Items) do
+        if item.sourceType == "World" and item.note and item.note:find(name, 1, true)
+            and not TwinkGearFinderDB.done[item.itemID] then
+            TwinkGearFinderDB.done[item.itemID] = true
+            marked = name
+        end
+    end
+    if marked then
+        print(string.format("|cFFFFD100[TGF]|r Отмечен как убитый: %s", marked))
+        if frame:IsShown() then RefreshResults() end
+    end
+end
+
 frame:RegisterEvent("GET_ITEM_INFO_RECEIVED")
 frame:RegisterEvent("ADDON_LOADED") -- SavedVariables only exist by the time this fires
 frame:RegisterEvent("PLAYER_LOGIN")  -- UnitClass is reliable from here on
 frame:RegisterEvent("BAG_UPDATE_DELAYED")     -- picked something up: recheck the "owned" ticks
 frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
+frame:RegisterEvent("LOOT_OPENED")           -- лутаем рарника
+frame:RegisterEvent("PLAYER_REGEN_ENABLED")  -- вышли из боя: цель мертва?
 frame:SetScript("OnEvent", function(self, event, addonName)
     if event == "PLAYER_LOGIN" then
         -- Preselect the character's own class: on a twink you almost always want
@@ -1414,6 +1440,11 @@ frame:SetScript("OnEvent", function(self, event, addonName)
         ApplyStatsLayout()
         return
     end
+    if event == "LOOT_OPENED" or event == "PLAYER_REGEN_ENABLED" then
+        MarkKilledTarget()
+        return
+    end
+
     -- Only worth rebuilding while the window is up. This event fires whenever the
     -- client caches any item at all (passing players, auction house, bags), so
     -- without this the addon rebuilt all 121 rows hundreds of times a second in
