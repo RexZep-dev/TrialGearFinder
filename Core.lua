@@ -932,10 +932,7 @@ local function CreateRow(index)
                 GameTooltip:AddLine("  " .. FormatDiffLine(d), 1, 0.6, 0.6)
             end
         elseif row.owned then
-            GameTooltip:AddLine("Вещь есть, характеристики совпадают", 0.2, 1, 0.2)
-            for _, d in ipairs(row.ownedSocketDiffs or {}) do
-                GameTooltip:AddLine("  " .. FormatDiffLine(d) .. " против BiS-версии", 1, 0.82, 0)
-            end
+            GameTooltip:AddLine("Вещь есть, совпадает с BiS", 0.2, 1, 0.2)
         else
             GameTooltip:AddLine("Отметить: рарник убит, лут не выпал", 1, 0.82, 0)
         end
@@ -1000,7 +997,6 @@ local function CreateRow(index)
             self.owned = data.owned
             self.done:SetChecked(done and true or false)
             self.ownedDiffs = data.ownedDiffs
-            self.ownedSocketDiffs = data.ownedSocketDiffs
             if done then
                 local tex = self.done:GetCheckedTexture()
                 if tex then
@@ -1266,26 +1262,22 @@ local function BuildRowData(item)
     -- уровня, и тогда это не тот предмет, который расписан как BiS.
     -- Считается только для реально имеющихся вещей, поэтому дёшево.
     local owned = (C_Item.GetItemCount(item.itemID, true, false, true) or 0) > 0
-    local ownedDiffs, ownedSocketDiffs
+    local ownedDiffs
     if owned then
         local ownedLink = FindOwnedLink(item.itemID)
         if ownedLink then
             -- Уровень из сверки выброшен: база хранит вещь, отмасштабированную нашей
             -- связкой bonusIDs, а копия в сумке считает уровень по уровню персонажа -
             -- на не-двадцатке расхождение будет всегда и ни о чём не говорит.
-            -- Гнёзда считаем отдельно: их отсутствие - это не "вещь не та",
-            -- а "версия слабее BiS", и цвет галочки от этого не краснеет.
-            local diffs, socketDiffs = {}, {}
+            -- Гнездо сверяем наравне со статами: у вещей с рарников именно оно
+            -- и делает копию BiS-версией, без него вещь надо перефармливать.
+            local diffs = {}
             for _, d in ipairs(DiffData(item, ScanItemLink(ownedLink))) do
-                local label = d.label or ""
-                if label:find("гнездо", 1, true) then
-                    table.insert(socketDiffs, d)
-                elseif not label:find("уровню предмета", 1, true) then
+                if not (d.label or ""):find("уровню предмета", 1, true) then
                     table.insert(diffs, d)
                 end
             end
             ownedDiffs = (#diffs == 0) and true or diffs
-            ownedSocketDiffs = (#socketDiffs > 0) and socketDiffs or nil
         end
     end
 
@@ -1303,7 +1295,6 @@ local function BuildRowData(item)
         -- Совпадает ли выпавшая копия с тем, что записано как BiS. nil - вещи нет,
         -- true - всё сходится, иначе список расхождений для подсказки.
         ownedDiffs = ownedDiffs,
-        ownedSocketDiffs = ownedSocketDiffs,
         -- Номер карты из метки: по нему рарники группируются по зонам.
         mapID = (function()
             local key = PinKey(item.sourceType, item.itemID, item.source)
@@ -1487,13 +1478,12 @@ frame:SetScript("OnHide", function() GameTooltip:Hide() end)
 local function CompareToLive(itemID, link)
     if not ns_ItemsByID[itemID] then return nil end
 
-    -- Уровень и гнёзда не сверяем: в базе вещь отмасштабирована нашей связкой
-    -- bonusIDs, а живая копия считает уровень по уровню персонажа. Значимы
-    -- только характеристики.
+    -- Уровень не сверяем: в базе вещь отмасштабирована нашей связкой bonusIDs,
+    -- а живая копия считает уровень по уровню персонажа. Гнёзда сверяем -
+    -- у вещей с рарников гнездо и определяет BiS-версию.
     local diffs = {}
     for _, d in ipairs(DiffAgainstLive(itemID, ScanItemLink(link))) do
-        if not (d.label or ""):find("уровню предмета", 1, true)
-            and not (d.label or ""):find("гнездо", 1, true) then
+        if not (d.label or ""):find("уровню предмета", 1, true) then
             table.insert(diffs, d)
         end
     end
