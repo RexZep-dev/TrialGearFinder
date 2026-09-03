@@ -1260,6 +1260,13 @@ local function BuildRowData(item)
         -- Есть в сумках, банке или надета - значит уже забрана.
         -- includeBank/includeReagentBank выставлены, чтобы не пропустить лежащее в банке.
         owned = (C_Item.GetItemCount(item.itemID, true, false, true) or 0) > 0,
+        -- Номер карты из метки: по нему рарники группируются по зонам.
+        mapID = (function()
+            local key = PinKey(item.sourceType, item.itemID, item.source)
+            local saved = TwinkGearFinderDB and TwinkGearFinderDB.pins
+            local pin = (saved and saved[key]) or SOURCE_PINS[key]
+            return pin and pin[1] or 9999
+        end)(),
         str = stats.str,
         agi = stats.agi,
         int = stats.int,
@@ -1317,7 +1324,12 @@ RefreshResults = function()
     else
         -- Standard order: grouped by slot (head, neck, shoulder, ... down to
         -- trinkets, then weapons), matching SLOT_DEFS - not insertion order.
+        -- Exception: with the Рарники filter on, zone comes first - they are
+        -- farmed by flying around a zone, not by gear slot.
         table.sort(matches, function(a, b)
+            if filters.sourceType == "World" and (a.mapID or 9999) ~= (b.mapID or 9999) then
+                return (a.mapID or 9999) < (b.mapID or 9999)
+            end
             local rankA, rankB = SlotRank(a.equipLoc), SlotRank(b.equipLoc)
             if rankA ~= rankB then return rankA < rankB end
             -- Within the same slot: Cloth, Leather, Mail, Plate (ARMOR_SUBCLASSES'
