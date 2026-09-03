@@ -459,7 +459,11 @@ local function ScanItemLink(link)
         if text then
             if text:find("соответствии цвета") then inSocketBonusZone = true end
 
-            if text:find("|T", 1, true) and text:match("%+%d+%s+к.+%s+и%s+%+%d+%s+к") then
+            -- Строка вставленного камня: иконка плюс любой числовой бонус. Раньше
+            -- требовалось строгое «+N к X и +N к Y», но у половины камней вторая
+            -- половина в процентах («и +5% к сопротивлению оглушению»), и такие
+            -- гнёзда не считались вовсе.
+            if text:find("|T", 1, true) and text:find("%+%d") then
                 filledGems = filledGems + 1
             else
                 local value, rest = text:match("^%+(%d+)%s+к%s+(.+)$")
