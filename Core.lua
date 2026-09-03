@@ -1434,22 +1434,26 @@ local function MarkKilledByName(name)
     end
 end
 
--- Боевой лог слушает отдельный безымянный фрейм: главное окно лежит в UISpecialFrames
--- и помечено SetToplevel, а на такой фрейм игра вешать это событие не даёт
--- (ADDON_ACTION_FORBIDDEN про защищённую функцию).
-local combatFrame = CreateFrame("Frame")
-combatFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-combatFrame:SetScript("OnEvent", function()
-    local _, subevent, _, _, _, _, _, _, destName = CombatLogGetCurrentEventInfo()
-    if subevent == "UNIT_DIED" then MarkKilledByName(destName) end
-end)
-
 frame:RegisterEvent("GET_ITEM_INFO_RECEIVED")
 frame:RegisterEvent("ADDON_LOADED") -- SavedVariables only exist by the time this fires
 frame:RegisterEvent("PLAYER_LOGIN")  -- UnitClass is reliable from here on
 frame:RegisterEvent("BAG_UPDATE_DELAYED")     -- picked something up: recheck the "owned" ticks
 frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
+-- Смерть рарника ловим по трупу: боевой лог клиент этому аддону регистрировать
+-- не даёт (ADDON_ACTION_FORBIDDEN), а эти события открыты.
+frame:RegisterEvent("PLAYER_TARGET_CHANGED")
+frame:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
+frame:RegisterEvent("LOOT_OPENED")
+frame:RegisterEvent("PLAYER_REGEN_ENABLED")
 frame:SetScript("OnEvent", function(self, event, addonName)
+    if event == "PLAYER_TARGET_CHANGED" or event == "UPDATE_MOUSEOVER_UNIT"
+        or event == "LOOT_OPENED" or event == "PLAYER_REGEN_ENABLED" then
+        for _, unit in ipairs({ "target", "mouseover" }) do
+            if UnitExists(unit) and UnitIsDead(unit) then MarkKilledByName(UnitName(unit)) end
+        end
+        return
+    end
+
     if event == "PLAYER_LOGIN" then
         -- Preselect the character's own class: on a twink you almost always want
         -- your own gear, and "Класс: Все" is one click away when you don't.
