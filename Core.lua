@@ -612,6 +612,30 @@ end
 -- tooltip uses. Returns the text plus r,g,b for AddLine to color it green/red.
 -- Colors only the +N/-N number (green/red); the stat name after it stays the
 -- tooltip's normal white, matching the game's own comparison block.
+-- Цвет гнезда, закрытого камнем, по тултипу не узнать - такие считаются
+-- бесцветными. Поэтому «-1 особое, +1 бесцветное» при одинаковом общем числе
+-- гнёзд означает только это и расхождением не является. Если же гнёзд реально
+-- больше или меньше, разница останется и попадёт в отчёт.
+local function DropBalancedSocketDiffs(diffs)
+    local total, socketCount = 0, 0
+    for _, d in ipairs(diffs) do
+        if (d.label or ""):find("гнездо", 1, true) or (d.label or ""):find("гнёзда", 1, true) then
+            total = total + (d.delta or 0)
+            socketCount = socketCount + 1
+        end
+    end
+    if socketCount == 0 or total ~= 0 then return diffs end
+
+    local kept = {}
+    for _, d in ipairs(diffs) do
+        local label = d.label or ""
+        if not (label:find("гнездо", 1, true) or label:find("гнёзда", 1, true)) then
+            table.insert(kept, d)
+        end
+    end
+    return kept
+end
+
 local function FormatDiffLine(diff)
     local sign = diff.delta > 0 and "+" or ""
     local colorCode = diff.delta > 0 and "|cFF20FF20" or "|cFFFF4040"
@@ -1292,6 +1316,7 @@ local function BuildRowData(item)
                     table.insert(diffs, d)
                 end
             end
+            diffs = DropBalancedSocketDiffs(diffs)
             ownedDiffs = (#diffs == 0) and true or diffs
         end
     end
@@ -1520,6 +1545,7 @@ local function CompareToLive(itemID, link)
         end
     end
 
+    diffs = DropBalancedSocketDiffs(diffs)
     if #diffs > 0 then
         local name = C_Item.GetItemNameByID(itemID) or ("item:" .. itemID)
         local parts = {}
