@@ -1642,6 +1642,22 @@ SlashCmdList["TWINKGEARFINDER"] = function(msg)
     -- so the pins become part of the addon instead of one character's saved vars.
     -- Data.lua stores no item names - they come from the client at display time.
     -- This dumps id + name so they can be referred to by name outside the game.
+    -- Диагностика гнёзд: печатает поля gemID из ссылки и то, что аддон насчитал.
+    -- Нужна, чтобы понять, откуда берутся лишние гнёзда в /tgf scan.
+    if msg == "gems" then
+        for _, item in ipairs(ns.Items) do
+            local link = FindOwnedLink(item.itemID)
+            if link then
+                local parts = { strsplit(":", link) }
+                local live = ScanItemLink(link)
+                print(string.format("%d | база: %d | насчитано: %d | поля 4-7: [%s][%s][%s][%s]",
+                    item.itemID, item.sockets or 0, live.sockets or 0,
+                    tostring(parts[4]), tostring(parts[5]), tostring(parts[6]), tostring(parts[7])))
+            end
+        end
+        return
+    end
+
     if msg == "names" then
         for _, item in ipairs(ns.Items) do
             print(string.format("%d = %s", item.itemID,
