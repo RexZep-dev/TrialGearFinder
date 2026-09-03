@@ -1434,12 +1434,21 @@ local function MarkKilledByName(name)
     end
 end
 
+-- Боевой лог слушает отдельный безымянный фрейм: главное окно лежит в UISpecialFrames
+-- и помечено SetToplevel, а на такой фрейм игра вешать это событие не даёт
+-- (ADDON_ACTION_FORBIDDEN про защищённую функцию).
+local combatFrame = CreateFrame("Frame")
+combatFrame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
+combatFrame:SetScript("OnEvent", function()
+    local _, subevent, _, _, _, _, _, _, destName = CombatLogGetCurrentEventInfo()
+    if subevent == "UNIT_DIED" then MarkKilledByName(destName) end
+end)
+
 frame:RegisterEvent("GET_ITEM_INFO_RECEIVED")
 frame:RegisterEvent("ADDON_LOADED") -- SavedVariables only exist by the time this fires
 frame:RegisterEvent("PLAYER_LOGIN")  -- UnitClass is reliable from here on
 frame:RegisterEvent("BAG_UPDATE_DELAYED")     -- picked something up: recheck the "owned" ticks
 frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
-frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED") -- смерть рарника
 frame:SetScript("OnEvent", function(self, event, addonName)
     if event == "PLAYER_LOGIN" then
         -- Preselect the character's own class: on a twink you almost always want
@@ -1459,13 +1468,6 @@ frame:SetScript("OnEvent", function(self, event, addonName)
         ApplyStatsLayout()
         return
     end
-    -- Самое частое событие в файле: проверяем и выходим первым делом.
-    if event == "COMBAT_LOG_EVENT_UNFILTERED" then
-        local _, subevent, _, _, _, _, _, _, destName = CombatLogGetCurrentEventInfo()
-        if subevent == "UNIT_DIED" then MarkKilledByName(destName) end
-        return
-    end
-
     -- Only worth rebuilding while the window is up. This event fires whenever the
     -- client caches any item at all (passing players, auction house, bags), so
     -- without this the addon rebuilt all 121 rows hundreds of times a second in
