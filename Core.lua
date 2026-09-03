@@ -926,7 +926,11 @@ local function CreateRow(index)
     end)
     row.done:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:AddLine(row.owned and "Вещь уже есть у персонажа" or "Отметить, что уже забрано")
+        if row.owned then
+            GameTooltip:AddLine("Вещь уже есть у персонажа", 0.2, 1, 0.2)
+        else
+            GameTooltip:AddLine("Отметить: рарник убит, лут не выпал", 1, 0.82, 0)
+        end
         GameTooltip:Show()
     end)
     row.done:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -981,13 +985,24 @@ local function CreateRow(index)
             self.owned = nil
             self:SetAlpha(1)
         else
-            -- Стоит, если вещь уже у персонажа ИЛИ отмечена руками. Автоматическую
-            -- снять нельзя: она отражает факт, а не пометку.
+            -- Два состояния: зелёная - вещь на руках (ставится сама), жёлтая - рарник
+            -- убит, но лут не выпал (ставится щелчком). Пустая - ещё не был.
             local manual = TwinkGearFinderDB and TwinkGearFinderDB.done and TwinkGearFinderDB.done[data.itemID]
             local done = data.owned or manual
             self.owned = data.owned
             self.done:SetChecked(done and true or false)
-            self:SetAlpha(done and 0.45 or 1)
+            if done then
+                local tex = self.done:GetCheckedTexture()
+                if tex then
+                    if data.owned then
+                        tex:SetVertexColor(0.2, 1, 0.2)   -- получил
+                    else
+                        tex:SetVertexColor(1, 0.82, 0)    -- убил, не выпало
+                    end
+                end
+            end
+            -- Забранное гасим сильнее, чем «был, но не выпало»: туда ещё вернёшься.
+            self:SetAlpha(data.owned and 0.45 or (manual and 0.7 or 1))
         end
 
         self.fullSource = data.source
