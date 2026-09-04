@@ -312,6 +312,12 @@ local function StyleDropdown(drop)
 
     local button = _G[name .. "Button"]
     if button then
+        -- Blizzard перерисовывает текстуры кнопки при каждом открытии списка,
+        -- поэтому прятать их бесполезно - подменяем на пустые.
+        button:SetNormalTexture("")
+        button:SetPushedTexture("")
+        button:SetDisabledTexture("")
+        button:SetHighlightTexture("")
         StripTextures(button)
         button:SetSize(20, 20)
         button:ClearAllPoints()
@@ -523,9 +529,48 @@ AddHeaderLabel(COL_SOURCE_X, COL_SOURCE_W, "Источник", "CENTER", "source
 -- Scroll area + rows
 ------------------------------------------------------------
 
+-- Полоса прокрутки: стрелки сверху и снизу убираем совсем, трек делаем тонкой
+-- тёмной дорожкой, ползунок - светлой скруглённой пилюлей. Как в вебе, где
+-- полоса не спорит с содержимым.
+local function StyleScrollBar(bar)
+    if not bar then return end
+
+    local barName = bar.GetName and bar:GetName()
+    for _, suffix in ipairs({ "ScrollUpButton", "ScrollDownButton" }) do
+        local arrow = bar[suffix] or (barName and _G[barName .. suffix])
+        if arrow then
+            arrow:SetSize(1, 1)
+            arrow:SetAlpha(0)
+            arrow:EnableMouse(false)
+        end
+    end
+    StripTextures(bar)
+    bar:SetWidth(8)
+
+    local track = bar:CreateTexture(nil, "BACKGROUND")
+    track:SetPoint("TOPLEFT", bar, "TOPLEFT", 2, 0)
+    track:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", -2, 0)
+    Fill(track, C.block2)
+
+    local thumb = bar.GetThumbTexture and bar:GetThumbTexture()
+    if thumb then
+        thumb:SetTexture(ROUND_TEXTURE)
+        if thumb.SetTextureSliceMargins then
+            thumb:SetTextureSliceMargins(10, 10, 10, 10)
+            if thumb.SetTextureSliceMode and Enum and Enum.UITextureSliceMode then
+                thumb:SetTextureSliceMode(Enum.UITextureSliceMode.Stretched)
+            end
+        end
+        thumb:SetVertexColor(C.text3[1], C.text3[2], C.text3[3], 1)
+        thumb:SetSize(8, 40)
+    end
+end
+
 local scrollFrame = CreateFrame("ScrollFrame", "TwinkGearFinderScroll", frame, "FauxScrollFrameTemplate")
 scrollFrame:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -6)
 scrollFrame:SetPoint("BOTTOMRIGHT", footer, "TOPRIGHT", -24, 6)
+
+StyleScrollBar(scrollFrame.ScrollBar or _G["TwinkGearFinderScrollScrollBar"])
 
 local emptyText = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 emptyText:SetPoint("TOPLEFT", scrollFrame, "TOPLEFT", 4, -4)
