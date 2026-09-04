@@ -167,8 +167,9 @@ end
 -- нарисован для этого аддона; SetTextureSliceMargins растягивает середину,
 -- оставляя углы нетронутыми, поэтому одна картинка годится для любого размера.
 local ROUND_TEXTURE = "Interface/AddOns/TwinkGearFinder/roundrect"
--- Капсула для полосы прокрутки: 16x16 с радиусом 8, то есть скругление ровно
--- в половину ширины - при растяжении по высоте торцы остаются полукруглыми.
+-- Капсула для полосы прокрутки: 8x32, радиус 4 - ровно половина ширины.
+-- Тянется только по высоте (маргины сверху и снизу по 4), ширина 1 в 1,
+-- поэтому торцы остаются полукруглыми, а не превращаются в овал.
 local PILL_TEXTURE = "Interface/AddOns/TwinkGearFinder/pill"
 
 local function RoundedTexture(parent, layer, color, sublevel)
@@ -543,14 +544,14 @@ local function StyleScrollBar(bar)
     -- гасить остальные, иначе спрячем заодно и его.
     local thumb = bar.GetThumbTexture and bar:GetThumbTexture()
     StripTextures(bar)
-    bar:SetWidth(10)
+    bar:SetWidth(8)
 
     local track = bar:CreateTexture(nil, "BACKGROUND")
-    track:SetPoint("TOPLEFT", bar, "TOPLEFT", 2, -14)
-    track:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", -2, 14)
+    track:SetPoint("TOPLEFT", bar, "TOPLEFT", 0, -14)
+    track:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", 0, 14)
     track:SetTexture(PILL_TEXTURE)
     if track.SetTextureSliceMargins then
-        track:SetTextureSliceMargins(8, 8, 8, 8)
+        track:SetTextureSliceMargins(0, 4, 0, 4)
         if track.SetTextureSliceMode and Enum and Enum.UITextureSliceMode then
             track:SetTextureSliceMode(Enum.UITextureSliceMode.Stretched)
         end
@@ -561,13 +562,13 @@ local function StyleScrollBar(bar)
         thumb:Show()
         thumb:SetTexture(PILL_TEXTURE)
         if thumb.SetTextureSliceMargins then
-            thumb:SetTextureSliceMargins(8, 8, 8, 8)
+            thumb:SetTextureSliceMargins(0, 4, 0, 4)
             if thumb.SetTextureSliceMode and Enum and Enum.UITextureSliceMode then
                 thumb:SetTextureSliceMode(Enum.UITextureSliceMode.Stretched)
             end
         end
         thumb:SetVertexColor(C.text2[1], C.text2[2], C.text2[3], 1)
-        thumb:SetSize(6, 44)
+        thumb:SetSize(8, 44)
     end
 
     -- Стрелки оставляем, но снимаем с них объёмную обшивку Blizzard и красим
