@@ -559,16 +559,23 @@ local function StyleScrollBar(bar)
     track:SetVertexColor(C.block2[1], C.block2[2], C.block2[3], 1)
 
     if thumb then
-        thumb:Show()
-        thumb:SetTexture(PILL_TEXTURE)
-        if thumb.SetTextureSliceMargins then
-            thumb:SetTextureSliceMargins(0, 4, 0, 4)
-            if thumb.SetTextureSliceMode and Enum and Enum.UITextureSliceMode then
-                thumb:SetTextureSliceMode(Enum.UITextureSliceMode.Stretched)
+        -- Сам ползунок игра перерисовывает при каждой прокрутке, поэтому его
+        -- текстуру не трогаем, а делаем свою и вешаем ровно на него - она
+        -- поедет следом сама.
+        thumb:SetAlpha(0)
+        thumb:SetSize(8, 44)
+
+        local pill = bar:CreateTexture(nil, "ARTWORK")
+        pill:SetPoint("TOPLEFT", thumb, "TOPLEFT", 0, 0)
+        pill:SetPoint("BOTTOMRIGHT", thumb, "BOTTOMRIGHT", 0, 0)
+        pill:SetTexture(PILL_TEXTURE)
+        if pill.SetTextureSliceMargins then
+            pill:SetTextureSliceMargins(0, 4, 0, 4)
+            if pill.SetTextureSliceMode and Enum and Enum.UITextureSliceMode then
+                pill:SetTextureSliceMode(Enum.UITextureSliceMode.Stretched)
             end
         end
-        thumb:SetVertexColor(C.text2[1], C.text2[2], C.text2[3], 1)
-        thumb:SetSize(8, 44)
+        pill:SetVertexColor(C.text2[1], C.text2[2], C.text2[3], 1)
     end
 
     -- Стрелки оставляем, но снимаем с них объёмную обшивку Blizzard и красим
