@@ -315,8 +315,49 @@ footer:SetHeight(40)
 -- Выпадающий список Blizzard тащит за собой золотую рамку и объёмные торцы -
 -- в плоской тёмной палитре сайта это чужое. Гасим его текстуры и рисуем
 -- прямоугольник: блок, тонкая рамка, приглушённый текст, своя стрелка.
+-- Выпадающий список - общий фрейм игры (DropDownList1), его открывают все меню
+-- в интерфейсе. Поэтому не переделываем его насовсем, а показываем свою
+-- подложку только пока открыт фильтр аддона, и убираем, когда список закрылся.
+local ourDropdowns, listSkins = {}, {}
+
+local function SkinDropDownList(level)
+    local list = _G["DropDownList" .. (level or 1)]
+    if not list then return end
+
+    local skin = listSkins[list]
+    if not skin then
+        skin = CreateFrame("Frame", nil, list)
+        skin:SetPoint("TOPLEFT", list, "TOPLEFT", 10, -10)
+        skin:SetPoint("BOTTOMRIGHT", list, "BOTTOMRIGHT", -10, 10)
+        skin:SetFrameLevel(math.max(0, list:GetFrameLevel() - 1))
+        RoundedPanel(skin, C.block, C.border)
+        listSkins[list] = skin
+
+        -- Когда список закрывается, прячем и подложку - иначе она всплывёт
+        -- в чужом меню, открытом следующим.
+        list:HookScript("OnHide", function() skin:Hide() end)
+    end
+
+    -- Родные рамки прячем только на время показа нашего списка.
+    for _, region in ipairs({ list:GetRegions() }) do
+        if region.GetObjectType and region:GetObjectType() == "Texture" then
+            region:SetAlpha(0)
+        end
+    end
+    if list.Border then list.Border:SetAlpha(0) end
+    if list.NineSlice then list.NineSlice:SetAlpha(0) end
+    skin:Show()
+end
+
+hooksecurefunc("ToggleDropDownMenu", function(level, _, dropDownFrame)
+    if dropDownFrame and ourDropdowns[dropDownFrame] then
+        SkinDropDownList(level)
+    end
+end)
+
 local function StyleDropdown(drop)
     local name = drop:GetName()
+    ourDropdowns[drop] = true
     StripTextures(drop)
 
     local button = _G[name .. "Button"]
