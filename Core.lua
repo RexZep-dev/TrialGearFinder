@@ -350,30 +350,35 @@ local function SkinDropDownList(level)
     if list.NineSlice then list.NineSlice:SetAlpha(0) end
     skin:Show()
 
-    -- Пункты списка игра создаёт заново при каждом открытии, поэтому оформляем
-    -- их здесь же: белая точка вместо галочки Blizzard и мягкая серая подсветка
-    -- вместо жёлтой полосы.
-    for i = 1, (UIDROPDOWNMENU_MAXBUTTONS or 32) do
-        local button = _G["DropDownList" .. (level or 1) .. "Button" .. i]
-        if not button then break end
+    -- Пункты игра создаёт и раскрашивает уже ПОСЛЕ того, как отработает наш хук,
+    -- поэтому оформляем их следующим кадром, иначе стилить нечего. Кнопки берём
+    -- перебором детей списка: имена у них от версии клиента зависят.
+    C_Timer.After(0, function()
+        if not list:IsShown() then return end
+        for _, button in ipairs({ list:GetChildren() }) do
+            if button.GetHighlightTexture then
+                local highlight = button:GetHighlightTexture()
+                if highlight then
+                    highlight:SetTexture(nil)
+                    highlight:SetColorTexture(C.text3[1], C.text3[2], C.text3[3], 0.18)
+                end
 
-        local check = _G[button:GetName() .. "Check"]
-        if check then
-            check:SetTexture(DOT_TEXTURE)
-            check:SetSize(8, 8)
-            check:SetVertexColor(C.text[1], C.text[2], C.text[3])
+                local buttonName = button.GetName and button:GetName()
+                if buttonName then
+                    local check = _G[buttonName .. "Check"]
+                    if check then
+                        check:SetTexture(DOT_TEXTURE)
+                        check:SetSize(10, 10)
+                        check:SetVertexColor(C.text[1], C.text[2], C.text[3])
+                    end
+                    local uncheck = _G[buttonName .. "UnCheck"]
+                    if uncheck then uncheck:SetTexture(nil) end
+                    local text = _G[buttonName .. "NormalText"]
+                    if text then text:SetTextColor(C.text2[1], C.text2[2], C.text2[3]) end
+                end
+            end
         end
-        local uncheck = _G[button:GetName() .. "UnCheck"]
-        if uncheck then uncheck:SetAlpha(0) end
-
-        local highlight = button.GetHighlightTexture and button:GetHighlightTexture()
-        if highlight then
-            highlight:SetColorTexture(C.text3[1], C.text3[2], C.text3[3], 0.18)
-        end
-
-        local text = _G[button:GetName() .. "NormalText"]
-        if text then text:SetTextColor(C.text2[1], C.text2[2], C.text2[3]) end
-    end
+    end)
 end
 
 hooksecurefunc("ToggleDropDownMenu", function(level, _, dropDownFrame)
