@@ -166,6 +166,8 @@ end
 -- в игре это заранее нарисованные картинки. roundrect.png (32x32, радиус 10)
 -- нарисован для этого аддона; SetTextureSliceMargins растягивает середину,
 -- оставляя углы нетронутыми, поэтому одна картинка годится для любого размера.
+local debugOverlays = {}
+
 local ROUND_TEXTURE = "Interface/AddOns/TwinkGearFinder/roundrect"
 -- Капсула для полосы прокрутки: 8x32, радиус 4 - ровно половина ширины.
 -- Тянется только по высоте (маргины сверху и снизу по 4), ширина 1 в 1,
@@ -1930,6 +1932,59 @@ SlashCmdList["TWINKGEARFINDER"] = function(msg)
     -- This dumps id + name so they can be referred to by name outside the game.
     -- Диагностика гнёзд: печатает поля gemID из ссылки и то, что аддон насчитал.
     -- Нужна, чтобы понять, откуда берутся лишние гнёзда в /tgf scan.
+    -- Разметка интерфейса: обводит каждый элемент окна и по наведению показывает
+    -- имя, тип и размер. Нужна, чтобы не гадать, какой фрейм за что отвечает.
+    -- Мышь в этом режиме перехватывается оверлеями, поэтому кликать по окну
+    -- не выйдет - выключается тем же /tgf debug.
+    if msg == "debug" then
+        if debugOverlays and #debugOverlays > 0 then
+            for _, o in ipairs(debugOverlays) do o:Hide() end
+            debugOverlays = {}
+            print("|cFFFFD100[TGF]|r Разметка выключена.")
+            return
+        end
+        debugOverlays = {}
+
+        local palette = {
+            { 1, 0.3, 0.3 }, { 0.3, 1, 0.4 }, { 0.4, 0.6, 1 },
+            { 1, 0.85, 0.3 }, { 0.9, 0.4, 1 }, { 0.3, 0.9, 0.9 },
+        }
+
+        local function Mark(element, depth, label)
+            local o = CreateFrame("Frame", nil, element)
+            o:SetAllPoints()
+            o:SetFrameStrata("TOOLTIP")
+            o:EnableMouse(true)
+            AddBorder(o, palette[(depth - 1) % #palette + 1])
+            o:SetScript("OnEnter", function(self)
+                GameTooltip:SetOwner(self, "ANCHOR_CURSOR")
+                GameTooltip:AddLine(label, 1, 0.82, 0)
+                GameTooltip:AddLine(string.format("%s  %dx%d", element:GetObjectType(),
+                    math.floor(element:GetWidth() or 0), math.floor(element:GetHeight() or 0)), 1, 1, 1)
+                GameTooltip:AddLine("уровень вложенности: " .. depth, 0.6, 0.6, 0.6)
+                GameTooltip:Show()
+            end)
+            o:SetScript("OnLeave", function() GameTooltip:Hide() end)
+            table.insert(debugOverlays, o)
+        end
+
+        local function Walk(parent, depth)
+            if depth > 5 then return end
+            for _, child in ipairs({ parent:GetChildren() }) do
+                if child:IsShown() then
+                    Mark(child, depth, child:GetName() or ("(без имени, " .. child:GetObjectType() .. ")"))
+                    Walk(child, depth + 1)
+                end
+            end
+        end
+
+        Mark(frame, 1, frame:GetName())
+        Walk(frame, 2)
+        print(string.format("|cFFFFD100[TGF]|r Разметка включена: %d элементов. Наводи мышь; /tgf debug - выключить.",
+            #debugOverlays))
+        return
+    end
+
     -- Диагностика полосы прокрутки: как называются её части в этой версии клиента.
     if msg == "ui" then
         local bar = scrollFrame.ScrollBar or _G["TwinkGearFinderScrollScrollBar"]
