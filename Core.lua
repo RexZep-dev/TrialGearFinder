@@ -383,18 +383,29 @@ local function SkinDropDownList(level)
                     highlight:SetColorTexture(C.text3[1], C.text3[2], C.text3[3], 0.18)
                 end
 
-                -- Отметку ищем не по имени, а по самой текстуре: у пунктов это
-                -- галочка Blizzard, и путь к ней содержит слово Check.
+                -- Родную отметку гасим: у неё то галочка, то кружок радио-кнопки,
+                -- и найти её надёжно по имени или текстуре не выходит.
                 for _, region in ipairs({ button:GetRegions() }) do
                     if region.GetObjectType and region:GetObjectType() == "Texture" then
                         local path = tostring(region:GetTexture() or "")
-                        if path:find("Check", 1, true) then
-                            region:SetTexture(DOT_TEXTURE)
-                            region:SetSize(10, 10)
-                            region:SetVertexColor(C.text[1], C.text[2], C.text[3])
+                        if path:find("Check", 1, true) or path:find("Radio", 1, true) then
+                            region:SetAlpha(0)
                         end
                     end
                 end
+
+                -- Своя точка. Видимость берём из поля checked, которое
+                -- UIDropDownMenu ставит выбранному пункту сам.
+                local dot = button.tgfDot
+                if not dot then
+                    dot = button:CreateTexture(nil, "OVERLAY")
+                    dot:SetTexture(DOT_TEXTURE)
+                    dot:SetSize(7, 7)
+                    dot:SetPoint("LEFT", button, "LEFT", 4, 0)
+                    dot:SetVertexColor(C.text[1], C.text[2], C.text[3])
+                    button.tgfDot = dot
+                end
+                dot:SetShown(button.checked == true or button.checked == 1)
 
                 local buttonName = button.GetName and button:GetName()
                 if buttonName then
