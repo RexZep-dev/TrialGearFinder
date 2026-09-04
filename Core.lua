@@ -330,16 +330,19 @@ local function StyleDropdown(drop)
         button:ClearAllPoints()
         button:SetPoint("RIGHT", drop, "RIGHT", -18, 2)
 
-        local arrow = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        -- Тот же треугольник, что у полосы прокрутки, только вершиной вниз.
+        local arrow = button:CreateTexture(nil, "OVERLAY")
+        arrow:SetTexture(ARROW_TEXTURE)
+        arrow:SetSize(9, 9)
         arrow:SetPoint("CENTER")
-        arrow:SetText("v")
-        arrow:SetTextColor(C.text3[1], C.text3[2], C.text3[3])
+        arrow:SetTexCoord(0, 1, 1, 0)
+        arrow:SetVertexColor(C.text3[1], C.text3[2], C.text3[3])
         button.tgfArrow = arrow
         button:SetScript("OnEnter", function()
-            arrow:SetTextColor(C.warm[1], C.warm[2], C.warm[3])
+            arrow:SetVertexColor(C.warm[1], C.warm[2], C.warm[3])
         end)
         button:SetScript("OnLeave", function()
-            arrow:SetTextColor(C.text3[1], C.text3[2], C.text3[3])
+            arrow:SetVertexColor(C.text3[1], C.text3[2], C.text3[3])
         end)
     end
 
