@@ -383,31 +383,29 @@ local function SkinDropDownList(level)
                     highlight:SetColorTexture(C.text3[1], C.text3[2], C.text3[3], 0.18)
                 end
 
-                -- Родную отметку гасим: у неё то галочка, то кружок радио-кнопки,
-                -- и найти её надёжно по имени или текстуре не выходит.
-                for _, region in ipairs({ button:GetRegions() }) do
-                    if region.GetObjectType and region:GetObjectType() == "Texture" then
-                        local path = tostring(region:GetTexture() or "")
-                        if path:find("Check", 1, true) or path:find("Radio", 1, true) then
-                            region:SetAlpha(0)
-                        end
-                    end
-                end
-
-                -- Своя точка. Видимость берём из поля checked, которое
-                -- UIDropDownMenu ставит выбранному пункту сам.
-                local dot = button.tgfDot
-                if not dot then
-                    dot = button:CreateTexture(nil, "OVERLAY")
-                    dot:SetTexture(DOT_TEXTURE)
-                    dot:SetSize(7, 7)
-                    dot:SetPoint("LEFT", button, "LEFT", 4, 0)
-                    dot:SetVertexColor(C.text[1], C.text[2], C.text[3])
-                    button.tgfDot = dot
-                end
-                dot:SetShown(button.checked == true or button.checked == 1)
-
                 local buttonName = button.GetName and button:GetName()
+                if buttonName then
+                    -- Родные отметки берём по именам из шаблона: искать по пути
+                    -- текстуры бесполезно, они заданы атласом и путь пустой.
+                    local check = _G[buttonName .. "Check"]
+                    local uncheck = _G[buttonName .. "UnCheck"]
+                    if check then check:SetAlpha(0) end
+                    if uncheck then uncheck:SetAlpha(0) end
+
+                    -- Своя точка: видна ровно тогда, когда игра показывает
+                    -- родную отметку выбранного пункта.
+                    local dot = button.tgfDot
+                    if not dot then
+                        dot = button:CreateTexture(nil, "OVERLAY")
+                        dot:SetTexture(DOT_TEXTURE)
+                        dot:SetSize(7, 7)
+                        dot:SetPoint("LEFT", button, "LEFT", 6, 0)
+                        dot:SetVertexColor(C.text[1], C.text[2], C.text[3])
+                        button.tgfDot = dot
+                    end
+                    dot:SetShown(check ~= nil and check:IsShown())
+                end
+
                 if buttonName then
                     local text = _G[buttonName .. "NormalText"]
                     if text then text:SetTextColor(C.text2[1], C.text2[2], C.text2[3]) end
@@ -425,9 +423,12 @@ for level = 1, 2 do
     if list then
         list:HookScript("OnShow", function()
             if not listOpenedByUs then return end
-            -- Размеры списка игра выставляет уже после OnShow, поэтому строим
-            -- подложку следующим кадром - иначе она получается нулевой.
+            -- Размеры и части списка игра доделывает уже после OnShow, поэтому
+            -- оформляем следующим кадром. Второй проход - для самого первого
+            -- открытия: там фон и кнопки создаются лениво и к первому кадру
+            -- ещё не существуют.
             C_Timer.After(0, function() SkinDropDownList(level) end)
+            C_Timer.After(0.05, function() SkinDropDownList(level) end)
         end)
     end
 end
