@@ -321,6 +321,9 @@ footer:SetHeight(40)
 -- в интерфейсе. Поэтому не переделываем его насовсем, а показываем свою
 -- подложку только пока открыт фильтр аддона, и убираем, когда список закрылся.
 local ourDropdowns, listSkins = {}, {}
+-- Ставится при клике по нашему фильтру и снимается, когда список оформлен.
+-- Проверять UIDROPDOWNMENU_OPEN_MENU бесполезно: к моменту показа оно пустое.
+local listOpenedByUs = false
 
 local function SkinDropDownList(level)
     local list = _G["DropDownList" .. (level or 1)]
@@ -337,7 +340,10 @@ local function SkinDropDownList(level)
 
         -- Когда список закрывается, прячем и подложку - иначе она всплывёт
         -- в чужом меню, открытом следующим.
-        list:HookScript("OnHide", function() skin:Hide() end)
+        list:HookScript("OnHide", function()
+            skin:Hide()
+            listOpenedByUs = false
+        end)
     end
 
     -- Родные рамки прячем только на время показа нашего списка.
@@ -348,6 +354,11 @@ local function SkinDropDownList(level)
     end
     if list.Border then list.Border:SetAlpha(0) end
     if list.NineSlice then list.NineSlice:SetAlpha(0) end
+    -- Фон меню - отдельный фрейм с собственным именем, GetRegions его не задевает.
+    for _, suffix in ipairs({ "Backdrop", "MenuBackdrop" }) do
+        local backdrop = _G["DropDownList" .. (level or 1) .. suffix]
+        if backdrop then backdrop:SetAlpha(0) end
+    end
     skin:Show()
 
     -- Пункты игра создаёт и раскрашивает уже ПОСЛЕ того, как отработает наш хук,
@@ -388,7 +399,7 @@ for level = 1, 2 do
     local list = _G["DropDownList" .. level]
     if list then
         list:HookScript("OnShow", function()
-            if ourDropdowns[UIDROPDOWNMENU_OPEN_MENU] then
+            if listOpenedByUs then
                 SkinDropDownList(level)
             end
         end)
@@ -398,6 +409,7 @@ end
 local function StyleDropdown(drop)
     local name = drop:GetName()
     ourDropdowns[drop] = true
+    drop:HookScript("OnMouseDown", function() listOpenedByUs = true end)
     StripTextures(drop)
 
     local button = _G[name .. "Button"]
@@ -426,6 +438,7 @@ local function StyleDropdown(drop)
         button:HookScript("OnLeave", function()
             arrow:SetVertexColor(C.text3[1], C.text3[2], C.text3[3])
         end)
+        button:HookScript("OnClick", function() listOpenedByUs = true end)
     end
 
     -- Внутренние отступы шаблона: видимая часть уже самого фрейма на 16 слева
