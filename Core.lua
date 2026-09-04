@@ -171,6 +171,9 @@ local ROUND_TEXTURE = "Interface/AddOns/TwinkGearFinder/roundrect"
 -- Тянется только по высоте (маргины сверху и снизу по 4), ширина 1 в 1,
 -- поэтому торцы остаются полукруглыми, а не превращаются в овал.
 local PILL_TEXTURE = "Interface/AddOns/TwinkGearFinder/pill"
+-- Треугольник вершиной вверх. Для нижней стрелки та же картинка, перевёрнутая
+-- через SetTexCoord - вторую рисовать незачем.
+local ARROW_TEXTURE = "Interface/AddOns/TwinkGearFinder/arrow"
 
 local function RoundedTexture(parent, layer, color, sublevel)
     local t = parent:CreateTexture(nil, layer, nil, sublevel)
@@ -583,22 +586,31 @@ local function StyleScrollBar(bar)
     for _, suffix in ipairs({ "ScrollUpButton", "ScrollDownButton" }) do
         local arrow = bar[suffix] or (barName and _G[barName .. suffix])
         if arrow then
-            arrow:SetSize(12, 12)
+            arrow:SetSize(16, 16)
             arrow:SetNormalTexture("")
             arrow:SetPushedTexture("")
             arrow:SetDisabledTexture("")
             arrow:SetHighlightTexture("")
             StripTextures(arrow)
 
-            local glyph = arrow:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            local plate = CreateFrame("Frame", nil, arrow)
+            plate:SetAllPoints()
+            plate:SetFrameLevel(math.max(0, arrow:GetFrameLevel() - 1))
+            RoundedPanel(plate, C.block2, C.borderSoft)
+
+            local glyph = arrow:CreateTexture(nil, "OVERLAY")
+            glyph:SetTexture(ARROW_TEXTURE)
+            glyph:SetSize(10, 10)
             glyph:SetPoint("CENTER")
-            glyph:SetText(suffix == "ScrollUpButton" and "^" or "v")
-            glyph:SetTextColor(C.text3[1], C.text3[2], C.text3[3])
+            if suffix == "ScrollDownButton" then
+                glyph:SetTexCoord(0, 1, 1, 0) -- та же картинка вверх ногами
+            end
+            glyph:SetVertexColor(C.text2[1], C.text2[2], C.text2[3])
             arrow:HookScript("OnEnter", function()
-                glyph:SetTextColor(C.warm[1], C.warm[2], C.warm[3])
+                glyph:SetVertexColor(C.warm[1], C.warm[2], C.warm[3])
             end)
             arrow:HookScript("OnLeave", function()
-                glyph:SetTextColor(C.text3[1], C.text3[2], C.text3[3])
+                glyph:SetVertexColor(C.text2[1], C.text2[2], C.text2[3])
             end)
         end
     end
