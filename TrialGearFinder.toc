@@ -1,8 +1,8 @@
 ## Interface: 120007, 120100
-## Title: |cCC33FFFFTwink Gear Finder|r
+## Title: |cCC33FFFFTrial Gear Finder|r
 ## Notes: BiS gear finder for level 20 twinks - dungeon bosses, mobs, quests, world drops.
 ## Version: 0.1.0
-## SavedVariables: TwinkGearFinderDB
+## SavedVariables: TrialGearFinderDB, TwinkGearFinderDB
 
 Data.lua
 Core.lua

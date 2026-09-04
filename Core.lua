@@ -160,6 +160,11 @@ local C = {
     -- подземелья в Обзоре приключений, и названия источников должны совпадать
     -- с ними один в один. Тёплый акцент рядом смотрелся выцветшим.
     gold       = { 1.000, 0.820, 0.000 }, -- #FFD100 названия подземелий
+    -- Серебро обводки портрета редкого моба. Заметно холоднее нейтрального:
+    -- почти нейтральный #C6CBD2 сливался с белой подписью типа брони - оба
+    -- светлые и оба без цвета, глаз их не различал. Разводим по цветности,
+    -- а не по яркости, иначе серебро пришлось бы гасить до серого.
+    silver     = { 0.706, 0.761, 0.831 }, -- #B4C2D4 источники-рарники
 }
 
 -- Заливка сплошным цветом из палитры.
@@ -175,18 +180,18 @@ end
 -- оставляя углы нетронутыми, поэтому одна картинка годится для любого размера.
 local debugOverlays = {}
 
-local ROUND_TEXTURE = "Interface/AddOns/TwinkGearFinder/roundrect"
+local ROUND_TEXTURE = "Interface/AddOns/TrialGearFinder/roundrect"
 -- Капсула для полосы прокрутки: 8x32, радиус 4 - ровно половина ширины.
 -- Тянется только по высоте (маргины сверху и снизу по 4), ширина 1 в 1,
 -- поэтому торцы остаются полукруглыми, а не превращаются в овал.
-local PILL_TEXTURE = "Interface/AddOns/TwinkGearFinder/pill"
+local PILL_TEXTURE = "Interface/AddOns/TrialGearFinder/pill"
 -- Треугольник вершиной вверх. Для нижней стрелки та же картинка, перевёрнутая
 -- через SetTexCoord - вторую рисовать незачем.
-local ARROW_TEXTURE = "Interface/AddOns/TwinkGearFinder/arrow"
+local ARROW_TEXTURE = "Interface/AddOns/TrialGearFinder/arrow"
 -- Размер стрелок фильтров и прокрутки. Одним именем, чтобы не разъезжались.
 local ARROW_SIZE = 12
 -- Точка-отметка выбранного пункта в выпадающем списке.
-local DOT_TEXTURE = "Interface/AddOns/TwinkGearFinder/dot"
+local DOT_TEXTURE = "Interface/AddOns/TrialGearFinder/dot"
 -- Кольцо: скруглённый контур в один пиксель, середина прозрачная. Отдельная
 -- картинка нужна потому, что RoundedPanel рисует обводку сплошным блоком цвета
 -- рамки и прикрывает его блоком цвета фона - под такой «обводкой» всегда есть
@@ -194,7 +199,7 @@ local DOT_TEXTURE = "Interface/AddOns/TwinkGearFinder/dot"
 -- 16x16, радиус 5. Маргины среза 7, а не 5: дуга угла доходит до седьмого
 -- пикселя, и при пятёрке её хвост попадал бы в растягиваемую полосу и мазался.
 -- Середина остаётся 2 пикселя - ровно прямой участок обводки.
-local RING_TEXTURE = "Interface/AddOns/TwinkGearFinder/roundring"
+local RING_TEXTURE = "Interface/AddOns/TrialGearFinder/roundring"
 
 local function RoundedTexture(parent, layer, color, sublevel)
     local t = parent:CreateTexture(nil, layer, nil, sublevel)
@@ -289,7 +294,7 @@ local function StyleCheckBox(check, dotSize)
     end)
 end
 
-local frame = CreateFrame("Frame", "TwinkGearFinderFrame", UIParent, "BasicFrameTemplateWithInset")
+local frame = CreateFrame("Frame", "TrialGearFinderFrame", UIParent, "BasicFrameTemplateWithInset")
 frame:SetSize(880, 632)
 frame:SetPoint("CENTER")
 frame:SetFrameStrata("DIALOG") -- above plain HIGH-strata addon windows, which is
@@ -299,7 +304,7 @@ frame:SetToplevel(true)
 frame:SetMovable(true)
 frame:EnableMouse(true)
 frame:RegisterForDrag("LeftButton")
-tinsert(UISpecialFrames, "TwinkGearFinderFrame") -- closes on Escape, like Blizzard's own panels
+tinsert(UISpecialFrames, "TrialGearFinderFrame") -- closes on Escape, like Blizzard's own panels
 frame:SetScript("OnDragStart", frame.StartMoving)
 frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 frame:Hide()
@@ -629,20 +634,20 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
     return button
 end
 
-local slotDrop = CreateSelect("TwinkGearFinderSlotDrop", nil, "Слот", VISIBLE_SLOT_DEFS,
+local slotDrop = CreateSelect("TrialGearFinderSlotDrop", nil, "Слот", VISIBLE_SLOT_DEFS,
     function(o) return o.key end, function(o) return o.label end,
     function(key) filters.slot = key; RefreshResults() end)
 
-local classDrop = CreateSelect("TwinkGearFinderClassDrop", slotDrop, "Класс", CLASS_SORT_ORDER,
+local classDrop = CreateSelect("TrialGearFinderClassDrop", slotDrop, "Класс", CLASS_SORT_ORDER,
     function(c) return c end,
     function(c) return CLASS_RU[c] or (LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[c]) or c end,
     function(key) filters.class = key; RefreshResults() end)
 
-local armorDrop = CreateSelect("TwinkGearFinderArmorDrop", classDrop, "Броня", ARMOR_SUBCLASSES,
+local armorDrop = CreateSelect("TrialGearFinderArmorDrop", classDrop, "Броня", ARMOR_SUBCLASSES,
     function(a) return a.id end, function(a) return a.label end,
     function(key) filters.armor = key; RefreshResults() end)
 
-local sourceDrop = CreateSelect("TwinkGearFinderSourceDrop", armorDrop, "Источник", SOURCE_TYPES,
+local sourceDrop = CreateSelect("TrialGearFinderSourceDrop", armorDrop, "Источник", SOURCE_TYPES,
     function(s) return s.key end, function(s) return s.label end,
     function(key) filters.sourceType = key; RefreshResults() end)
 
@@ -893,7 +898,7 @@ end
 -- их числа.
 local LIST_HEIGHT = NUM_VISIBLE_ROWS * ROW_HEIGHT + (NUM_VISIBLE_ROWS - 1) * ROW_SPACING
 
-local scrollFrame = CreateFrame("ScrollFrame", "TwinkGearFinderScroll", frame, "FauxScrollFrameTemplate")
+local scrollFrame = CreateFrame("ScrollFrame", "TrialGearFinderScroll", frame, "FauxScrollFrameTemplate")
 scrollFrame:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -6)
 -- Правый край через header, а не через footer: header центрируется вместе
 -- со списком в обоих режимах, footer тянется во всю ширину окна. Цифра та же,
@@ -901,7 +906,7 @@ scrollFrame:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -6)
 scrollFrame:SetPoint("TOPRIGHT", header, "BOTTOMRIGHT", 4, -6)
 scrollFrame:SetHeight(LIST_HEIGHT)
 
-StyleScrollBar(scrollFrame.ScrollBar or _G["TwinkGearFinderScrollScrollBar"])
+StyleScrollBar(scrollFrame.ScrollBar or _G["TrialGearFinderScrollScrollBar"])
 
 local emptyText = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 emptyText:SetPoint("TOPLEFT", scrollFrame, "TOPLEFT", 4, -4)
@@ -935,8 +940,8 @@ local SOCKET_LABELS = {
 -- Socket icons shipped with the addon (Media/ folder). Only the two types this
 -- guide's items actually use are provided; anything else falls back to text.
 local SOCKET_ICON_PATHS = {
-    meta = "Interface\\AddOns\\TwinkGearFinder\\socket-meta.png",
-    prismatic = "Interface\\AddOns\\TwinkGearFinder\\socket-prismatic.png",
+    meta = "Interface\\AddOns\\TrialGearFinder\\socket-meta.png",
+    prismatic = "Interface\\AddOns\\TrialGearFinder\\socket-prismatic.png",
 }
 
 local STAT_LABELS = {
@@ -964,7 +969,7 @@ for _, it in ipairs(ns.Items) do ns_ItemsByID[it.itemID] = it end
 local REVERSE_SOCKET_LABELS = {}
 for typeKey, word in pairs(SOCKET_LABELS) do REVERSE_SOCKET_LABELS[word] = typeKey end
 
-local ScanTooltip = CreateFrame("GameTooltip", "TwinkGearFinderScanTooltip", nil, "GameTooltipTemplate")
+local ScanTooltip = CreateFrame("GameTooltip", "TrialGearFinderScanTooltip", nil, "GameTooltipTemplate")
 ScanTooltip:SetOwner(UIParent, "ANCHOR_NONE")
 
 local function StemToStatKey(text)
@@ -1009,7 +1014,7 @@ local function ScanItemLink(link)
     local filledGems = CountGemsInLink(link)
 
     for i = 1, ScanTooltip:NumLines() do
-        local fs = _G["TwinkGearFinderScanTooltipTextLeft" .. i]
+        local fs = _G["TrialGearFinderScanTooltipTextLeft" .. i]
         local text = fs and fs:GetText()
         if text then
             if text:find("соответствии цвета") then inSocketBonusZone = true end
@@ -1365,7 +1370,7 @@ local function SetSourceWaypoint(sourceName, sourceType, itemID)
     local key = PinKey(sourceType, itemID, sourceName)
 
     -- Pins captured in game (Ctrl-click) win over the ones baked into this file.
-    local saved = TwinkGearFinderDB and TwinkGearFinderDB.pins
+    local saved = TrialGearFinderDB and TrialGearFinderDB.pins
     local pin = (saved and saved[key]) or SOURCE_PINS[key]
     if not pin then
         print(string.format("|cFFFFD100[TGF]|r Координаты для «%s» ещё не заданы.", sourceName))
@@ -1400,9 +1405,9 @@ local function SaveSourceWaypoint(sourceName, sourceType, itemID)
         return
     end
 
-    TwinkGearFinderDB = TwinkGearFinderDB or {}
-    TwinkGearFinderDB.pins = TwinkGearFinderDB.pins or {}
-    TwinkGearFinderDB.pins[key] = { point.uiMapID, point.position.x * 100, point.position.y * 100 }
+    TrialGearFinderDB = TrialGearFinderDB or {}
+    TrialGearFinderDB.pins = TrialGearFinderDB.pins or {}
+    TrialGearFinderDB.pins[key] = { point.uiMapID, point.position.x * 100, point.position.y * 100 }
     print(string.format("|cFFFFD100[TGF]|r Запомнено: %s = %s", sourceName,
         WaypointLink(point.uiMapID, point.position.x * 100, point.position.y * 100,
             string.format("карта %d: %.1f, %.1f", point.uiMapID,
@@ -1410,7 +1415,7 @@ local function SaveSourceWaypoint(sourceName, sourceType, itemID)
 end
 
 local function CreateRow(index)
-    local row = CreateFrame("Frame", "TwinkGearFinderRow" .. index, frame)
+    local row = CreateFrame("Frame", "TrialGearFinderRow" .. index, frame)
     row:SetSize(ROW_WIDTH, ROW_HEIGHT)
     row:EnableMouse(true)
 
@@ -1508,9 +1513,10 @@ local function CreateRow(index)
         if not self.hyperlink then return end
         GameTooltip:SetOwner(self.iconFrame, "ANCHOR_RIGHT")
         GameTooltip:SetHyperlink(self.hyperlink)
+        local sc = self.srcColor or C.gold
         if self.fullSource and self.fullSource ~= "" then
             GameTooltip:AddLine(" ")
-            GameTooltip:AddLine(self.fullSource, 0.6, 0.85, 1, true)
+            GameTooltip:AddLine(self.fullSource, sc[1], sc[2], sc[3], true)
         end
         if self.fullNote and self.fullNote ~= "" then
             GameTooltip:AddLine(self.fullNote, 1, 1, 1, true)
@@ -1561,22 +1567,20 @@ local function CreateRow(index)
     row.iskus = StatFS(COL_ISKUS_X)
     row.vers = StatFS(COL_VERS_X)
 
-    -- Название подземелья: золотое и в один размер с названием предмета - две
-    -- колонки должны читаться как равные заголовки строки, а не как заголовок
-    -- и приписка. Размер берём у самого названия, а не числом: сменится шрифт
-    -- клиента - равенство сохранится.
-    row.source = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    -- Название источника берёт тот же шрифтовой объект, что и название
+    -- предмета: две колонки - равные заголовки строки, и размер обязан
+    -- совпадать. Через объект, а не через GetFont с подстановкой размера:
+    -- сменится шрифт клиента - совпадение сохранится само.
+    -- Цвет ставится в SetData, он зависит от типа источника.
+    row.source = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     row.source:SetPoint("TOPLEFT", row, "TOPLEFT", COL_SOURCE_X, -4)
     row.source:SetSize(COL_SOURCE_W, 16)
     row.source:SetJustifyH("LEFT")
-    row.source:SetTextColor(C.gold[1], C.gold[2], C.gold[3], 1)
-    local nameFont, nameSize, nameFlags = row.name:GetFont()
-    if nameFont and nameSize then
-        row.source:SetFont(nameFont, nameSize, nameFlags)
-    end
 
     row.sourceboss = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    row.sourceboss:SetTextColor(C.text2[1], C.text2[2], C.text2[3])
+    -- Белым, а не вторичным серым: на тёмной строке #AEB4BC читался с трудом,
+    -- та же жалоба, что была на подпись типа брони.
+    row.sourceboss:SetTextColor(C.text[1], C.text[2], C.text[3])
     row.sourceboss:SetPoint("TOPLEFT", row.source, "BOTTOMLEFT", 0, -4)
     row.sourceboss:SetSize(COL_SOURCE_W, 14)
     row.sourceboss:SetJustifyH("LEFT")
@@ -1599,9 +1603,9 @@ local function CreateRow(index)
             self:SetChecked(true)
             return
         end
-        TwinkGearFinderDB = TwinkGearFinderDB or {}
-        TwinkGearFinderDB.done = TwinkGearFinderDB.done or {}
-        TwinkGearFinderDB.done[row.itemID] = self:GetChecked() and true or nil
+        TrialGearFinderDB = TrialGearFinderDB or {}
+        TrialGearFinderDB.done = TrialGearFinderDB.done or {}
+        TrialGearFinderDB.done[row.itemID] = self:GetChecked() and true or nil
         row:SetAlpha(self:GetChecked() and 0.45 or 1)
     end)
     row.done:SetScript("OnEnter", function(self)
@@ -1628,7 +1632,11 @@ local function CreateRow(index)
         if not frame:IsShown() then return end -- window closed: nothing to describe
         if not self.fullSource then return end
         GameTooltip:SetOwner(self.sourceHitbox, "ANCHOR_TOPLEFT")
-        GameTooltip:AddLine(self.fullSource, 0.6, 0.85, 1, true)
+        -- Тот же цвет, что у источника в строке: золото подземельям, серебро
+        -- рарникам. Раньше здесь стоял бледно-голубой, и подсказка расходилась
+        -- со списком, из которого её открыли.
+        local sc = self.srcColor or C.gold
+        GameTooltip:AddLine(self.fullSource, sc[1], sc[2], sc[3], true)
         if self.fullNote and self.fullNote ~= "" then
             GameTooltip:AddLine(self.fullNote, 1, 1, 1, true)
         end
@@ -1676,6 +1684,13 @@ local function CreateRow(index)
         self.iskus:SetText(ColorStat(data.iskus))
         self.vers:SetText(ColorStat(data.vers))
         self.source:SetText(data.source or "")
+        -- Золото - цвет подземелий в Обзоре приключений, и рарникам оно не идёт:
+        -- источник там не подземелье, а точка в открытом мире. Делим по тому же
+        -- признаку, по которому ставится галочка «уже был», - так две пометки
+        -- в строке говорят об одном и том же.
+        local srcColor = (data.sourceType == "World") and C.silver or C.gold
+        self.source:SetTextColor(srcColor[1], srcColor[2], srcColor[3], 1)
+        self.srcColor = srcColor -- тем же цветом источник пишется и в подсказке
         self.sourceboss:SetText(data.sourceboss or "")
         -- Галочка только у рарников и сокровищ (sourceType == "World"): они берутся
         -- раз в день или раз на персонажа, и есть смысл помнить, где уже был.
@@ -1688,7 +1703,7 @@ local function CreateRow(index)
         else
             -- Два состояния: зелёная - вещь на руках (ставится сама), жёлтая - рарник
             -- убит, но лут не выпал (ставится щелчком). Пустая - ещё не был.
-            local manual = TwinkGearFinderDB and TwinkGearFinderDB.done and TwinkGearFinderDB.done[data.itemID]
+            local manual = TrialGearFinderDB and TrialGearFinderDB.done and TrialGearFinderDB.done[data.itemID]
             local done = data.owned or manual
             self.owned = data.owned
             self.done:SetChecked(done and true or false)
@@ -1774,7 +1789,7 @@ local ROW_WIDTH_NARROW = ROW_WIDTH - (FRAME_WIDTH_FULL - FRAME_WIDTH_NARROW)
 local STAT_COLS = { "str", "agi", "int", "stam", "crit", "haste", "iskus", "vers" }
 
 -- Label above, checkbox under it, top-right corner of the window.
-local statsToggle = CreateFrame("CheckButton", "TwinkGearFinderStatsToggle", frame, "UICheckButtonTemplate")
+local statsToggle = CreateFrame("CheckButton", "TrialGearFinderStatsToggle", frame, "UICheckButtonTemplate")
 statsToggle:SetSize(24, 24)
 StyleCheckBox(statsToggle, 11) -- тумблер без состояний: кружок остаётся белым
 
@@ -1798,7 +1813,7 @@ end
 -- Source column slides left into the freed space and takes the extra width;
 -- everything else keeps its position, so only these three move.
 local function ApplyStatsLayout()
-    local show = TwinkGearFinderDB and TwinkGearFinderDB.showStats or false
+    local show = TrialGearFinderDB and TrialGearFinderDB.showStats or false
     local sourceX = show and COL_SOURCE_X or COL_STR_X
     local rowWidth = show and ROW_WIDTH or ROW_WIDTH_NARROW
     local sourceW = rowWidth - sourceX - 34 -- 34: место под галочку «уже был»
@@ -1856,8 +1871,8 @@ local function ApplyStatsLayout()
 end
 
 statsToggle:SetScript("OnClick", function(self)
-    TwinkGearFinderDB.showStats = not TwinkGearFinderDB.showStats
-    if not TwinkGearFinderDB.showStats then
+    TrialGearFinderDB.showStats = not TrialGearFinderDB.showStats
+    if not TrialGearFinderDB.showStats then
         -- With the columns gone a stat filter would silently keep filtering the
         -- list with no visible reason, so drop it along with its sort.
         wipe(statFilter)
@@ -1978,9 +1993,28 @@ local function BuildRowData(item)
             if sub.id == subclassID then materialLabel = sub.label break end
         end
     end
-    local typeLabel = materialLabel and string.format("%s (%s)", materialLabel, slotLabel) or slotLabel
-    if item.ilvl then
-        typeLabel = typeLabel .. string.format(" | %d ур.", item.ilvl)
+    -- Подпись не повторяет то, что уже сказано фильтром: при «Слот: Голова»
+    -- приписка «(Голова)» стоит в каждой строке и не несёт ничего, при
+    -- «Броня: Ткань» - то же самое со словом «Ткань». Уровень остаётся всегда,
+    -- он у предметов разный.
+    local armorFree, slotFree = filters.armor == "ALL", filters.slot == "ALL"
+    local showMaterial = materialLabel and armorFree
+    local showSlot = slotFree
+    local typeLabel
+    if showMaterial and showSlot then
+        typeLabel = string.format("%s (%s)", materialLabel, slotLabel)
+    elseif showMaterial then
+        typeLabel = materialLabel
+    elseif showSlot then
+        typeLabel = slotLabel
+    else
+        typeLabel = ""
+    end
+    -- Уровень тоже убираем, как только включён любой фильтр: строка под
+    -- названием должна быть тихой, а не повторять то, что и так выбрано сверху.
+    if item.ilvl and armorFree and slotFree then
+        local lvl = string.format("%d ур.", item.ilvl)
+        typeLabel = typeLabel ~= "" and (typeLabel .. " | " .. lvl) or lvl
     end
     local stats = item.stats or {}
 
@@ -2002,15 +2036,15 @@ local function BuildRowData(item)
             -- поправили статы плащей в Data.lua, а подсказка на вещь из банка
             -- ещё показывала расхождения, посчитанные до правки. Вывод зависит
             -- от базы, а её правят постоянно; замер живой вещи не меняется.
-            TwinkGearFinderDB = TwinkGearFinderDB or {}
-            TwinkGearFinderDB.compared = nil -- прежняя память выводов, формат другой
-            TwinkGearFinderDB.seen = TwinkGearFinderDB.seen or {}
-            TwinkGearFinderDB.seen[item.itemID] = {
+            TrialGearFinderDB = TrialGearFinderDB or {}
+            TrialGearFinderDB.compared = nil -- прежняя память выводов, формат другой
+            TrialGearFinderDB.seen = TrialGearFinderDB.seen or {}
+            TrialGearFinderDB.seen[item.itemID] = {
                 ilvl = live.ilvl, stats = live.stats, socketTypes = live.socketTypes,
             }
         else
-            live = TwinkGearFinderDB and TwinkGearFinderDB.seen
-                and TwinkGearFinderDB.seen[item.itemID]
+            live = TrialGearFinderDB and TrialGearFinderDB.seen
+                and TrialGearFinderDB.seen[item.itemID]
         end
 
         if live then
@@ -2055,7 +2089,7 @@ local function BuildRowData(item)
         -- Номер карты из метки: по нему рарники группируются по зонам.
         mapID = (function()
             local key = PinKey(item.sourceType, item.itemID, item.source)
-            local saved = TwinkGearFinderDB and TwinkGearFinderDB.pins
+            local saved = TrialGearFinderDB and TrialGearFinderDB.pins
             local pin = (saved and saved[key]) or SOURCE_PINS[key]
             return pin and pin[1] or 9999
         end)(),
@@ -2176,12 +2210,12 @@ local function MarkKilledByName(name)
         end
     end
 
-    TwinkGearFinderDB = TwinkGearFinderDB or {}
-    TwinkGearFinderDB.done = TwinkGearFinderDB.done or {}
+    TrialGearFinderDB = TrialGearFinderDB or {}
+    TrialGearFinderDB.done = TrialGearFinderDB.done or {}
     local marked
     for _, item in ipairs(rareItems) do
-        if item.note:find(name, 1, true) and not TwinkGearFinderDB.done[item.itemID] then
-            TwinkGearFinderDB.done[item.itemID] = true
+        if item.note:find(name, 1, true) and not TrialGearFinderDB.done[item.itemID] then
+            TrialGearFinderDB.done[item.itemID] = true
             marked = name
         end
     end
@@ -2223,9 +2257,20 @@ frame:SetScript("OnEvent", function(self, event, addonName)
     end
 
     if event == "ADDON_LOADED" then
-        if addonName ~= "TwinkGearFinder" then return end
-        TwinkGearFinderDB = TwinkGearFinderDB or {}
-        if TwinkGearFinderDB.showStats == nil then TwinkGearFinderDB.showStats = false end
+        if addonName ~= "TrialGearFinder" then return end
+        -- Перенос сохранений со старого имени. Аддон назывался TwinkGearFinder,
+        -- и смена имени переменной сама по себе стёрла бы отметки «уже был»
+        -- и запомненные метки у всех, кто уже пользовался сборкой. Старое имя
+        -- оставлено в .toc вторым - только поэтому оно здесь ещё видно.
+        --
+        -- Условие именно на nil, а не на пустоту: переносим ровно один раз,
+        -- дальше TrialGearFinderDB уже существует и старое не перетрёт новое.
+        if TrialGearFinderDB == nil and TwinkGearFinderDB ~= nil then
+            TrialGearFinderDB = TwinkGearFinderDB
+            print("|cFFFFD100[TGF]|r Настройки перенесены со старого имени аддона.")
+        end
+        TrialGearFinderDB = TrialGearFinderDB or {}
+        if TrialGearFinderDB.showStats == nil then TrialGearFinderDB.showStats = false end
         ApplyStatsLayout()
         return
     end
@@ -2355,8 +2400,8 @@ end
 -- Slash command
 ------------------------------------------------------------
 
-SLASH_TWINKGEARFINDER1 = "/tgf"
-SlashCmdList["TWINKGEARFINDER"] = function(msg)
+SLASH_TRIALGEARFINDER1 = "/tgf"
+SlashCmdList["TRIALGEARFINDER"] = function(msg)
     -- Dumps everything captured with Ctrl-click, ready to paste into SOURCE_PINS
     -- so the pins become part of the addon instead of one character's saved vars.
     -- Data.lua stores no item names - they come from the client at display time.
@@ -2438,7 +2483,7 @@ SlashCmdList["TWINKGEARFINDER"] = function(msg)
 
     -- Диагностика полосы прокрутки: как называются её части в этой версии клиента.
     if msg == "ui" then
-        local bar = scrollFrame.ScrollBar or _G["TwinkGearFinderScrollScrollBar"]
+        local bar = scrollFrame.ScrollBar or _G["TrialGearFinderScrollScrollBar"]
         if not bar then
             print("|cFFFFD100[TGF]|r Полоса прокрутки не найдена вовсе.")
             return
@@ -2483,7 +2528,7 @@ SlashCmdList["TWINKGEARFINDER"] = function(msg)
     end
 
     if msg == "pins" then
-        local saved = TwinkGearFinderDB and TwinkGearFinderDB.pins
+        local saved = TrialGearFinderDB and TrialGearFinderDB.pins
         if not saved or not next(saved) then
             print("|cFFFFD100[TGF]|r Меток пока не запомнено.")
             return
@@ -2570,9 +2615,9 @@ SlashCmdList["TWINKGEARFINDER"] = function(msg)
         end
         local matched = matches[1]
 
-        TwinkGearFinderDB = TwinkGearFinderDB or {}
-        TwinkGearFinderDB.pins = TwinkGearFinderDB.pins or {}
-        TwinkGearFinderDB.pins[matched.key] = { mapID, x, y }
+        TrialGearFinderDB = TrialGearFinderDB or {}
+        TrialGearFinderDB.pins = TrialGearFinderDB.pins or {}
+        TrialGearFinderDB.pins[matched.key] = { mapID, x, y }
         print(string.format("|cFFFFD100[TGF]|r Запомнено: %s = карта %d, %.1f, %.1f", matched.label, mapID, x, y))
         return
     end
