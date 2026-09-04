@@ -137,6 +137,51 @@ end
 -- Main window
 ------------------------------------------------------------
 
+------------------------------------------------------------
+-- Палитра. Взята с forsaken-dungeons.online, чтобы аддон и сайт выглядели
+-- как одно целое. Значения - те же HEX, переведённые в доли единицы.
+-- Меняешь тут - меняется во всём окне.
+------------------------------------------------------------
+local C = {
+    bg         = { 0.024, 0.027, 0.031 }, -- #060708 основной фон
+    block      = { 0.063, 0.067, 0.075 }, -- #101113 основной блок
+    block2     = { 0.090, 0.098, 0.110 }, -- #17191C дополнительный блок
+    border     = { 0.184, 0.200, 0.220 }, -- #2F3338 основная рамка
+    borderSoft = { 0.125, 0.137, 0.157 }, -- #202328 мягкая рамка
+    text       = { 0.957, 0.957, 0.961 }, -- #F4F4F5 основной текст
+    text2      = { 0.682, 0.706, 0.737 }, -- #AEB4BC вторичный текст
+    text3      = { 0.490, 0.522, 0.561 }, -- #7D858F приглушённый текст
+    warm       = { 0.847, 0.722, 0.416 }, -- #D8B86A тёплый акцент
+    cool       = { 0.525, 0.780, 0.741 }, -- #86C7BD холодный акцент
+}
+
+-- Заливка сплошным цветом из палитры.
+local function Fill(texture, color, alpha)
+    texture:SetColorTexture(color[1], color[2], color[3], alpha or 1)
+end
+
+-- Рамка в один пиксель из четырёх полосок: скруглений в WoW без своих текстур
+-- не сделать, поэтому строгие прямые линии - как на сайте.
+local function AddBorder(parent, color, inset)
+    inset = inset or 0
+    local sides = {}
+    for _, side in ipairs({ "TOP", "BOTTOM", "LEFT", "RIGHT" }) do
+        local line = parent:CreateTexture(nil, "BORDER")
+        Fill(line, color)
+        if side == "TOP" or side == "BOTTOM" then
+            line:SetHeight(1)
+            line:SetPoint(side .. "LEFT", parent, side .. "LEFT", inset, 0)
+            line:SetPoint(side .. "RIGHT", parent, side .. "RIGHT", -inset, 0)
+        else
+            line:SetWidth(1)
+            line:SetPoint("TOP" .. side, parent, "TOP" .. side, 0, -inset)
+            line:SetPoint("BOTTOM" .. side, parent, "BOTTOM" .. side, 0, inset)
+        end
+        sides[side] = line
+    end
+    return sides
+end
+
 local frame = CreateFrame("Frame", "TwinkGearFinderFrame", UIParent, "BasicFrameTemplateWithInset")
 frame:SetSize(880, 632)
 frame:SetPoint("CENTER")
@@ -152,6 +197,23 @@ frame:SetScript("OnDragStart", frame.StartMoving)
 frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
 frame:Hide()
 
+-- Стандартную обшивку Blizzard убираем и рисуем своё: сайт строится на плоских
+-- тёмных блоках с тонкой рамкой, а шаблонная рамка с камнем и заклёпками этому
+-- прямо противоречит. Прячем аккуратно - в разных версиях клиента набор
+-- элементов у шаблона разный.
+for _, part in ipairs({ "Bg", "TitleBg", "NineSlice", "TopTileStreaks", "portrait", "PortraitContainer" }) do
+    local piece = frame[part]
+    if piece and piece.Hide then piece:Hide() end
+end
+if frame.Inset then
+    frame.Inset:Hide()
+end
+
+frame.backdrop = frame:CreateTexture(nil, "BACKGROUND", nil, -8)
+frame.backdrop:SetAllPoints()
+Fill(frame.backdrop, C.bg)
+AddBorder(frame, C.border)
+
 -- Blizzard's own title-bar art is a fixed-width piece sized just for the title
 -- text, so it doesn't stretch to also cover the search box - this draws our own
 -- backing bar the full width instead, so title + search visually sit in one strip.
@@ -159,11 +221,19 @@ frame.titleBg = frame:CreateTexture(nil, "ARTWORK")
 frame.titleBg:SetPoint("TOPLEFT", frame, "TOPLEFT", 10, -4)
 frame.titleBg:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -28, -4)
 frame.titleBg:SetHeight(76) -- covers both the centred title and the search box under it
-frame.titleBg:SetColorTexture(0.05, 0.04, 0.03, 0.6)
+Fill(frame.titleBg, C.block)
 
 frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 frame.title:SetPoint("TOP", frame, "TOP", 0, -26)
-frame.title:SetText("Поиск шмота для триала")
+frame.title:SetText("ПОИСК ШМОТА ДЛЯ ТРИАЛА")
+frame.title:SetTextColor(C.text[1], C.text[2], C.text[3])
+
+-- Линия под шапкой: на сайте блоки всегда отделены тонкой рамкой, а не пустотой.
+frame.titleLine = frame:CreateTexture(nil, "ARTWORK")
+frame.titleLine:SetHeight(1)
+frame.titleLine:SetPoint("BOTTOMLEFT", frame.titleBg, "BOTTOMLEFT", 0, 0)
+frame.titleLine:SetPoint("BOTTOMRIGHT", frame.titleBg, "BOTTOMRIGHT", 0, 0)
+Fill(frame.titleLine, C.borderSoft)
 
 ------------------------------------------------------------
 -- Search box: matches item name OR the note text (what the item actually does -
@@ -277,9 +347,9 @@ local function UpdateHeaderSortIndicators()
         end
         entry.fs:SetText(text)
         if statFilter[key] then
-            entry.fs:SetTextColor(1, 0.82, 0) -- отмечен как фильтр
+            entry.fs:SetTextColor(C.warm[1], C.warm[2], C.warm[3]) -- отмечен как фильтр
         else
-            entry.fs:SetTextColor(1, 1, 1)
+            entry.fs:SetTextColor(C.text3[1], C.text3[2], C.text3[3])
         end
     end
 end
@@ -381,11 +451,22 @@ emptyText:SetJustifyH("LEFT")
 emptyText:SetJustifyV("TOP")
 emptyText:Hide()
 
+-- Числа статов: ярко-зелёный из старого вида в тёмной палитре сайта смотрится
+-- чужеродно. Значение - основным текстом, прочерк - приглушённым.
+-- math.floor обязателен: %x от дробного числа в Lua роняет форматирование.
+local function Hex(color)
+    return string.format("%02x%02x%02x",
+        math.floor(color[1] * 255 + 0.5),
+        math.floor(color[2] * 255 + 0.5),
+        math.floor(color[3] * 255 + 0.5))
+end
+local STAT_HEX, MUTED_HEX = Hex(C.text), Hex(C.text3)
+
 local function ColorStat(value)
     if value and value > 0 then
-        return string.format("|cff00ff00%d|r", value)
+        return string.format("|cff%s%d|r", STAT_HEX, value)
     end
-    return "|cff808080-|r"
+    return string.format("|cff%s-|r", MUTED_HEX)
 end
 
 local SOCKET_LABELS = {
@@ -863,17 +944,30 @@ local function CreateRow(index)
 
     row.bgAlt = row:CreateTexture(nil, "BACKGROUND", nil, 0)
     row.bgAlt:SetAllPoints()
-    if index % 2 == 0 then
-        row.bgAlt:SetColorTexture(0.247, 0.247, 0.247, 0.6)
-    else
-        row.bgAlt:SetColorTexture(0.17, 0.17, 0.17, 0.4)
-    end
+    -- Чередование строк как на сайте: два соседних оттенка блока, без прозрачности.
+    Fill(row.bgAlt, index % 2 == 0 and C.block2 or C.block)
 
     row.bg = row:CreateTexture(nil, "BACKGROUND", nil, 1)
     row.bg:SetAllPoints()
-    row.bg:SetColorTexture(1, 1, 1, 0)
-    row:SetScript("OnEnter", function(self) self.bg:SetColorTexture(1, 1, 1, 0.08) end)
-    row:SetScript("OnLeave", function(self) self.bg:SetColorTexture(1, 1, 1, 0) end)
+    row.bg:SetColorTexture(0, 0, 0, 0)
+
+    -- Наведение: подсветка блока плюс тёплая полоска слева - так на сайте
+    -- отмечены активные карточки.
+    row.hoverBar = row:CreateTexture(nil, "ARTWORK")
+    row.hoverBar:SetWidth(2)
+    row.hoverBar:SetPoint("TOPLEFT", row, "TOPLEFT", 0, 0)
+    row.hoverBar:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", 0, 0)
+    Fill(row.hoverBar, C.warm)
+    row.hoverBar:Hide()
+
+    row:SetScript("OnEnter", function(self)
+        Fill(self.bg, C.border, 0.35)
+        self.hoverBar:Show()
+    end)
+    row:SetScript("OnLeave", function(self)
+        self.bg:SetColorTexture(0, 0, 0, 0)
+        self.hoverBar:Hide()
+    end)
 
     row.iconFrame = CreateFrame("Button", nil, row)
     row.iconFrame:SetSize(ICON_SIZE, ICON_SIZE)
@@ -920,6 +1014,7 @@ local function CreateRow(index)
     row.name:SetJustifyH("LEFT")
 
     row.type = row:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    row.type:SetTextColor(C.text3[1], C.text3[2], C.text3[3])
     row.type:SetPoint("TOPLEFT", row.name, "BOTTOMLEFT", 0, -4)
     row.type:SetSize(COL_NAME_W, 14)
     row.type:SetJustifyH("LEFT")
@@ -944,9 +1039,10 @@ local function CreateRow(index)
     row.source:SetPoint("TOPLEFT", row, "TOPLEFT", COL_SOURCE_X, -4)
     row.source:SetSize(COL_SOURCE_W, 14)
     row.source:SetJustifyH("LEFT")
-    row.source:SetTextColor(0.6, 0.85, 1, 1)
+    row.source:SetTextColor(C.cool[1], C.cool[2], C.cool[3], 1)
 
     row.sourceboss = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    row.sourceboss:SetTextColor(C.text2[1], C.text2[2], C.text2[3])
     row.sourceboss:SetPoint("TOPLEFT", row.source, "BOTTOMLEFT", 0, -4)
     row.sourceboss:SetSize(COL_SOURCE_W, 14)
     row.sourceboss:SetJustifyH("LEFT")
