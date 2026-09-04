@@ -620,15 +620,15 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
             local color = chosen and C.text or C.text2
             row.text:SetTextColor(color[1], color[2], color[3])
         end
-        -- Обычно открываем вниз, но если до низа экрана не хватает места -
-        -- разворачиваем вверх, как это делает стандартный список.
+        -- Всегда открываем вниз, но если до низа экрана не хватает - поднимаем
+        -- ровно на недостающее, чтобы меню прилипло к краю экрана. Именно так
+        -- ведёт себя стандартный список: он не переворачивается, а сползает.
         menu:ClearAllPoints()
-        local bottom = button:GetBottom()
-        if bottom and bottom - menu:GetHeight() - 2 < 0 then
-            menu:SetPoint("BOTTOM", button, "TOP", 0, 2)
-        else
-            menu:SetPoint("TOP", button, "BOTTOM", 0, -2)
+        local bottom, overflow = button:GetBottom(), 0
+        if bottom then
+            overflow = math.max(0, menu:GetHeight() + 2 - bottom)
         end
+        menu:SetPoint("TOP", button, "BOTTOM", 0, -2 + overflow)
 
         menu:Show()
         menuCatcher:Show()
