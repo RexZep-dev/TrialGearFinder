@@ -620,6 +620,16 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
             local color = chosen and C.text or C.text2
             row.text:SetTextColor(color[1], color[2], color[3])
         end
+        -- Обычно открываем вниз, но если до низа экрана не хватает места -
+        -- разворачиваем вверх, как это делает стандартный список.
+        menu:ClearAllPoints()
+        local bottom = button:GetBottom()
+        if bottom and bottom - menu:GetHeight() - 2 < 0 then
+            menu:SetPoint("BOTTOM", button, "TOP", 0, 2)
+        else
+            menu:SetPoint("TOP", button, "BOTTOM", 0, -2)
+        end
+
         menu:Show()
         menuCatcher:Show()
         openMenu = menu
