@@ -486,6 +486,155 @@ local function StyleDropdown(drop)
     end
 end
 
+------------------------------------------------------------
+-- Свой выпадающий список.
+--
+-- Почему не UIDropDownMenu: тот пересоздаёт кнопки при каждом открытии, рисует
+-- фон лениво, задаёт отметки атласами и возвращает свои текстуры когда захочет.
+-- Шесть заходов правок его так и не приручили, а кода обхода вышло больше, чем
+-- занимает этот список целиком. Плюс он общий для всей игры - вмешиваться
+-- в него значит менять чужие меню.
+--
+-- Списки у нас короткие (максимум 16 слотов), поэтому без прокрутки: всё сразу.
+------------------------------------------------------------
+
+local MENU_ROW_HEIGHT, MENU_PADDING = 20, 6
+local openMenu
+
+local function CloseFilterMenu()
+    if openMenu then
+        openMenu:Hide()
+        openMenu = nil
+    end
+end
+
+-- Ловушка на весь экран: ловит клик мимо меню и закрывает его. Лежит ниже
+-- меню по слою, поэтому клики по самим пунктам до неё не доходят.
+local menuCatcher = CreateFrame("Frame", nil, UIParent)
+menuCatcher:SetAllPoints(UIParent)
+menuCatcher:SetFrameStrata("FULLSCREEN")
+menuCatcher:EnableMouse(true)
+menuCatcher:Hide()
+menuCatcher:SetScript("OnMouseDown", CloseFilterMenu)
+
+local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, onSelect)
+    local button = CreateFrame("Button", name, footer)
+    button:SetSize(155, 26)
+    if anchorTo then
+        button:SetPoint("LEFT", anchorTo, "RIGHT", 4, 0)
+    else
+        button:SetPoint("LEFT", footer, "LEFT", 0, 0)
+    end
+    RoundedPanel(button, C.block2, C.borderSoft)
+
+    button.label = label
+    button.selectedKey = "ALL"
+
+    button.text = button:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    button.text:SetPoint("LEFT", button, "LEFT", 8, 0)
+    button.text:SetPoint("RIGHT", button, "RIGHT", -22, 0)
+    button.text:SetJustifyH("LEFT")
+    button.text:SetTextColor(C.text2[1], C.text2[2], C.text2[3])
+    button.text:SetText(label .. ": Все")
+
+    button.arrow = button:CreateTexture(nil, "OVERLAY")
+    button.arrow:SetTexture(ARROW_TEXTURE)
+    button.arrow:SetSize(9, 9)
+    button.arrow:SetPoint("RIGHT", button, "RIGHT", -8, 0)
+    button.arrow:SetTexCoord(0, 1, 1, 0)
+    button.arrow:SetVertexColor(C.text3[1], C.text3[2], C.text3[3])
+
+    -- Меню держим на UIParent, а не на кнопке: иначе оно обрезалось бы окном
+    -- и лежало под соседними фильтрами.
+    local menu = CreateFrame("Frame", name .. "Menu", UIParent)
+    menu:SetFrameStrata("FULLSCREEN_DIALOG")
+    menu:SetPoint("TOP", button, "BOTTOM", 0, -2)
+    menu:SetWidth(button:GetWidth())
+    menu:Hide()
+    RoundedPanel(menu, C.block, C.border)
+    tinsert(UISpecialFrames, menu:GetName()) -- Escape закроет меню, а не окно
+
+    menu:SetScript("OnHide", function()
+        menuCatcher:Hide()
+        if openMenu == menu then openMenu = nil end
+    end)
+
+    -- Пункты. Строятся один раз: наборы у нас фиксированные, слотов и классов
+    -- в игре не прибавится.
+    local entries = { { key = "ALL", label = "Все" } }
+    for _, option in ipairs(options) do
+        table.insert(entries, { key = getKey(option), label = getLabel(option) })
+    end
+
+    menu.rows = {}
+    for index, entry in ipairs(entries) do
+        local row = CreateFrame("Button", nil, menu)
+        row:SetHeight(MENU_ROW_HEIGHT)
+        row:SetPoint("LEFT", menu, "LEFT", MENU_PADDING, 0)
+        row:SetPoint("RIGHT", menu, "RIGHT", -MENU_PADDING, 0)
+        row:SetPoint("TOP", menu, "TOP", 0, -(MENU_PADDING + (index - 1) * MENU_ROW_HEIGHT))
+
+        local highlight = row:CreateTexture(nil, "BACKGROUND")
+        highlight:SetAllPoints()
+        highlight:SetColorTexture(C.text3[1], C.text3[2], C.text3[3], 0.18)
+        highlight:Hide()
+
+        row.dot = row:CreateTexture(nil, "OVERLAY")
+        row.dot:SetTexture(DOT_TEXTURE)
+        row.dot:SetSize(6, 6)
+        row.dot:SetPoint("LEFT", row, "LEFT", 4, 0)
+        row.dot:SetVertexColor(C.text[1], C.text[2], C.text[3])
+        row.dot:Hide()
+
+        row.text = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        row.text:SetPoint("LEFT", row, "LEFT", 16, 0)
+        row.text:SetJustifyH("LEFT")
+        row.text:SetText(entry.label)
+        row.text:SetTextColor(C.text2[1], C.text2[2], C.text2[3])
+
+        row:SetScript("OnEnter", function() highlight:Show() end)
+        row:SetScript("OnLeave", function() highlight:Hide() end)
+        row:SetScript("OnClick", function()
+            button.selectedKey = entry.key
+            button.text:SetText(label .. ": " .. entry.label)
+            CloseFilterMenu()
+            onSelect(entry.key)
+        end)
+
+        row.entryKey = entry.key
+        menu.rows[index] = row
+    end
+    menu:SetHeight(#entries * MENU_ROW_HEIGHT + MENU_PADDING * 2)
+
+    button:SetScript("OnClick", function()
+        if openMenu == menu then
+            CloseFilterMenu()
+            return
+        end
+        CloseFilterMenu()
+        -- Точку ставим при открытии: так она всегда сходится с текущим выбором,
+        -- даже если фильтр сменили из кода.
+        for _, row in ipairs(menu.rows) do
+            local chosen = row.entryKey == button.selectedKey
+            row.dot:SetShown(chosen)
+            local color = chosen and C.text or C.text2
+            row.text:SetTextColor(color[1], color[2], color[3])
+        end
+        menu:Show()
+        menuCatcher:Show()
+        openMenu = menu
+    end)
+
+    button:SetScript("OnEnter", function()
+        button.arrow:SetVertexColor(C.warm[1], C.warm[2], C.warm[3])
+    end)
+    button:SetScript("OnLeave", function()
+        button.arrow:SetVertexColor(C.text3[1], C.text3[2], C.text3[3])
+    end)
+
+    return button
+end
+
 local function CreateFilterDropdown(name, anchorTo, label, options, getKey, getLabel, onSelect)
     local drop = CreateFrame("Frame", name, footer, "UIDropDownMenuTemplate")
     if anchorTo then
@@ -522,7 +671,9 @@ local function CreateFilterDropdown(name, anchorTo, label, options, getKey, getL
     return drop
 end
 
-local slotDrop = CreateFilterDropdown("TwinkGearFinderSlotDrop", nil, "Слот", VISIBLE_SLOT_DEFS,
+-- Первый фильтр на своём списке. Остальные три пока на UIDropDownMenu -
+-- переведём, когда этот покажет себя в игре.
+local slotDrop = CreateSelect("TwinkGearFinderSlotDrop", nil, "Слот", VISIBLE_SLOT_DEFS,
     function(o) return o.key end, function(o) return o.label end,
     function(key) filters.slot = key; RefreshResults() end)
 
