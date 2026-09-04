@@ -1930,6 +1930,25 @@ SlashCmdList["TWINKGEARFINDER"] = function(msg)
     -- This dumps id + name so they can be referred to by name outside the game.
     -- Диагностика гнёзд: печатает поля gemID из ссылки и то, что аддон насчитал.
     -- Нужна, чтобы понять, откуда берутся лишние гнёзда в /tgf scan.
+    -- Диагностика полосы прокрутки: как называются её части в этой версии клиента.
+    if msg == "ui" then
+        local bar = scrollFrame.ScrollBar or _G["TwinkGearFinderScrollScrollBar"]
+        if not bar then
+            print("|cFFFFD100[TGF]|r Полоса прокрутки не найдена вовсе.")
+            return
+        end
+        print("|cFFFFD100[TGF]|r Полоса: " .. tostring(bar:GetName()))
+        for _, child in ipairs({ bar:GetChildren() }) do
+            print(string.format("   %s | %s | %dx%d",
+                tostring(child:GetName()), child:GetObjectType(),
+                math.floor(child:GetWidth() or 0), math.floor(child:GetHeight() or 0)))
+        end
+        for _, key in ipairs({ "Back", "Forward", "ScrollUpButton", "ScrollDownButton", "Track", "Thumb" }) do
+            if bar[key] then print("   поле " .. key .. " = " .. tostring(bar[key]:GetObjectType())) end
+        end
+        return
+    end
+
     if msg == "gems" then
         for _, item in ipairs(ns.Items) do
             local link = FindOwnedLink(item.itemID)
