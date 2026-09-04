@@ -199,15 +199,23 @@ frame:Hide()
 
 -- Стандартную обшивку Blizzard убираем и рисуем своё: сайт строится на плоских
 -- тёмных блоках с тонкой рамкой, а шаблонная рамка с камнем и заклёпками этому
--- прямо противоречит. Прячем аккуратно - в разных версиях клиента набор
--- элементов у шаблона разный.
-for _, part in ipairs({ "Bg", "TitleBg", "NineSlice", "TopTileStreaks", "portrait", "PortraitContainer" }) do
-    local piece = frame[part]
-    if piece and piece.Hide then piece:Hide() end
+-- прямо противоречит. Имена частей шаблона от версии к версии меняются, поэтому
+-- не перечисляем их, а просто гасим все текстуры фрейма и его обшивки.
+local function StripTextures(f)
+    if not f or not f.GetRegions then return end
+    for _, region in ipairs({ f:GetRegions() }) do
+        if region.GetObjectType and region:GetObjectType() == "Texture" then
+            region:Hide()
+        end
+    end
 end
-if frame.Inset then
-    frame.Inset:Hide()
-end
+
+StripTextures(frame)
+StripTextures(frame.NineSlice)
+StripTextures(frame.Inset)
+StripTextures(frame.Inset and frame.Inset.NineSlice)
+StripTextures(frame.TitleContainer)
+if frame.PortraitContainer then frame.PortraitContainer:Hide() end
 
 frame.backdrop = frame:CreateTexture(nil, "BACKGROUND", nil, -8)
 frame.backdrop:SetAllPoints()
