@@ -156,6 +156,10 @@ local C = {
     text3      = { 0.490, 0.522, 0.561 }, -- #7D858F приглушённый текст
     warm       = { 0.847, 0.722, 0.416 }, -- #D8B86A тёплый акцент
     cool       = { 0.525, 0.780, 0.741 }, -- #86C7BD холодный акцент
+    -- Золото самой игры (NORMAL_FONT_COLOR), а не палитры сайта: им подписаны
+    -- подземелья в Обзоре приключений, и названия источников должны совпадать
+    -- с ними один в один. Тёплый акцент рядом смотрелся выцветшим.
+    gold       = { 1.000, 0.820, 0.000 }, -- #FFD100 названия подземелий
 }
 
 -- Заливка сплошным цветом из палитры.
@@ -1242,12 +1246,16 @@ end
 -- a wrong waypoint is worse than none.
 ------------------------------------------------------------
 
--- ВАЖНО про связку плащей { 4244, 23, 8810 }: 23 - это НЕ уровень предмета,
--- а суффикс «с символом огненной вспышки» (+крит, +скорость). Проверено снятием:
--- без 23 у 158583 уровень остаётся 23 (его держит 4244), гнездо остаётся (8810),
--- но крит падает 9 -> 5 и скорость исчезает совсем.
--- Суффикс оставлен намеренно: аддон показывает BiS, то есть максимальную версию
--- предмета, к которой нужно стремиться. Статы плащей в Data.lua записаны с ним.
+-- ВАЖНО про связку плащей. Была { 4244, 23, 8810 }, стала { 4244, 8810 }.
+-- 23 - это НЕ уровень предмета, а суффикс «с символом огненной вспышки»
+-- (+крит, +скорость): без него уровень остаётся 23 (его держит 4244), гнездо
+-- остаётся (8810), но крит падает и скорость исчезает.
+--
+-- Суффикс убран 4 сентября, решение от 2 сентября отменено. Число 23 пришло
+-- из параметра &ilvl=23 на Wowhead, а не из игры, и попало в связку при
+-- исходном парсинге гайда. Сравнение выбитого плаща с базой бок о бок
+-- показало: версии с суффиксом в дропе нет, это артефакт разбора.
+-- Гнездо оставлено - его держит 8810, и вот оно как раз редкий ролл.
 
 local SOURCE_PINS = {
     -- ПОДЗЕМЕЛЬЯ. Ключ - поле source из Data.lua.
@@ -1476,6 +1484,20 @@ local function CreateRow(index)
     row.iconFrame:SetPoint("TOPLEFT", row, "TOPLEFT", COL_ICON_X, -6)
     row.icon = row.iconFrame:CreateTexture(nil, "ARTWORK")
     row.icon:SetAllPoints()
+
+    -- Обводка значка цветом качества предмета: синий, фиолетовый, оранжевый.
+    -- Берём то же кольцо, что у чекбоксов - новой текстуры не нужно. Растянуто
+    -- на два пикселя наружу, чтобы не съедать саму иконку.
+    row.iconRing = row.iconFrame:CreateTexture(nil, "OVERLAY")
+    row.iconRing:SetPoint("TOPLEFT", row.iconFrame, "TOPLEFT", -2, 2)
+    row.iconRing:SetPoint("BOTTOMRIGHT", row.iconFrame, "BOTTOMRIGHT", 2, -2)
+    row.iconRing:SetTexture(RING_TEXTURE)
+    if row.iconRing.SetTextureSliceMargins then
+        row.iconRing:SetTextureSliceMargins(7, 7, 7, 7)
+        if row.iconRing.SetTextureSliceMode and Enum and Enum.UITextureSliceMode then
+            row.iconRing:SetTextureSliceMode(Enum.UITextureSliceMode.Stretched)
+        end
+    end
     -- Native tooltip via SetHyperlink - real item card, real Shift-compare
     -- against whatever's equipped, real Ctrl-dressup. Accuracy now depends on
     -- each item's bonusIDs in Data.lua actually reconstructing to ilvl 23 -
@@ -1515,8 +1537,10 @@ local function CreateRow(index)
     row.name:SetSize(COL_NAME_W, 16)
     row.name:SetJustifyH("LEFT")
 
+    -- Подпись «Латы (Плечи) | 23 ур.» - белым: приглушённый серый тестеры
+    -- читали с трудом. Шрифт остаётся мелким, меняется только цвет.
     row.type = row:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    row.type:SetTextColor(C.text3[1], C.text3[2], C.text3[3])
+    row.type:SetTextColor(C.text[1], C.text[2], C.text[3])
     row.type:SetPoint("TOPLEFT", row.name, "BOTTOMLEFT", 0, -4)
     row.type:SetSize(COL_NAME_W, 14)
     row.type:SetJustifyH("LEFT")
@@ -1537,11 +1561,19 @@ local function CreateRow(index)
     row.iskus = StatFS(COL_ISKUS_X)
     row.vers = StatFS(COL_VERS_X)
 
+    -- Название подземелья: золотое и в один размер с названием предмета - две
+    -- колонки должны читаться как равные заголовки строки, а не как заголовок
+    -- и приписка. Размер берём у самого названия, а не числом: сменится шрифт
+    -- клиента - равенство сохранится.
     row.source = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     row.source:SetPoint("TOPLEFT", row, "TOPLEFT", COL_SOURCE_X, -4)
-    row.source:SetSize(COL_SOURCE_W, 14)
+    row.source:SetSize(COL_SOURCE_W, 16)
     row.source:SetJustifyH("LEFT")
-    row.source:SetTextColor(C.cool[1], C.cool[2], C.cool[3], 1)
+    row.source:SetTextColor(C.gold[1], C.gold[2], C.gold[3], 1)
+    local nameFont, nameSize, nameFlags = row.name:GetFont()
+    if nameFont and nameSize then
+        row.source:SetFont(nameFont, nameSize, nameFlags)
+    end
 
     row.sourceboss = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     row.sourceboss:SetTextColor(C.text2[1], C.text2[2], C.text2[3])
@@ -1631,6 +1663,8 @@ local function CreateRow(index)
         end
         self:Show()
         self.icon:SetTexture(data.icon)
+        local qc = data.qualityColor
+        if qc then self.iconRing:SetVertexColor(qc[1], qc[2], qc[3], 1) end
         self.name:SetText(data.name)
         self.type:SetText(data.type)
         self.str:SetText(ColorStat(data.str))
@@ -1933,7 +1967,8 @@ local function BuildRowData(item)
         end
     end
 
-    local qualityHex = select(4, C_Item.GetItemQualityColor(quality))
+    -- Цвет качества нужен и текстом (в названии), и числами (обводка значка).
+    local qR, qG, qB, qualityHex = C_Item.GetItemQualityColor(quality)
     -- Armor material by numeric subclassID, slot by our own table: itemSubType and
     -- _G[equipLoc] are both client-localized and came out English on an EN client.
     local slotLabel = INVTYPE_RU[equipLoc] or _G[equipLoc] or equipLoc
@@ -1956,14 +1991,36 @@ local function BuildRowData(item)
     local ownedDiffs
     if owned then
         local ownedLink = FindOwnedLink(item.itemID)
+        local live
         if ownedLink then
+            live = ScanItemLink(ownedLink)
+            -- Запоминаем ЗАМЕР живой вещи, а не готовый вывод. Содержимое банка
+            -- игра отдаёт только пока он открыт, и без этой памяти вещь оттуда
+            -- вдали от банка выглядела бы непроверенной.
+            --
+            -- Сначала запоминался именно вывод - и он протух в тот же день:
+            -- поправили статы плащей в Data.lua, а подсказка на вещь из банка
+            -- ещё показывала расхождения, посчитанные до правки. Вывод зависит
+            -- от базы, а её правят постоянно; замер живой вещи не меняется.
+            TwinkGearFinderDB = TwinkGearFinderDB or {}
+            TwinkGearFinderDB.compared = nil -- прежняя память выводов, формат другой
+            TwinkGearFinderDB.seen = TwinkGearFinderDB.seen or {}
+            TwinkGearFinderDB.seen[item.itemID] = {
+                ilvl = live.ilvl, stats = live.stats, socketTypes = live.socketTypes,
+            }
+        else
+            live = TwinkGearFinderDB and TwinkGearFinderDB.seen
+                and TwinkGearFinderDB.seen[item.itemID]
+        end
+
+        if live then
             -- Уровень из сверки выброшен: база хранит вещь, отмасштабированную нашей
             -- связкой bonusIDs, а копия в сумке считает уровень по уровню персонажа -
             -- на не-двадцатке расхождение будет всегда и ни о чём не говорит.
             -- Гнездо сверяем наравне со статами: у вещей с рарников именно оно
             -- и делает копию BiS-версией, без него вещь надо перефармливать.
             local diffs = {}
-            for _, d in ipairs(DiffData(item, ScanItemLink(ownedLink))) do
+            for _, d in ipairs(DiffData(item, live)) do
                 if not (d.label or ""):find("уровню предмета", 1, true) then
                     table.insert(diffs, d)
                 end
@@ -1971,11 +2028,11 @@ local function BuildRowData(item)
             diffs = DropBalancedSocketDiffs(diffs)
             ownedDiffs = (#diffs == 0) and true or diffs
         else
-            -- Вещь числится по счётчику, а ссылки на неё нет: содержимое банка
-            -- читается только пока он открыт. Сверять не с чем - и это НЕ то же
-            -- самое, что «отличается». Раньше здесь оставался nil, он проходил
-            -- проверку `~= true` и вещь красилась красным с пустым списком
-            -- расхождений: подсказка обещала причины, которых никто не считал.
+            -- Вещь числится по счётчику, ссылки нет, замера в памяти тоже -
+            -- сверять не с чем, и это НЕ то же самое, что «отличается».
+            -- Раньше здесь оставался nil: он проходил проверку `~= true`,
+            -- вещь краснела, а список расхождений был пуст - подсказка обещала
+            -- причины, которых никто не считал.
             ownedDiffs = false
         end
     end
@@ -1984,6 +2041,7 @@ local function BuildRowData(item)
         icon = icon,
         name = string.format("|c%s%s|r", qualityHex, name),
         rawName = name,
+        qualityColor = { qR or 1, qG or 1, qB or 1 },
         type = typeLabel,
         equipLoc = equipLoc,
         subclassID = classID == ARMOR_CLASS_ID and subclassID or nil,
