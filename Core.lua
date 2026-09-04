@@ -7,9 +7,16 @@ local ROW_WIDTH, ROW_HEIGHT, ROW_SPACING = 800, 46, 2
 local NUM_VISIBLE_ROWS = 9
 local TWINK_LEVEL = 20
 
--- Ground-truth comparison (hover-any-item note, list tooltip, /tgf scan) is still
--- rough around the edges (gem detection etc.) - kept in the code, just switched
--- off for now. Flip back to true once it's solid.
+-- Подсказка на ЧУЖИХ тултипах: наводишь на любую вещь в мире, аддон ищет
+-- ближайшую запись базы по слоту и показывает расхождения. Механизм написан
+-- целиком, но в игре не видели ни разу.
+--
+-- Решение к релизу 1.0 (4 сентября 2026): оставить ВЫКЛЮЧЕННЫМ. Удалять готовую
+-- работу рано, а включать перед первой выкладкой нельзя: хук цепляется к чужим
+-- тултипам - самая ломкая часть аддона, и сломает он их у всех сразу.
+-- Включаем и обкатываем в 1.1, когда будет кому присылать отчёты.
+--
+-- Флаг НЕ отключает сверку в списке и /tgf scan - они работают всегда.
 local ENABLE_COMPARISON = false
 
 -- Slot names come from the CLIENT (_G.INVTYPE_*), so on an English client the
@@ -52,6 +59,14 @@ local SLOT_DEFS = {
 -- Slots marked hidden are still ranked and sorted below (SlotRank walks the full
 -- list), they just do not appear in the window or in the Слот dropdown - drop the
 -- hidden flag to bring a category back once its data is finished.
+--
+-- К релизу 1.0 скрыты обе: шеи и кольца.
+-- Шеи вдобавок удалены из Data.lua целиком - 17 записей. Причина не в аддоне:
+-- по гайду часть из них больше не выбить, а гнездо в них вставлялось оправой,
+-- которая теперь не работает. Держать в БиС-списке вещи, которых не собрать,
+-- хуже, чем не показывать слот вовсе. Записи никуда не делись, они в истории
+-- git - вернуть можно, если правила снова поменяются.
+-- Кольца просто ждут данных, они не собирались.
 local VISIBLE_SLOT_DEFS, HIDDEN_INVTYPES = {}, {}
 for _, d in ipairs(SLOT_DEFS) do
     if d.hidden then
@@ -198,7 +213,7 @@ end
 -- Рамка в один пиксель из четырёх полосок: скруглений в WoW без своих текстур
 -- не сделать, поэтому строгие прямые линии - как на сайте.
 -- Скруглённая подложка. Движок не умеет скруглять прямоугольники - всё круглое
--- в игре это заранее нарисованные картинки. roundrect.png (32x32, радиус 10)
+-- в игре это заранее нарисованные картинки. roundrect.tga (32x32, радиус 10)
 -- нарисован для этого аддона; SetTextureSliceMargins растягивает середину,
 -- оставляя углы нетронутыми, поэтому одна картинка годится для любого размера.
 local debugOverlays = {}
@@ -952,11 +967,15 @@ local function Hex(color)
 end
 local STAT_HEX, MUTED_HEX = Hex(C.text), Hex(C.text3)
 
+-- Переписана намеренно. Первая версия повторяла одноимённую функцию из чужого
+-- аддона вплоть до ярко-зелёного 00ff00, а тот распространяется под
+-- All Rights Reserved - копировать из него нельзя, и благодарность этого
+-- не исправляет. Пять строк форматирования не жалко переписать своими.
 local function ColorStat(value)
-    if value and value > 0 then
-        return string.format("|cff%s%d|r", STAT_HEX, value)
+    if not value or value <= 0 then
+        return "|cff" .. MUTED_HEX .. "-|r"
     end
-    return string.format("|cff%s-|r", MUTED_HEX)
+    return "|cff" .. STAT_HEX .. value .. "|r"
 end
 
 local SOCKET_LABELS = {
@@ -964,12 +983,6 @@ local SOCKET_LABELS = {
     yellow = "жёлтое", blue = "синее", cogwheel = "шестерёнка", domination = "владычества",
 }
 
--- Socket icons shipped with the addon (Media/ folder). Only the two types this
--- guide's items actually use are provided; anything else falls back to text.
-local SOCKET_ICON_PATHS = {
-    meta = "Interface\\AddOns\\TrialGearFinder\\socket-meta.png",
-    prismatic = "Interface\\AddOns\\TrialGearFinder\\socket-prismatic.png",
-}
 
 local STAT_LABELS = {
     { key = "str", label = "Сила" },
@@ -992,6 +1005,17 @@ local STAT_LABELS = {
 
 local ns_ItemsByID = {}
 for _, it in ipairs(ns.Items) do ns_ItemsByID[it.itemID] = it end
+
+-- Иконки гнёзд для строки расхождения. Лежат в папке аддона; для остальных
+-- типов картинки нет, там останется только текст.
+--
+-- ВНИМАНИЕ, не удалять как «нерабочее»: они рисуются. Двойной пробел, который
+-- виден в скопированном из чата выводе - след копирования, оно вырезает
+-- текстуры |T|t. На этом я один раз уже попался и снёс их зря.
+local SOCKET_ICON_PATHS = {
+    meta = "Interface\\AddOns\\TrialGearFinder\\socket-meta.png",
+    prismatic = "Interface\\AddOns\\TrialGearFinder\\socket-prismatic.png",
+}
 
 local REVERSE_SOCKET_LABELS = {}
 for typeKey, word in pairs(SOCKET_LABELS) do REVERSE_SOCKET_LABELS[word] = typeKey end
@@ -1227,7 +1251,6 @@ local function FormatDiffLine(diff)
         if iconPath then
             return string.format("%s |T%s:16:16|t %s", number, iconPath, diff.label)
         end
-        return string.format("%s %s", number, diff.label)
     end
     return string.format("%s %s", number, diff.label)
 end
@@ -2599,7 +2622,31 @@ end
 ------------------------------------------------------------
 
 SLASH_TRIALGEARFINDER1 = "/tgf"
+-- Команды разработчика. В релизе они не удалены, а спрятаны за флагом:
+-- держать вторую сборку дороже, чем один переключатель, и расходятся сборки
+-- ровно тогда, когда про них забудут. Включается /tgf dev, флаг живёт
+-- в SavedVariables, так что делается это один раз на аккаунт.
+--
+-- scan и gems наружу оставлены намеренно: по ним пользователи присылают
+-- отчёты о расхождениях, а это главный источник исправлений базы.
+local DEV_ONLY = { debug = true, ui = true, names = true, pins = true }
+
 SlashCmdList["TRIALGEARFINDER"] = function(msg)
+    if msg == "dev" then
+        TrialGearFinderDB = TrialGearFinderDB or {}
+        TrialGearFinderDB.dev = not TrialGearFinderDB.dev
+        print(string.format("|cFFFFD100[TGF]|r Команды разработчика: %s",
+            TrialGearFinderDB.dev and "включены" or "выключены"))
+        return
+    end
+    if not (TrialGearFinderDB and TrialGearFinderDB.dev) then
+        -- pin с именем подземелья тоже сюда: /tgf pin, /tgf pin сетекк.
+        if DEV_ONLY[msg] or msg:match("^pin") then
+            print("|cFFFFD100[TGF]|r Неизвестная команда.")
+            return
+        end
+    end
+
     -- Dumps everything captured with Ctrl-click, ready to paste into SOURCE_PINS
     -- so the pins become part of the addon instead of one character's saved vars.
     -- Data.lua stores no item names - they come from the client at display time.
