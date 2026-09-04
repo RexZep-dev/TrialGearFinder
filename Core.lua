@@ -1,7 +1,10 @@
 local addonName, ns = ...
 
 local ROW_WIDTH, ROW_HEIGHT, ROW_SPACING = 800, 46, 2
-local NUM_VISIBLE_ROWS = 8
+-- Девятая строка занимает пустую полосу над фильтрами: окно фиксированной
+-- высоты, а строк помещалось восемь, и снизу оставалась мёртвая щель ровно
+-- в одну строку. Ход полосы прокрутки считается от этого же числа.
+local NUM_VISIBLE_ROWS = 9
 local TWINK_LEVEL = 20
 
 -- Ground-truth comparison (hover-any-item note, list tooltip, /tgf scan) is still
@@ -176,8 +179,18 @@ local PILL_TEXTURE = "Interface/AddOns/TwinkGearFinder/pill"
 -- Треугольник вершиной вверх. Для нижней стрелки та же картинка, перевёрнутая
 -- через SetTexCoord - вторую рисовать незачем.
 local ARROW_TEXTURE = "Interface/AddOns/TwinkGearFinder/arrow"
+-- Размер стрелок фильтров и прокрутки. Одним именем, чтобы не разъезжались.
+local ARROW_SIZE = 12
 -- Точка-отметка выбранного пункта в выпадающем списке.
 local DOT_TEXTURE = "Interface/AddOns/TwinkGearFinder/dot"
+-- Кольцо: скруглённый контур в один пиксель, середина прозрачная. Отдельная
+-- картинка нужна потому, что RoundedPanel рисует обводку сплошным блоком цвета
+-- рамки и прикрывает его блоком цвета фона - под такой «обводкой» всегда есть
+-- заливка, и на чередующихся строках она не совпадала бы с фоном.
+-- 16x16, радиус 5. Маргины среза 7, а не 5: дуга угла доходит до седьмого
+-- пикселя, и при пятёрке её хвост попадал бы в растягиваемую полосу и мазался.
+-- Середина остаётся 2 пикселя - ровно прямой участок обводки.
+local RING_TEXTURE = "Interface/AddOns/TwinkGearFinder/roundring"
 
 local function RoundedTexture(parent, layer, color, sublevel)
     local t = parent:CreateTexture(nil, layer, nil, sublevel)
@@ -224,6 +237,54 @@ local function AddBorder(parent, color, inset)
     return sides
 end
 
+-- Штатный квадратик UICheckButtonTemplate - объёмная рамка с «птичкой», чужая
+-- в плоской палитре. Гасим его прозрачностью (Hide игра снимает при каждом
+-- переключении, альфу не трогает), кладём скруглённый блок и подменяем отметку
+-- на кружок из dot.tga.
+--
+-- Отметку меняем именно текстурой, а не рисуем свою поверх: проверка вещей
+-- красит состояние через GetCheckedTexture():SetVertexColor - зелёный, красный,
+-- жёлтый. Подменённая текстура принимает тот же цвет, и логику трогать не надо.
+local function StyleCheckBox(check, dotSize)
+    if not check then return end
+    for _, region in ipairs({ check:GetRegions() }) do
+        if region.GetObjectType and region:GetObjectType() == "Texture" then
+            region:SetAlpha(0)
+        end
+    end
+    -- Только контур, без заливки: под квадратиком должен просвечивать фон
+    -- строки, а он чередуется. Белым - мягкая рамка #202328 на блоке почти
+    -- не читалась. Наведение тёплым, как везде в окне.
+    local edge = check:CreateTexture(nil, "BACKGROUND")
+    edge:SetAllPoints()
+    edge:SetTexture(RING_TEXTURE)
+    if edge.SetTextureSliceMargins then
+        edge:SetTextureSliceMargins(7, 7, 7, 7)
+        if edge.SetTextureSliceMode and Enum and Enum.UITextureSliceMode then
+            edge:SetTextureSliceMode(Enum.UITextureSliceMode.Stretched)
+        end
+    end
+    edge:SetVertexColor(C.text[1], C.text[2], C.text[3], 1)
+
+    check:SetCheckedTexture(DOT_TEXTURE)
+    local mark = check:GetCheckedTexture()
+    if mark then
+        mark:SetAlpha(1) -- цикл выше погасил и её тоже
+        mark:ClearAllPoints()
+        mark:SetPoint("CENTER")
+        mark:SetSize(dotSize or 10, dotSize or 10)
+    end
+
+    -- Подсветку шаблона мы погасили вместе с остальным, возвращаем свою: без неё
+    -- не видно, что квадратик вообще нажимается.
+    check:HookScript("OnEnter", function()
+        edge:SetVertexColor(C.warm[1], C.warm[2], C.warm[3], 1)
+    end)
+    check:HookScript("OnLeave", function()
+        edge:SetVertexColor(C.text[1], C.text[2], C.text[3], 1)
+    end)
+end
+
 local frame = CreateFrame("Frame", "TwinkGearFinderFrame", UIParent, "BasicFrameTemplateWithInset")
 frame:SetSize(880, 632)
 frame:SetPoint("CENTER")
@@ -259,28 +320,72 @@ StripTextures(frame.Inset and frame.Inset.NineSlice)
 StripTextures(frame.TitleContainer)
 if frame.PortraitContainer then frame.PortraitContainer:Hide() end
 
+-- Кнопка закрытия: от штатной остаётся только область клика. Круглая рамка
+-- с золотым ободком и красным крестом - самая заметная чужая деталь в окне,
+-- поэтому вместо картинки рисуем знак умножения шрифтом окна: он белый,
+-- со скруглёнными концами и без всякой обшивки.
+--
+-- Гасим прозрачностью, а не Hide и не пустым путём. Hide игра снимает сама при
+-- нажатии и наведении, а Set*Texture("") вообще возвращает регион на место -
+-- на этом уже обожглись: штатный крестик проступал под нашим. Альфу игра
+-- не трогает (то же правило, что для ползунка прокрутки).
+local closeButton = frame.CloseButton
+if closeButton then
+    for _, region in ipairs({ closeButton:GetRegions() }) do
+        if region.GetObjectType and region:GetObjectType() == "Texture" then
+            region:SetAlpha(0)
+        end
+    end
+    -- Отодвигаем от угла: штатная кнопка сидит почти вплотную к краю, а окно
+    -- у нас со скруглением - крестик заезжал на закругление.
+    closeButton:ClearAllPoints()
+    closeButton:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -12, -12)
+    closeButton:SetSize(28, 28)
+
+    -- Шрифт берём объектом игры, а не путём к файлу: на русском клиенте
+    -- подставится тот, в котором знак умножения вообще нарисован.
+    closeButton.glyph = closeButton:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+    -- Крупнее шаблонного в полтора раза. Размер берём у самого шрифта, а не
+    -- числом: сменится шрифт клиента - соотношение останется.
+    local glyphFont, glyphSize, glyphFlags = closeButton.glyph:GetFont()
+    if glyphFont and glyphSize then
+        closeButton.glyph:SetFont(glyphFont, glyphSize * 1.5, glyphFlags)
+    end
+    closeButton.glyph:SetPoint("CENTER", closeButton, "CENTER", 0, 0)
+    closeButton.glyph:SetText("\195\151") -- U+00D7, знак умножения: округлый крестик
+    closeButton.glyph:SetTextColor(C.text[1], C.text[2], C.text[3])
+
+    -- Наведение подсвечиваем тёплым - тем же, что строки списка и пункты меню.
+    closeButton:HookScript("OnEnter", function(self)
+        self.glyph:SetTextColor(C.warm[1], C.warm[2], C.warm[3])
+    end)
+    closeButton:HookScript("OnLeave", function(self)
+        self.glyph:SetTextColor(C.text[1], C.text[2], C.text[3])
+    end)
+end
+
 frame.backdrop, frame.backdropEdge = RoundedPanel(frame, C.bg, C.border, "BACKGROUND", -8)
 
--- Blizzard's own title-bar art is a fixed-width piece sized just for the title
--- text, so it doesn't stretch to also cover the search box - this draws our own
--- backing bar the full width instead, so title + search visually sit in one strip.
-frame.titleBg = frame:CreateTexture(nil, "ARTWORK")
-frame.titleBg:SetPoint("TOPLEFT", frame, "TOPLEFT", 10, -4)
-frame.titleBg:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -28, -4)
-frame.titleBg:SetHeight(76) -- covers both the centred title and the search box under it
-Fill(frame.titleBg, C.block)
+-- Шапка. Своя, потому что штатная полоска Blizzard шириной ровно под текст
+-- заголовка и поле поиска не накрывает.
+--
+-- Был плоский прямоугольник с отступом 10 слева и 28 справа (справа оставляли
+-- место кнопке закрытия) - блок заметно уезжал влево и упирался прямыми углами
+-- в скруглённое окно. Теперь это тот же скруглённый блок с рамкой, что и
+-- список: отступы симметричные, углы круглые, контур на месте.
+frame.titleBg = CreateFrame("Frame", nil, frame)
+frame.titleBg:SetPoint("TOPLEFT", frame, "TOPLEFT", 12, -8)
+frame.titleBg:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -12, -8)
+frame.titleBg:SetHeight(86) -- заголовок, поле поиска и тумблер Мин-Макс целиком
+frame.titleBg:SetFrameLevel(frame:GetFrameLevel()) -- под своим содержимым
+RoundedPanel(frame.titleBg, C.block, C.border)
 
-frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-frame.title:SetPoint("TOP", frame, "TOP", 0, -26)
+-- Заголовок держим на самой шапке, а не на окне: у равных уровней порядок
+-- отрисовки задаётся не слоем, и подложка могла бы закрыть текст.
+frame.title = frame.titleBg:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+frame.title:SetPoint("TOP", frame.titleBg, "TOP", 0, -18)
 frame.title:SetText("ПОИСК ШМОТА ДЛЯ ТРИАЛА")
 frame.title:SetTextColor(C.text[1], C.text[2], C.text[3])
-
--- Линия под шапкой: на сайте блоки всегда отделены тонкой рамкой, а не пустотой.
-frame.titleLine = frame:CreateTexture(nil, "ARTWORK")
-frame.titleLine:SetHeight(1)
-frame.titleLine:SetPoint("BOTTOMLEFT", frame.titleBg, "BOTTOMLEFT", 0, 0)
-frame.titleLine:SetPoint("BOTTOMRIGHT", frame.titleBg, "BOTTOMRIGHT", 0, 0)
-Fill(frame.titleLine, C.borderSoft)
 
 ------------------------------------------------------------
 -- Search box: matches item name OR the note text (what the item actually does -
@@ -295,11 +400,41 @@ local RefreshResults -- forward declare, the search box and dropdowns call it
 -- showing/hiding that icon and button; HookScript (not SetScript) so ours runs
 -- alongside that instead of replacing it.
 local searchBox = CreateFrame("EditBox", nil, frame, "SearchBoxTemplate")
-searchBox:SetSize(300, 20)
+searchBox:SetSize(300, 26) -- одна высота с кнопками фильтров внизу
 searchBox:SetPoint("TOP", frame.title, "BOTTOM", 0, -10)
 searchBox:SetAutoFocus(false)
 searchBox.Instructions:SetText("Поиск")
 searchBox:SetScript("OnEscapePressed", searchBox.ClearFocus)
+
+-- Обшивка шаблона - золотистая рамка с объёмными торцами, для плоской тёмной
+-- палитры чужая. Гасим её текстуры и кладём тот же блок, что у фильтров внизу.
+StripTextures(searchBox)
+RoundedPanel(searchBox, C.block2, C.borderSoft)
+searchBox:SetTextColor(C.text[1], C.text[2], C.text[3])
+searchBox.Instructions:SetTextColor(C.text3[1], C.text3[2], C.text3[3])
+-- Лупу и крестик очистки StripTextures погасил вместе с рамкой - возвращаем их
+-- и красим в приглушённый, чтобы не спорили с текстом.
+--
+-- Заодно переставляем: шаблон отсчитывает лупу и подпись от торцевой текстуры
+-- рамки, а мы её сняли - поэтому они вылезали левее нашего блока. Задаём
+-- отступы сами, те же 8 пикселей, что у кнопок фильтров.
+local ICON_INSET, TEXT_INSET = 8, 26 -- 8 отступ + 14 лупа + 4 просвет
+if searchBox.searchIcon then
+    searchBox.searchIcon:Show()
+    searchBox.searchIcon:SetVertexColor(C.text3[1], C.text3[2], C.text3[3])
+    searchBox.searchIcon:ClearAllPoints()
+    searchBox.searchIcon:SetPoint("LEFT", searchBox, "LEFT", ICON_INSET, 0)
+end
+searchBox.Instructions:ClearAllPoints()
+searchBox.Instructions:SetPoint("LEFT", searchBox, "LEFT", TEXT_INSET, 0)
+searchBox:SetTextInsets(TEXT_INSET, 24, 0, 0) -- набранный текст встаёт туда же
+if searchBox.clearButton then
+    searchBox.clearButton:ClearAllPoints()
+    searchBox.clearButton:SetPoint("RIGHT", searchBox, "RIGHT", -6, 0)
+    local clearIcon = searchBox.clearButton.GetNormalTexture
+        and searchBox.clearButton:GetNormalTexture()
+    if clearIcon then clearIcon:SetVertexColor(C.text3[1], C.text3[2], C.text3[3]) end
+end
 searchBox:HookScript("OnTextChanged", function(self)
     filters.search = FoldCase(self:GetText())
     RefreshResults()
@@ -370,7 +505,7 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
 
     button.arrow = button:CreateTexture(nil, "OVERLAY")
     button.arrow:SetTexture(ARROW_TEXTURE)
-    button.arrow:SetSize(9, 9)
+    button.arrow:SetSize(ARROW_SIZE, ARROW_SIZE)
     button.arrow:SetPoint("RIGHT", button, "RIGHT", -8, 0)
     button.arrow:SetTexCoord(0, 1, 1, 0)
     button.arrow:SetVertexColor(C.text3[1], C.text3[2], C.text3[3])
@@ -522,6 +657,10 @@ header:SetHeight(20)
 local sortState = { key = nil, dir = "DESC" }
 local statFilter = {} -- statKey -> true; предмет должен иметь ВСЕ отмеченные статы
 local headerLabels = {} -- sortKey -> { fs = fontstring, text = base label text }
+-- Цвет невыбранной подписи колонки. Держим одним именем: раньше он стоял только
+-- внутри UpdateHeaderSortIndicators, а рождались подписи белыми от шрифта - и
+-- после первого же клика колонка сереет навсегда, вернуть белый неоткуда.
+local HEADER_COLOR = C.text
 local STAT_FILTER_KEYS = {
     str = true, agi = true, int = true, stam = true,
     crit = true, haste = true, iskus = true, vers = true,
@@ -562,7 +701,7 @@ local function UpdateHeaderSortIndicators()
         if statFilter[key] then
             entry.fs:SetTextColor(C.warm[1], C.warm[2], C.warm[3]) -- отмечен как фильтр
         else
-            entry.fs:SetTextColor(C.text3[1], C.text3[2], C.text3[3])
+            entry.fs:SetTextColor(HEADER_COLOR[1], HEADER_COLOR[2], HEADER_COLOR[3])
         end
     end
 end
@@ -573,11 +712,12 @@ local function AddHeaderLabel(x, width, text, justify, sortKey, fullName)
     fs:SetWidth(width)
     fs:SetJustifyH(justify or "LEFT")
     fs:SetText(text)
+    fs:SetTextColor(HEADER_COLOR[1], HEADER_COLOR[2], HEADER_COLOR[3])
 
     if sortKey then
         local arrow = header:CreateTexture(nil, "OVERLAY")
         arrow:SetTexture(ARROW_TEXTURE)
-        arrow:SetSize(8, 8)
+        arrow:SetSize(10, 10) -- чуть мельче общей: стоит в строке с мелкой подписью
         arrow:Hide()
 
         fs:EnableMouse(true)
@@ -672,9 +812,12 @@ local function StyleScrollBar(bar)
     StripTextures(bar)
     bar:SetWidth(8)
 
+    -- Во всю высоту полосы. Раньше стоял отступ 14 сверху и снизу "под стрелки",
+    -- но стрелки шаблона висят СНАРУЖИ полосы (кнопка вверх прицеплена низом
+    -- к её верху), место под них уже вычтено - и дорожка выходила короче хода
+    -- ползунка, не доставая до конца.
     local track = bar:CreateTexture(nil, "BACKGROUND")
-    track:SetPoint("TOPLEFT", bar, "TOPLEFT", 0, -14)
-    track:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", 0, 14)
+    track:SetAllPoints(bar)
     track:SetTexture(PILL_TEXTURE)
     if track.SetTextureSliceMargins then
         track:SetTextureSliceMargins(0, 4, 0, 4)
@@ -713,14 +856,16 @@ local function StyleScrollBar(bar)
         if arrow then
             arrow:SetAlpha(0)
 
+            -- Рамка вокруг стрелки убрана: голый треугольник на фоне окна, как
+            -- у заголовков и фильтров. Сам skin оставлен - он держит стрелку
+            -- поверх полосы и служит ей якорем.
             local skin = CreateFrame("Frame", nil, bar)
             skin:SetAllPoints(arrow)
             skin:SetFrameLevel(bar:GetFrameLevel() + 3)
-            RoundedPanel(skin, C.borderSoft, C.border)
 
             local glyph = skin:CreateTexture(nil, "OVERLAY")
             glyph:SetTexture(ARROW_TEXTURE)
-            glyph:SetSize(9, 9)
+            glyph:SetSize(ARROW_SIZE, ARROW_SIZE)
             glyph:SetPoint("CENTER")
             if suffix == "ScrollDownButton" then
                 glyph:SetTexCoord(0, 1, 1, 0) -- та же картинка вверх ногами
@@ -737,9 +882,20 @@ local function StyleScrollBar(bar)
     end
 end
 
+-- Высота области прокрутки = ровно стопка строк. Раньше низ был привязан
+-- к футеру, и область свисала ниже последней строки - а стрелки шаблона стоят
+-- в её верхней и нижней полосе по 16 пикселей, поэтому нижняя уезжала вниз
+-- на всю эту разницу. Считаем от строк, чтобы не разъезжалось снова при смене
+-- их числа.
+local LIST_HEIGHT = NUM_VISIBLE_ROWS * ROW_HEIGHT + (NUM_VISIBLE_ROWS - 1) * ROW_SPACING
+
 local scrollFrame = CreateFrame("ScrollFrame", "TwinkGearFinderScroll", frame, "FauxScrollFrameTemplate")
 scrollFrame:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -6)
-scrollFrame:SetPoint("BOTTOMRIGHT", footer, "TOPRIGHT", -24, 6)
+-- Правый край через header, а не через footer: header центрируется вместе
+-- со списком в обоих режимах, footer тянется во всю ширину окна. Цифра та же,
+-- зато полоса теперь держится за список, а не за окно.
+scrollFrame:SetPoint("TOPRIGHT", header, "BOTTOMRIGHT", 4, -6)
+scrollFrame:SetHeight(LIST_HEIGHT)
 
 StyleScrollBar(scrollFrame.ScrollBar or _G["TwinkGearFinderScrollScrollBar"])
 
@@ -1049,6 +1205,16 @@ local function AddDiffLines(tooltip, diffs)
 end
 
 -- Is itemID currently equipped or sitting in a bag? Returns its live link, or nil.
+-- Где искать копию вещи. Счётчик C_Item.GetItemCount, по которому ставится
+-- «вещь есть», считает и банк с банком реагентов - значит и ссылку надо искать
+-- там же, иначе вещь числится в наличии, а сверять её не с чем.
+-- Закрытый банк отдаёт ноль слотов, лишних обходов это не создаёт.
+local OWNED_CONTAINERS = {
+    0, 1, 2, 3, 4, 5,          -- рюкзак, сумки, сумка реагентов
+    -1, 6, 7, 8, 9, 10, 11,    -- банк и его сумки
+    -3,                        -- банк реагентов
+}
+
 local function FindOwnedLink(itemID)
     if not itemID then return nil end
     for slot = INVSLOT_FIRST_EQUIPPED, INVSLOT_LAST_EQUIPPED do
@@ -1056,8 +1222,8 @@ local function FindOwnedLink(itemID)
             return GetInventoryItemLink("player", slot)
         end
     end
-    for bag = 0, 4 do
-        for slot = 1, C_Container.GetContainerNumSlots(bag) do
+    for _, bag in ipairs(OWNED_CONTAINERS) do
+        for slot = 1, (C_Container.GetContainerNumSlots(bag) or 0) do
             local info = C_Container.GetContainerItemInfo(bag, slot)
             if info and info.itemID == itemID then return info.hyperlink end
         end
@@ -1240,32 +1406,70 @@ local function CreateRow(index)
     row:SetSize(ROW_WIDTH, ROW_HEIGHT)
     row:EnableMouse(true)
 
+    -- Пиксель с боков оставляем рамке подложки: строка лежит поверх неё, и
+    -- растянутая на всю ширину заливка закрашивала контур - он проступал только
+    -- напротив прозрачных строк, и обводка шла зеброй. Тот же отступ, что у тела
+    -- RoundedPanel, поэтому чётные и нечётные строки встают вровень.
     row.bgAlt = row:CreateTexture(nil, "BACKGROUND", nil, 0)
-    row.bgAlt:SetAllPoints()
-    -- Чередование строк как на сайте: два соседних оттенка блока, без прозрачности.
-    Fill(row.bgAlt, index % 2 == 0 and C.block2 or C.block)
+    row.bgAlt:SetPoint("TOPLEFT", row, "TOPLEFT", 1, 0)
+    row.bgAlt:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", -1, 0)
+    -- Чередование строк как на сайте: два соседних оттенка блока. Нечётные
+    -- оставляем прозрачными - их оттенок даёт скруглённая подложка списка,
+    -- и через неё же видно скругление у первой и последней строки.
+    if index % 2 == 0 then
+        Fill(row.bgAlt, C.block2)
+    else
+        row.bgAlt:SetColorTexture(0, 0, 0, 0)
+    end
 
     row.bg = row:CreateTexture(nil, "BACKGROUND", nil, 1)
-    row.bg:SetAllPoints()
+    row.bg:SetPoint("TOPLEFT", row, "TOPLEFT", 1, 0) -- тоже мимо рамки подложки
+    row.bg:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", -1, 0)
     row.bg:SetColorTexture(0, 0, 0, 0)
 
-    -- Наведение: подсветка блока плюс тёплая полоска слева - так на сайте
-    -- отмечены активные карточки.
+    -- Наведение: подсветка блока плюс полоска слева - так на сайте отмечены
+    -- активные карточки. Полоска белая: названия предметов раскрашены по
+    -- качеству, и тёплый акцент спорил с оранжевыми и золотыми названиями.
+    --
+    -- У первой и последней строки угол списка скруглён, и прямая полоска
+    -- вылезала за него уголком. Своего скругления полоска нести не может:
+    -- маргины среза не бывают шире элемента, а она в 2 пикселя (на том же
+    -- спотыкались с ползунком - капсула 16x16 не тянулась). Поэтому там, где
+    -- угол круглый, поджимаем её внутрь на радиус и берём капсулу: торцы
+    -- получаются скруглёнными.
+    local topInset = (index == 1) and 6 or 0
+    local bottomInset = (index == NUM_VISIBLE_ROWS) and 6 or 0
+
     row.hoverBar = row:CreateTexture(nil, "ARTWORK")
     row.hoverBar:SetWidth(2)
-    row.hoverBar:SetPoint("TOPLEFT", row, "TOPLEFT", 0, 0)
-    row.hoverBar:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", 0, 0)
-    Fill(row.hoverBar, C.warm)
+    row.hoverBar:SetPoint("TOPLEFT", row, "TOPLEFT", 0, -topInset)
+    row.hoverBar:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", 0, bottomInset)
+    if topInset > 0 or bottomInset > 0 then
+        row.hoverBar:SetTexture(PILL_TEXTURE)
+        if row.hoverBar.SetTextureSliceMargins then
+            row.hoverBar:SetTextureSliceMargins(0, 4, 0, 4)
+            if row.hoverBar.SetTextureSliceMode and Enum and Enum.UITextureSliceMode then
+                row.hoverBar:SetTextureSliceMode(Enum.UITextureSliceMode.Stretched)
+            end
+        end
+        row.hoverBar:SetVertexColor(C.text[1], C.text[2], C.text[3], 1)
+    else
+        Fill(row.hoverBar, C.text)
+    end
     row.hoverBar:Hide()
 
-    row:SetScript("OnEnter", function(self)
+    -- Отдельными методами, а не двумя замыканиями на месте: те же самые
+    -- показать-спрятать нужны детям строки, у которых своя мышь (см. ниже).
+    function row:HoverOn()
         Fill(self.bg, C.border, 0.35)
         self.hoverBar:Show()
-    end)
-    row:SetScript("OnLeave", function(self)
+    end
+    function row:HoverOff()
         self.bg:SetColorTexture(0, 0, 0, 0)
         self.hoverBar:Hide()
-    end)
+    end
+    row:SetScript("OnEnter", row.HoverOn)
+    row:SetScript("OnLeave", row.HoverOff)
 
     row.iconFrame = CreateFrame("Button", nil, row)
     row.iconFrame:SetSize(ICON_SIZE, ICON_SIZE)
@@ -1356,6 +1560,7 @@ local function CreateRow(index)
     row.done = CreateFrame("CheckButton", nil, row, "UICheckButtonTemplate")
     row.done:SetSize(22, 22)
     row.done:SetPoint("RIGHT", row, "RIGHT", -6, 0)
+    StyleCheckBox(row.done, 10)
     row.done:SetScript("OnClick", function(self)
         if not row.itemID then return end
         if row.owned then -- вещь на руках: отметка не наша, снять нельзя
@@ -1369,7 +1574,11 @@ local function CreateRow(index)
     end)
     row.done:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        if row.owned and row.ownedDiffs ~= true then
+        if row.ownedDiffs == false then
+            GameTooltip:AddLine("Вещь есть, но сверить не удалось", 0.7, 0.72, 0.75)
+            GameTooltip:AddLine("Копия не в сумках и не надета - похоже, лежит в банке. Открой банк и наведись снова.",
+                0.6, 0.6, 0.6, true)
+        elseif row.owned and row.ownedDiffs ~= true then
             GameTooltip:AddLine("Вещь есть, но отличается от BiS-версии:", 1, 0.2, 0.2)
             for _, d in ipairs(type(row.ownedDiffs) == "table" and row.ownedDiffs or {}) do
                 GameTooltip:AddLine("  " .. FormatDiffLine(d), 1, 0.6, 0.6)
@@ -1404,6 +1613,16 @@ local function CreateRow(index)
     end)
     row.sourceHitbox:SetScript("OnEnter", function() row:ShowSourceTooltip() end)
     row.sourceHitbox:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    -- Ребёнок с включённой мышью забирает её себе, а строка получает OnLeave -
+    -- и выделение гасло, стоило навести на источник, значок или галочку.
+    -- Вешаем возврат на всех троих сразу: чинить по одному значит оставить
+    -- остальных сломанными. HookScript, а не SetScript - у каждого уже есть
+    -- свой обработчик с подсказкой.
+    for _, child in ipairs({ row.iconFrame, row.sourceHitbox, row.done }) do
+        child:HookScript("OnEnter", function() row:HoverOn() end)
+        child:HookScript("OnLeave", function() row:HoverOff() end)
+    end
 
     function row:SetData(data)
         if not data then
@@ -1443,7 +1662,10 @@ local function CreateRow(index)
             if done then
                 local tex = self.done:GetCheckedTexture()
                 if tex then
-                    if data.owned and data.ownedDiffs ~= true then
+                    if data.ownedDiffs == false then
+                        -- есть, но сверить не удалось: серым, а не красным
+                        tex:SetVertexColor(C.text3[1], C.text3[2], C.text3[3])
+                    elseif data.owned and data.ownedDiffs ~= true then
                         tex:SetVertexColor(1, 0.2, 0.2)   -- есть, но не BiS-версия
                     elseif data.owned then
                         tex:SetVertexColor(0.2, 1, 0.2)   -- получил, всё сходится
@@ -1486,6 +1708,23 @@ for i = 1, NUM_VISIBLE_ROWS do
     end
     rows[i] = row
 end
+
+-- Подложка под всю стопку: скруглить углы у отдельной строки нельзя - текстура
+-- скругляет сразу все четыре, и по краям стопки вылезли бы насечки. Поэтому
+-- один скруглённый блок под списком, а нечётные строки прозрачные и показывают
+-- его - первая и девятая как раз нечётные, их углы и скруглены.
+--
+-- Держится на том, что NUM_VISIBLE_ROWS нечётное. Станет чётным - у последней
+-- строки появится своя заливка, и низ снова будет прямым: тогда прозрачной
+-- делать по краям стопки, а не по чётности.
+local listBg = CreateFrame("Frame", nil, frame)
+listBg:SetFrameLevel(frame:GetFrameLevel()) -- под строками, они на уровень выше
+listBg:SetPoint("TOPLEFT", rows[1], "TOPLEFT", 0, 0)
+listBg:SetPoint("BOTTOMRIGHT", rows[#rows], "BOTTOMRIGHT", 0, 0)
+-- Рамкой, а не осветлением блока: фон окна #060708 и блок #101113 по яркости
+-- почти совпадают, и поднимать блок пришлось бы заметно - он перестал бы быть
+-- фоном для строк. Контур даёт границу, не трогая заливку.
+RoundedPanel(listBg, C.block, C.border)
 ------------------------------------------------------------
 -- "Мин-Макс" toggle: off = plain list (item + source only), on = the full stat
 -- table. The stat block is 339px wide, but the four filter dropdowns underneath
@@ -1503,11 +1742,20 @@ local STAT_COLS = { "str", "agi", "int", "stam", "crit", "haste", "iskus", "vers
 -- Label above, checkbox under it, top-right corner of the window.
 local statsToggle = CreateFrame("CheckButton", "TwinkGearFinderStatsToggle", frame, "UICheckButtonTemplate")
 statsToggle:SetSize(24, 24)
-statsToggle:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -20, -62)
+StyleCheckBox(statsToggle, 11) -- тумблер без состояний: кружок остаётся белым
 
-statsToggle.label = statsToggle:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-statsToggle.label:SetPoint("BOTTOM", statsToggle, "TOP", 0, 2)
+-- Подпись живёт на шапке, а не на самом квадратике: квадратик теперь привязан
+-- к ней, и будь она его же регионом - вышла бы круговая зависимость.
+statsToggle.label = frame.titleBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+-- Цепочка привязки развёрнута: подпись держится за окно, квадратик - за подпись.
+-- Иначе не выходит одновременно и не вылезать за правый край (подпись втрое
+-- шире квадратика), и стоять по её центру.
+statsToggle.label:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -20, -48)
+statsToggle:SetPoint("TOP", statsToggle.label, "BOTTOM", 0, -2)
 statsToggle.label:SetText("Мин-Макс")
+-- Шрифт GameFontNormalSmall золотой - единственное золото в окне после перехода
+-- на свою палитру. Белым, как подписи колонок.
+statsToggle.label:SetTextColor(C.text[1], C.text[2], C.text[3])
 
 local function UpdateToggleVisual(on)
     statsToggle:SetChecked(on)
@@ -1722,6 +1970,13 @@ local function BuildRowData(item)
             end
             diffs = DropBalancedSocketDiffs(diffs)
             ownedDiffs = (#diffs == 0) and true or diffs
+        else
+            -- Вещь числится по счётчику, а ссылки на неё нет: содержимое банка
+            -- читается только пока он открыт. Сверять не с чем - и это НЕ то же
+            -- самое, что «отличается». Раньше здесь оставался nil, он проходил
+            -- проверку `~= true` и вещь красилась красным с пустым списком
+            -- расхождений: подсказка обещала причины, которых никто не считал.
+            ownedDiffs = false
         end
     end
 
@@ -2020,8 +2275,10 @@ local function ScanOwnedItems()
         end
     end
 
-    for bag = 0, 4 do
-        for slot = 1, C_Container.GetContainerNumSlots(bag) do
+    -- Тот же список контейнеров, что у поиска копии: иначе лежащее в банке
+    -- команда молча пропускала, хотя вещь числится в наличии.
+    for _, bag in ipairs(OWNED_CONTAINERS) do
+        for slot = 1, (C_Container.GetContainerNumSlots(bag) or 0) do
             local info = C_Container.GetContainerItemInfo(bag, slot)
             if info and info.hyperlink then
                 local status = CompareToLive(info.itemID, info.hyperlink)
@@ -2033,7 +2290,7 @@ local function ScanOwnedItems()
         end
     end
 
-    print(string.format("|cFFFFD100[TGF]|r Проверено %d предметов из базы (надето+сумки), расхождений: %d", checked, mismatched))
+    print(string.format("|cFFFFD100[TGF]|r Проверено %d предметов из базы (надето, сумки, банк если открыт), расхождений: %d", checked, mismatched))
 end
 
 ------------------------------------------------------------
@@ -2146,9 +2403,14 @@ SlashCmdList["TWINKGEARFINDER"] = function(msg)
             if link then
                 local parts = { strsplit(":", link) }
                 local live = ScanItemLink(link)
-                print(string.format("%d | база: %d | насчитано: %d | поля 4-7: [%s][%s][%s][%s]",
-                    item.itemID, item.sockets or 0, live.sockets or 0,
-                    tostring(parts[4]), tostring(parts[5]), tostring(parts[6]), tostring(parts[7])))
+                -- Печатаем название, а не голый id: по числам вывод нечитаем.
+                -- Поля 5-8 - именно те, откуда CountGemsInLink берёт камни
+                -- (в поле 4 лежат чары). Раньше печатались 4-7, и восьмое поле,
+                -- то есть четвёртый камень, в диагностику вообще не попадало.
+                print(string.format("%s | база: %d | насчитано: %d | камни (поля 5-8): [%s][%s][%s][%s]",
+                    C_Item.GetItemNameByID(item.itemID) or ("id " .. item.itemID),
+                    item.sockets or 0, live.sockets or 0,
+                    tostring(parts[5]), tostring(parts[6]), tostring(parts[7]), tostring(parts[8])))
             end
         end
         return
