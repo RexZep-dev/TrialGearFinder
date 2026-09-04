@@ -353,10 +353,20 @@ local function SkinDropDownList(level)
     end
     if list.Border then list.Border:SetAlpha(0) end
     if list.NineSlice then list.NineSlice:SetAlpha(0) end
-    -- Фон меню - отдельный фрейм с собственным именем, GetRegions его не задевает.
+    -- Фон меню - отдельный фрейм со своим именем, GetRegions его не задевает.
+    -- Игра создаёт его лениво, поэтому при первом открытии прятать ещё нечего:
+    -- вешаем хук на его показ, чтобы он гас и дальше сам.
     for _, suffix in ipairs({ "Backdrop", "MenuBackdrop" }) do
         local backdrop = _G["DropDownList" .. (level or 1) .. suffix]
-        if backdrop then backdrop:SetAlpha(0) end
+        if backdrop then
+            backdrop:SetAlpha(0)
+            if not backdrop.tgfHooked then
+                backdrop.tgfHooked = true
+                backdrop:HookScript("OnShow", function(self)
+                    if listSkins[list] and listSkins[list]:IsShown() then self:SetAlpha(0) end
+                end)
+            end
+        end
     end
     skin:Show()
     listOpenedByUs = false -- отработали, дальше чужие меню нас не касаются
@@ -373,16 +383,21 @@ local function SkinDropDownList(level)
                     highlight:SetColorTexture(C.text3[1], C.text3[2], C.text3[3], 0.18)
                 end
 
+                -- Отметку ищем не по имени, а по самой текстуре: у пунктов это
+                -- галочка Blizzard, и путь к ней содержит слово Check.
+                for _, region in ipairs({ button:GetRegions() }) do
+                    if region.GetObjectType and region:GetObjectType() == "Texture" then
+                        local path = tostring(region:GetTexture() or "")
+                        if path:find("Check", 1, true) then
+                            region:SetTexture(DOT_TEXTURE)
+                            region:SetSize(10, 10)
+                            region:SetVertexColor(C.text[1], C.text[2], C.text[3])
+                        end
+                    end
+                end
+
                 local buttonName = button.GetName and button:GetName()
                 if buttonName then
-                    local check = _G[buttonName .. "Check"]
-                    if check then
-                        check:SetTexture(DOT_TEXTURE)
-                        check:SetSize(10, 10)
-                        check:SetVertexColor(C.text[1], C.text[2], C.text[3])
-                    end
-                    local uncheck = _G[buttonName .. "UnCheck"]
-                    if uncheck then uncheck:SetTexture(nil) end
                     local text = _G[buttonName .. "NormalText"]
                     if text then text:SetTextColor(C.text2[1], C.text2[2], C.text2[3]) end
                 end
