@@ -321,29 +321,28 @@ local function StyleDropdown(drop)
 
     local button = _G[name .. "Button"]
     if button then
-        -- Blizzard перерисовывает текстуры кнопки при каждом открытии списка,
-        -- поэтому прятать их бесполезно - подменяем на пустые.
-        button:SetNormalTexture("")
-        button:SetPushedTexture("")
-        button:SetDisabledTexture("")
-        button:SetHighlightTexture("")
-        StripTextures(button)
+        -- Как и у полосы прокрутки: игра возвращает свои текстуры при каждом
+        -- открытии списка, поэтому кнопку прячем целиком, а рисуем поверх.
+        button:SetAlpha(0)
         button:SetSize(20, 20)
         button:ClearAllPoints()
         button:SetPoint("RIGHT", drop, "RIGHT", -18, 2)
 
-        -- Тот же треугольник, что у полосы прокрутки, только вершиной вниз.
-        local arrow = button:CreateTexture(nil, "OVERLAY")
+        local skin = CreateFrame("Frame", nil, drop)
+        skin:SetAllPoints(button)
+        skin:SetFrameLevel(drop:GetFrameLevel() + 3)
+
+        local arrow = skin:CreateTexture(nil, "OVERLAY")
         arrow:SetTexture(ARROW_TEXTURE)
         arrow:SetSize(9, 9)
         arrow:SetPoint("CENTER")
         arrow:SetTexCoord(0, 1, 1, 0)
         arrow:SetVertexColor(C.text3[1], C.text3[2], C.text3[3])
-        button.tgfArrow = arrow
-        button:SetScript("OnEnter", function()
+
+        button:HookScript("OnEnter", function()
             arrow:SetVertexColor(C.warm[1], C.warm[2], C.warm[3])
         end)
-        button:SetScript("OnLeave", function()
+        button:HookScript("OnLeave", function()
             arrow:SetVertexColor(C.text3[1], C.text3[2], C.text3[3])
         end)
     end
@@ -586,26 +585,21 @@ local function StyleScrollBar(bar)
         pill:SetVertexColor(C.text2[1], C.text2[2], C.text2[3], 1)
     end
 
-    -- Стрелки оставляем, но снимаем с них объёмную обшивку Blizzard и красим
-    -- в приглушённый: на референсе это два простых треугольника по краям.
+    -- Стрелки. Игра включает и выключает эти кнопки при каждой прокрутке и на
+    -- каждом переключении заново ставит свои текстуры - поэтому подменять их
+    -- бесполезно. Прячем кнопку целиком через прозрачность (её альфа не
+    -- сбрасывается) и рисуем свою поверх, а клики по-прежнему ловит штатная.
     for _, suffix in ipairs({ "ScrollUpButton", "ScrollDownButton" }) do
         local arrow = bar[suffix] or (barName and _G[barName .. suffix])
         if arrow then
-            arrow:SetSize(16, 16)
-            arrow:SetNormalTexture("")
-            arrow:SetPushedTexture("")
-            arrow:SetDisabledTexture("")
-            arrow:SetHighlightTexture("")
-            StripTextures(arrow)
+            arrow:SetAlpha(0)
 
-            -- Подложка на тон светлее блока и с заметной рамкой: на общем тёмном
-            -- фоне block2 сливался и кнопка выглядела нетронутой.
-            local plate = CreateFrame("Frame", nil, arrow)
-            plate:SetAllPoints()
-            plate:SetFrameLevel(math.max(0, arrow:GetFrameLevel() - 1))
-            RoundedPanel(plate, C.borderSoft, C.border)
+            local skin = CreateFrame("Frame", nil, bar)
+            skin:SetAllPoints(arrow)
+            skin:SetFrameLevel(bar:GetFrameLevel() + 3)
+            RoundedPanel(skin, C.borderSoft, C.border)
 
-            local glyph = arrow:CreateTexture(nil, "OVERLAY")
+            local glyph = skin:CreateTexture(nil, "OVERLAY")
             glyph:SetTexture(ARROW_TEXTURE)
             glyph:SetSize(9, 9)
             glyph:SetPoint("CENTER")
@@ -613,6 +607,7 @@ local function StyleScrollBar(bar)
                 glyph:SetTexCoord(0, 1, 1, 0) -- та же картинка вверх ногами
             end
             glyph:SetVertexColor(C.text2[1], C.text2[2], C.text2[3])
+
             arrow:HookScript("OnEnter", function()
                 glyph:SetVertexColor(C.warm[1], C.warm[2], C.warm[3])
             end)
