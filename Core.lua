@@ -381,11 +381,19 @@ local function SkinDropDownList(level)
     end)
 end
 
-hooksecurefunc("ToggleDropDownMenu", function(level, _, dropDownFrame)
-    if dropDownFrame and ourDropdowns[dropDownFrame] then
-        SkinDropDownList(level)
+-- Ловим показ самого списка, а не вызов ToggleDropDownMenu: игра открывает меню
+-- разными путями, и хук на функцию срабатывал не всегда. Владельца берём из
+-- UIDROPDOWNMENU_OPEN_MENU - это текущее открытое меню.
+for level = 1, 2 do
+    local list = _G["DropDownList" .. level]
+    if list then
+        list:HookScript("OnShow", function()
+            if ourDropdowns[UIDROPDOWNMENU_OPEN_MENU] then
+                SkinDropDownList(level)
+            end
+        end)
     end
-end)
+end
 
 local function StyleDropdown(drop)
     local name = drop:GetName()
@@ -2086,6 +2094,27 @@ SlashCmdList["TWINKGEARFINDER"] = function(msg)
     end
 
     -- Диагностика полосы прокрутки: как называются её части в этой версии клиента.
+    -- Диагностика выпадающего списка: кто владелец, какие кнопки внутри.
+    if msg == "list" then
+        local list = _G["DropDownList1"]
+        print("|cFFFFD100[TGF]|r владелец: " .. tostring(UIDROPDOWNMENU_OPEN_MENU and UIDROPDOWNMENU_OPEN_MENU:GetName()))
+        print("   наш ли он: " .. tostring(ourDropdowns[UIDROPDOWNMENU_OPEN_MENU] ~= nil))
+        print("   список показан: " .. tostring(list and list:IsShown()))
+        if list then
+            local n = 0
+            for _, child in ipairs({ list:GetChildren() }) do
+                n = n + 1
+                if n <= 3 then
+                    print(string.format("   кнопка %s | подсветка: %s", tostring(child:GetName()),
+                        tostring(child.GetHighlightTexture and child:GetHighlightTexture() and
+                            child:GetHighlightTexture():GetTexture())))
+                end
+            end
+            print("   всего кнопок: " .. n)
+        end
+        return
+    end
+
     if msg == "ui" then
         local bar = scrollFrame.ScrollBar or _G["TwinkGearFinderScrollScrollBar"]
         if not bar then
