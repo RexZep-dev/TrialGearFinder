@@ -167,6 +167,9 @@ end
 -- нарисован для этого аддона; SetTextureSliceMargins растягивает середину,
 -- оставляя углы нетронутыми, поэтому одна картинка годится для любого размера.
 local ROUND_TEXTURE = "Interface/AddOns/TwinkGearFinder/roundrect"
+-- Капсула для полосы прокрутки: 16x16 с радиусом 8, то есть скругление ровно
+-- в половину ширины - при растяжении по высоте торцы остаются полукруглыми.
+local PILL_TEXTURE = "Interface/AddOns/TwinkGearFinder/pill"
 
 local function RoundedTexture(parent, layer, color, sublevel)
     local t = parent:CreateTexture(nil, layer, nil, sublevel)
@@ -545,13 +548,20 @@ local function StyleScrollBar(bar)
     local track = bar:CreateTexture(nil, "BACKGROUND")
     track:SetPoint("TOPLEFT", bar, "TOPLEFT", 2, -14)
     track:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", -2, 14)
-    Fill(track, C.block2)
+    track:SetTexture(PILL_TEXTURE)
+    if track.SetTextureSliceMargins then
+        track:SetTextureSliceMargins(8, 8, 8, 8)
+        if track.SetTextureSliceMode and Enum and Enum.UITextureSliceMode then
+            track:SetTextureSliceMode(Enum.UITextureSliceMode.Stretched)
+        end
+    end
+    track:SetVertexColor(C.block2[1], C.block2[2], C.block2[3], 1)
 
     if thumb then
         thumb:Show()
-        thumb:SetTexture(ROUND_TEXTURE)
+        thumb:SetTexture(PILL_TEXTURE)
         if thumb.SetTextureSliceMargins then
-            thumb:SetTextureSliceMargins(10, 10, 10, 10)
+            thumb:SetTextureSliceMargins(8, 8, 8, 8)
             if thumb.SetTextureSliceMode and Enum and Enum.UITextureSliceMode then
                 thumb:SetTextureSliceMode(Enum.UITextureSliceMode.Stretched)
             end
