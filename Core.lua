@@ -275,6 +275,54 @@ footer:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 12, 10)
 footer:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -12, 10)
 footer:SetHeight(40)
 
+-- Выпадающий список Blizzard тащит за собой золотую рамку и объёмные торцы -
+-- в плоской тёмной палитре сайта это чужое. Гасим его текстуры и рисуем
+-- прямоугольник: блок, тонкая рамка, приглушённый текст, своя стрелка.
+local function StyleDropdown(drop)
+    local name = drop:GetName()
+    StripTextures(drop)
+
+    local button = _G[name .. "Button"]
+    if button then
+        StripTextures(button)
+        button:SetSize(20, 20)
+        button:ClearAllPoints()
+        button:SetPoint("RIGHT", drop, "RIGHT", -18, 2)
+
+        local arrow = button:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        arrow:SetPoint("CENTER")
+        arrow:SetText("v")
+        arrow:SetTextColor(C.text3[1], C.text3[2], C.text3[3])
+        button.tgfArrow = arrow
+        button:SetScript("OnEnter", function()
+            arrow:SetTextColor(C.warm[1], C.warm[2], C.warm[3])
+        end)
+        button:SetScript("OnLeave", function()
+            arrow:SetTextColor(C.text3[1], C.text3[2], C.text3[3])
+        end)
+    end
+
+    -- Внутренние отступы шаблона: видимая часть уже самого фрейма на 16 слева
+    -- и справа, поэтому подложку сажаем по этим границам, а не по краю.
+    local plate = CreateFrame("Frame", nil, drop)
+    plate:SetPoint("TOPLEFT", drop, "TOPLEFT", 16, -3)
+    plate:SetPoint("BOTTOMRIGHT", drop, "BOTTOMRIGHT", -16, 3)
+    plate:SetFrameLevel(math.max(0, drop:GetFrameLevel() - 1))
+    local bg = plate:CreateTexture(nil, "BACKGROUND")
+    bg:SetAllPoints()
+    Fill(bg, C.block2)
+    AddBorder(plate, C.borderSoft)
+
+    local text = _G[name .. "Text"]
+    if text then
+        text:SetTextColor(C.text2[1], C.text2[2], C.text2[3])
+        text:ClearAllPoints()
+        text:SetPoint("LEFT", plate, "LEFT", 8, 0)
+        text:SetPoint("RIGHT", plate, "RIGHT", -22, 0)
+        text:SetJustifyH("LEFT")
+    end
+end
+
 local function CreateFilterDropdown(name, anchorTo, label, options, getKey, getLabel, onSelect)
     local drop = CreateFrame("Frame", name, footer, "UIDropDownMenuTemplate")
     if anchorTo then
@@ -284,6 +332,7 @@ local function CreateFilterDropdown(name, anchorTo, label, options, getKey, getL
     end
     UIDropDownMenu_SetWidth(drop, 130)
     UIDropDownMenu_SetText(drop, label .. ": Все")
+    StyleDropdown(drop)
 
     UIDropDownMenu_Initialize(drop, function(_, level)
         local info = UIDropDownMenu_CreateInfo()
