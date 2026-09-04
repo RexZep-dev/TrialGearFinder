@@ -598,14 +598,16 @@ local function StyleScrollBar(bar)
             arrow:SetHighlightTexture("")
             StripTextures(arrow)
 
+            -- Подложка на тон светлее блока и с заметной рамкой: на общем тёмном
+            -- фоне block2 сливался и кнопка выглядела нетронутой.
             local plate = CreateFrame("Frame", nil, arrow)
             plate:SetAllPoints()
             plate:SetFrameLevel(math.max(0, arrow:GetFrameLevel() - 1))
-            RoundedPanel(plate, C.block2, C.borderSoft)
+            RoundedPanel(plate, C.borderSoft, C.border)
 
             local glyph = arrow:CreateTexture(nil, "OVERLAY")
             glyph:SetTexture(ARROW_TEXTURE)
-            glyph:SetSize(10, 10)
+            glyph:SetSize(9, 9)
             glyph:SetPoint("CENTER")
             if suffix == "ScrollDownButton" then
                 glyph:SetTexCoord(0, 1, 1, 0) -- та же картинка вверх ногами
