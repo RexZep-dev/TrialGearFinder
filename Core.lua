@@ -364,8 +364,7 @@ local function SkinDropDownList(level)
     -- Пункты игра создаёт и раскрашивает уже ПОСЛЕ того, как отработает наш хук,
     -- поэтому оформляем их следующим кадром, иначе стилить нечего. Кнопки берём
     -- перебором детей списка: имена у них от версии клиента зависят.
-    C_Timer.After(0, function()
-        if not list:IsShown() then return end
+    if list:IsShown() then
         for _, button in ipairs({ list:GetChildren() }) do
             if button.GetHighlightTexture then
                 local highlight = button:GetHighlightTexture()
@@ -389,7 +388,7 @@ local function SkinDropDownList(level)
                 end
             end
         end
-    end)
+    end
 end
 
 -- Ловим показ самого списка, а не вызов ToggleDropDownMenu: игра открывает меню
@@ -399,9 +398,10 @@ for level = 1, 2 do
     local list = _G["DropDownList" .. level]
     if list then
         list:HookScript("OnShow", function()
-            if listOpenedByUs then
-                SkinDropDownList(level)
-            end
+            if not listOpenedByUs then return end
+            -- Размеры списка игра выставляет уже после OnShow, поэтому строим
+            -- подложку следующим кадром - иначе она получается нулевой.
+            C_Timer.After(0, function() SkinDropDownList(level) end)
         end)
     end
 end
@@ -2101,6 +2101,26 @@ SlashCmdList["TWINKGEARFINDER"] = function(msg)
 
         Mark(frame, 1, frame:GetName())
         Walk(frame, 2)
+
+        -- Выпадающий список окну не принадлежит: это отдельный глобальный фрейм.
+        -- Размечаем его тоже, причём при каждом показе - иначе не поймать,
+        -- ведь ввод команды в чат список закрывает.
+        for level = 1, 2 do
+            local list = _G["DropDownList" .. level]
+            if list then
+                if list:IsShown() then
+                    Mark(list, 2, list:GetName())
+                    Walk(list, 3)
+                end
+                list:HookScript("OnShow", function(self)
+                    if #debugOverlays == 0 then return end
+                    C_Timer.After(0, function()
+                        Mark(self, 2, self:GetName())
+                        Walk(self, 3)
+                    end)
+                end)
+            end
+        end
         print(string.format("|cFFFFD100[TGF]|r Разметка включена: %d элементов. Наводи мышь; /tgf debug - выключить.",
             #debugOverlays))
         return
