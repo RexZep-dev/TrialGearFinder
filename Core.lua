@@ -534,26 +534,21 @@ AddHeaderLabel(COL_SOURCE_X, COL_SOURCE_W, "Источник", "CENTER", "source
 -- полоса не спорит с содержимым.
 local function StyleScrollBar(bar)
     if not bar then return end
-
     local barName = bar.GetName and bar:GetName()
-    for _, suffix in ipairs({ "ScrollUpButton", "ScrollDownButton" }) do
-        local arrow = bar[suffix] or (barName and _G[barName .. suffix])
-        if arrow then
-            arrow:SetSize(1, 1)
-            arrow:SetAlpha(0)
-            arrow:EnableMouse(false)
-        end
-    end
+
+    -- Ползунок - тоже текстура полосы, поэтому его надо забрать ДО того, как
+    -- гасить остальные, иначе спрячем заодно и его.
+    local thumb = bar.GetThumbTexture and bar:GetThumbTexture()
     StripTextures(bar)
-    bar:SetWidth(8)
+    bar:SetWidth(10)
 
     local track = bar:CreateTexture(nil, "BACKGROUND")
-    track:SetPoint("TOPLEFT", bar, "TOPLEFT", 2, 0)
-    track:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", -2, 0)
+    track:SetPoint("TOPLEFT", bar, "TOPLEFT", 2, -14)
+    track:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", -2, 14)
     Fill(track, C.block2)
 
-    local thumb = bar.GetThumbTexture and bar:GetThumbTexture()
     if thumb then
+        thumb:Show()
         thumb:SetTexture(ROUND_TEXTURE)
         if thumb.SetTextureSliceMargins then
             thumb:SetTextureSliceMargins(10, 10, 10, 10)
@@ -561,8 +556,33 @@ local function StyleScrollBar(bar)
                 thumb:SetTextureSliceMode(Enum.UITextureSliceMode.Stretched)
             end
         end
-        thumb:SetVertexColor(C.text3[1], C.text3[2], C.text3[3], 1)
-        thumb:SetSize(8, 40)
+        thumb:SetVertexColor(C.text2[1], C.text2[2], C.text2[3], 1)
+        thumb:SetSize(6, 44)
+    end
+
+    -- Стрелки оставляем, но снимаем с них объёмную обшивку Blizzard и красим
+    -- в приглушённый: на референсе это два простых треугольника по краям.
+    for _, suffix in ipairs({ "ScrollUpButton", "ScrollDownButton" }) do
+        local arrow = bar[suffix] or (barName and _G[barName .. suffix])
+        if arrow then
+            arrow:SetSize(12, 12)
+            arrow:SetNormalTexture("")
+            arrow:SetPushedTexture("")
+            arrow:SetDisabledTexture("")
+            arrow:SetHighlightTexture("")
+            StripTextures(arrow)
+
+            local glyph = arrow:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            glyph:SetPoint("CENTER")
+            glyph:SetText(suffix == "ScrollUpButton" and "^" or "v")
+            glyph:SetTextColor(C.text3[1], C.text3[2], C.text3[3])
+            arrow:HookScript("OnEnter", function()
+                glyph:SetTextColor(C.warm[1], C.warm[2], C.warm[3])
+            end)
+            arrow:HookScript("OnLeave", function()
+                glyph:SetTextColor(C.text3[1], C.text3[2], C.text3[3])
+            end)
+        end
     end
 end
 
