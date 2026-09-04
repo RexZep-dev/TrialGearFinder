@@ -70,6 +70,24 @@ local function SlotRank(equipLoc)
     return #SLOT_DEFS + 1
 end
 
+-- Запасной порядок внутри слота, когда рука не проставила rank. Оценка берётся
+-- из заметки: «бисов» у 49 записей, «лучш» у 8, «хорош» и «сильн» у 25.
+--
+-- Это именно ЗАПАСНОЙ вариант, и он ошибается. Проверено на кожаных шлемах:
+-- первым по заметке выходит Шлем странника пустошей («бисовая»), а нужен
+-- Клобук Лунной поляны («хорошая»). Пробовали и мета-гнездо как признак -
+-- тоже мимо, оно есть у обоих. Какая вещь лучшая в слоте, из данных
+-- не выводится: это знание игры, и его проставляют полем rank вручную.
+--
+-- Сравнение регистрозависимое, и это допустимо: заметки в базе поголовно
+-- со строчной буквы (проверено все 122).
+local function NoteRank(note)
+    if not note or note == "" then return 3 end
+    if note:find("бисов", 1, true) or note:find("лучш", 1, true) then return 1 end
+    if note:find("хорош", 1, true) or note:find("сильн", 1, true) then return 2 end
+    return 3
+end
+
 -- GetItemInfo's itemType/itemSubType strings are localized (Russian client returns
 -- "Броня"/"Кожа", not "Armor"/"Leather"), so classID/subclassID (numeric, always
 -- the same regardless of client language) drive comparisons; these labels are for
@@ -101,6 +119,11 @@ local SOURCE_TYPES = {
 }
 
 local filters = { slot = "ALL", class = "ALL", armor = "ALL", sourceType = "ALL", search = "" }
+
+-- Сторона персонажа: "Alliance" или "Horde". Заполняется на PLAYER_LOGIN -
+-- до входа UnitFactionGroup возвращает nil. Пока пусто, отсева нет и видны
+-- обе версии парных вещей; это безопаснее, чем спрятать обе.
+local playerFaction
 
 -- string.lower only folds ASCII a-z; Cyrillic needs its own table since WoW's
 -- Lua has no Unicode-aware case conversion built in.
@@ -200,6 +223,10 @@ local DOT_TEXTURE = "Interface/AddOns/TrialGearFinder/dot"
 -- пикселя, и при пятёрке её хвост попадал бы в растягиваемую полосу и мазался.
 -- Середина остаётся 2 пикселя - ровно прямой участок обводки.
 local RING_TEXTURE = "Interface/AddOns/TrialGearFinder/roundring"
+-- Сплошной белый круг. Кольцо кнопки на миникарте делается из него тем же
+-- приёмом, что и RoundedPanel: круг побольше цветом рамки, поверх меньший
+-- цветом заливки. Одна картинка вместо двух, и оба цвета - из палитры.
+local CIRCLE_TEXTURE = "Interface/AddOns/TrialGearFinder/circle"
 
 local function RoundedTexture(parent, layer, color, sublevel)
     local t = parent:CreateTexture(nil, layer, nil, sublevel)
@@ -1952,6 +1979,11 @@ local function BuildRowData(item)
     -- entirely, not just out of the Слот dropdown.
     if HIDDEN_INVTYPES[equipLoc] then return false end
 
+    -- Вещи одной фракции. Пока такая пара одна - фамильный знак различия,
+    -- у Орды и Альянса это два разных itemID с одинаковыми статами. Показываем
+    -- только свой: чужой всё равно не надеть, а в списке он сбивает.
+    if item.faction and item.faction ~= playerFaction then return false end
+
     if filters.search ~= "" then
         -- Name, note AND source, so typing a dungeon lists everything that drops there.
         local haystack = FoldCase(name) .. " " .. FoldCase(item.note or "")
@@ -2076,6 +2108,9 @@ local function BuildRowData(item)
         name = string.format("|c%s%s|r", qualityHex, name),
         rawName = name,
         qualityColor = { qR or 1, qG or 1, qB or 1 },
+        -- Ручной порядок внутри слота. Меньше - выше. Ставится в Data.lua
+        -- только там, где догадка по заметке промахивается.
+        rank = item.rank,
         type = typeLabel,
         equipLoc = equipLoc,
         subclassID = classID == ARMOR_CLASS_ID and subclassID or nil,
@@ -2162,6 +2197,14 @@ RefreshResults = function()
             -- own id order already matches that sequence) before by-name.
             local subA, subB = a.subclassID or 99, b.subclassID or 99
             if subA ~= subB then return subA < subB end
+            -- Затем по полезности. Сначала ручной rank из Data.lua: он бьёт
+            -- любую догадку, потому что какая вещь лучшая в слоте - знание
+            -- игры, а не свойство данных.
+            local rankA, rankB2 = a.rank or 99, b.rank or 99
+            if rankA ~= rankB2 then return rankA < rankB2 end
+            -- И только потом оценка по заметке, для записей без rank.
+            local noteA, noteB = NoteRank(a.sourceboss), NoteRank(b.sourceboss)
+            if noteA ~= noteB then return noteA < noteB end
             -- Then by zone, so вещи из одного места стоят рядом и их удобно
             -- собирать за один заход - иначе Дренор и Кул-Тирас чередуются.
             local mapA, mapB = a.mapID or 9999, b.mapID or 9999
@@ -2253,6 +2296,10 @@ frame:SetScript("OnEvent", function(self, event, addonName)
             filters.class = classToken
             classDrop:SetSelected(classToken)
         end
+        -- Фракция для отсева вещей чужой стороны. Здесь же, а не при
+        -- выполнении файла: до входа UnitFactionGroup возвращает nil.
+        playerFaction = UnitFactionGroup("player")
+        if frame:IsShown() then RefreshResults() end
         return
     end
 
@@ -2281,7 +2328,158 @@ frame:SetScript("OnEvent", function(self, event, addonName)
     if frame:IsShown() then RefreshResults() end
 end)
 
-frame:SetScript("OnShow", RefreshResults)
+------------------------------------------------------------
+-- Сброс отметок «был, но не выпало» на дневном сбросе.
+--
+-- Сбрасываем ТОЛЬКО ежедневных. Из 28 отмечаемых записей ежедневных семь -
+-- дренорские; остальные 18 кул-тирасских берутся раз на персонажа и не
+-- сбрасываются никогда. Стереть их значило бы стереть фарм, поэтому признак
+-- ищем в тексте источника и по умолчанию НЕ трогаем ничего.
+--
+-- Час сброса у самой игры, а не «5 утра» числом: он разный по регионам,
+-- и серверное время не совпадает с местным - у пользователя разница в час.
+------------------------------------------------------------
+
+local DAILY_SOURCE_MARK = "раз в день"
+
+local function NextDailyReset()
+    if C_DateAndTime and C_DateAndTime.GetSecondsUntilDailyReset then
+        local secs = C_DateAndTime.GetSecondsUntilDailyReset()
+        if secs and secs > 0 then return time() + secs end
+    end
+    return nil
+end
+
+local function ClearExpiredDailyMarks()
+    local db = TrialGearFinderDB
+    if not db then return end
+
+    -- Первый запуск: границу запоминаем, но ничего не стираем - иначе снесли бы
+    -- отметки, поставленные до появления этой возможности.
+    if not db.dailyResetAt then
+        db.dailyResetAt = NextDailyReset()
+        return
+    end
+    if time() < db.dailyResetAt then return end
+
+    local cleared = 0
+    for itemID in pairs(db.done or {}) do
+        local item = ns_ItemsByID[itemID]
+        if item and item.source and item.source:find(DAILY_SOURCE_MARK, 1, true) then
+            db.done[itemID] = nil -- удалять текущий ключ внутри pairs разрешено
+            cleared = cleared + 1
+        end
+    end
+    db.dailyResetAt = NextDailyReset()
+    if cleared > 0 then
+        print(string.format("|cFFFFD100[TGF]|r Дневной сброс: снято отметок с ежедневных рарников - %d", cleared))
+    end
+end
+
+-- При входе в игру. Через хук, а не в обработчике ADDON_LOADED: тот объявлен
+-- выше по файлу и этой функции ещё не видит. PLAYER_LOGIN там уже зарегистрирован,
+-- и к этому моменту SavedVariables загружены.
+frame:HookScript("OnEvent", function(_, event)
+    if event == "PLAYER_LOGIN" then ClearExpiredDailyMarks() end
+end)
+
+frame:SetScript("OnShow", function()
+    ClearExpiredDailyMarks() -- сброс мог случиться посреди сессии
+    RefreshResults()
+end)
+
+------------------------------------------------------------
+-- Кнопка на миникарте.
+--
+-- Без библиотеки: LibDBIcon тянет за собой LibStub и Ace, а нужно от неё
+-- ровно две вещи - посадить кнопку на край круга и дать её таскать.
+--
+-- Кольцо и заливка - один и тот же circle.tga, покрашенный по-разному:
+-- больший круг цветом рамки, поверх меньший цветом фона.
+------------------------------------------------------------
+
+local MINIMAP_DEFAULT_ANGLE = 200 -- левый нижний край, где обычно меньше всего чужих кнопок
+
+local minimapButton = CreateFrame("Button", "TrialGearFinderMinimapButton", Minimap)
+minimapButton:SetSize(31, 31)
+minimapButton:SetFrameStrata("MEDIUM")
+minimapButton:SetFrameLevel(8) -- поверх самой карты, но под её всплывашками
+
+-- Кольцо своё, серебряное. Штатное золотое MiniMapTrackingBorder пробовали -
+-- кнопка стала неотличима от дюжины соседей, все они в таком же золоте.
+-- Отличать нас должен именно цвет кольца, это единственное, что выделяет
+-- кнопку в общем ряду.
+--
+-- Но не во всю кнопку, как в первом заходе: у соседей значок занимает не весь
+-- квадрат, и наш диск на 31 пиксель казался крупнее прочих при том же размере.
+-- 26 - вровень с чужими кольцами.
+local mmEdge = minimapButton:CreateTexture(nil, "BACKGROUND")
+mmEdge:SetTexture(CIRCLE_TEXTURE)
+mmEdge:SetSize(26, 26)
+mmEdge:SetPoint("CENTER", minimapButton, "CENTER", 0, 0)
+mmEdge:SetVertexColor(C.silver[1], C.silver[2], C.silver[3], 1)
+
+local mmBody = minimapButton:CreateTexture(nil, "BACKGROUND", nil, 1)
+mmBody:SetTexture(CIRCLE_TEXTURE)
+mmBody:SetSize(22, 22)
+mmBody:SetPoint("CENTER", minimapButton, "CENTER", 0, 0)
+mmBody:SetVertexColor(C.bg[1], C.bg[2], C.bg[3], 1)
+
+minimapButton.label = minimapButton:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+-- Сдвиг на пиксель вправо и вниз - подгонка, а не логика. У цифр коробка
+-- шрифта включает место под нижние выносные элементы, поэтому геометрически
+-- отцентрованный текст всегда садится выше середины. Плюс полпикселя даёт
+-- сам круг. Если на другом клиенте уедет - крутить надо здесь.
+minimapButton.label:SetPoint("CENTER", mmBody, "CENTER", 1, -1)
+minimapButton.label:SetText("20")
+minimapButton.label:SetTextColor(C.text[1], C.text[2], C.text[3])
+
+-- Подсветка штатная: игра сама зажигает и гасит её по наведению, свой
+-- обработчик цвета для этого не нужен.
+minimapButton:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
+
+-- Угол хранится в градусах: так его читаемо видно в SavedVariables.
+local function PlaceMinimapButton()
+    local angle = math.rad((TrialGearFinderDB and TrialGearFinderDB.minimapAngle) or MINIMAP_DEFAULT_ANGLE)
+    local radius = (Minimap:GetWidth() / 2) + 5
+    minimapButton:ClearAllPoints()
+    minimapButton:SetPoint("CENTER", Minimap, "CENTER",
+        math.cos(angle) * radius, math.sin(angle) * radius)
+end
+PlaceMinimapButton()
+
+-- И ещё раз после входа: пока файл выполняется, SavedVariables не загружены,
+-- и сохранённый угол оттуда не прочитать - кнопка встала бы на место по
+-- умолчанию у всех, кто её однажды подвинул.
+minimapButton:RegisterEvent("PLAYER_LOGIN")
+minimapButton:SetScript("OnEvent", PlaceMinimapButton)
+
+minimapButton:RegisterForDrag("LeftButton")
+minimapButton:SetScript("OnDragStart", function(self)
+    -- Считаем угол от центра карты до курсора каждый кадр, пока тащат.
+    self:SetScript("OnUpdate", function()
+        local mx, my = Minimap:GetCenter()
+        local cx, cy = GetCursorPosition()
+        local scale = Minimap:GetEffectiveScale()
+        TrialGearFinderDB = TrialGearFinderDB or {}
+        TrialGearFinderDB.minimapAngle = math.deg(math.atan2(cy / scale - my, cx / scale - mx))
+        PlaceMinimapButton()
+    end)
+end)
+minimapButton:SetScript("OnDragStop", function(self) self:SetScript("OnUpdate", nil) end)
+
+minimapButton:SetScript("OnClick", function()
+    if frame:IsShown() then frame:Hide() else frame:Show() end
+end)
+
+minimapButton:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+    GameTooltip:AddLine("Trial Gear Finder")
+    GameTooltip:AddLine("Щелчок - открыть окно", 0.6, 0.6, 0.6)
+    GameTooltip:AddLine("Перетаскивание - двигать по краю карты", 0.6, 0.6, 0.6)
+    GameTooltip:Show()
+end)
+minimapButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
 -- Rows show the tooltip on OnEnter and hide it on OnLeave. Close the window while
 -- the cursor sits on a row (Escape, /tgf, the X button) and OnLeave never fires,
