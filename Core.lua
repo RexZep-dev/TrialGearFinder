@@ -317,175 +317,6 @@ footer:SetHeight(40)
 -- Выпадающий список Blizzard тащит за собой золотую рамку и объёмные торцы -
 -- в плоской тёмной палитре сайта это чужое. Гасим его текстуры и рисуем
 -- прямоугольник: блок, тонкая рамка, приглушённый текст, своя стрелка.
--- Выпадающий список - общий фрейм игры (DropDownList1), его открывают все меню
--- в интерфейсе. Поэтому не переделываем его насовсем, а показываем свою
--- подложку только пока открыт фильтр аддона, и убираем, когда список закрылся.
-local ourDropdowns, listSkins = {}, {}
--- Ставится при клике по нашему фильтру и снимается, когда список оформлен.
--- Проверять UIDROPDOWNMENU_OPEN_MENU бесполезно: к моменту показа оно пустое.
-local listOpenedByUs = false
-
-local function SkinDropDownList(level)
-    local list = _G["DropDownList" .. (level or 1)]
-    if not list then return end
-
-    local skin = listSkins[list]
-    if not skin then
-        skin = CreateFrame("Frame", nil, list)
-        skin:SetPoint("TOPLEFT", list, "TOPLEFT", 10, -10)
-        skin:SetPoint("BOTTOMRIGHT", list, "BOTTOMRIGHT", -10, 10)
-        skin:SetFrameLevel(math.max(0, list:GetFrameLevel() - 1))
-        RoundedPanel(skin, C.block, C.border)
-        listSkins[list] = skin
-
-        -- Когда список закрывается, прячем и подложку - иначе она всплывёт
-        -- в чужом меню, открытом следующим.
-        -- Флаг тут НЕ сбрасываем: открывая новый список, игра сначала закрывает
-        -- старый, и сброс здесь съедал бы оформление через раз.
-        list:HookScript("OnHide", function() skin:Hide() end)
-    end
-
-    -- Родные рамки прячем только на время показа нашего списка.
-    for _, region in ipairs({ list:GetRegions() }) do
-        if region.GetObjectType and region:GetObjectType() == "Texture" then
-            region:SetAlpha(0)
-        end
-    end
-    if list.Border then list.Border:SetAlpha(0) end
-    if list.NineSlice then list.NineSlice:SetAlpha(0) end
-    -- Фон меню - отдельный фрейм со своим именем, GetRegions его не задевает.
-    -- Игра создаёт его лениво, поэтому при первом открытии прятать ещё нечего:
-    -- вешаем хук на его показ, чтобы он гас и дальше сам.
-    for _, suffix in ipairs({ "Backdrop", "MenuBackdrop" }) do
-        local backdrop = _G["DropDownList" .. (level or 1) .. suffix]
-        if backdrop then
-            backdrop:SetAlpha(0)
-            if not backdrop.tgfHooked then
-                backdrop.tgfHooked = true
-                backdrop:HookScript("OnShow", function(self)
-                    if listSkins[list] and listSkins[list]:IsShown() then self:SetAlpha(0) end
-                end)
-            end
-        end
-    end
-    skin:Show()
-    listOpenedByUs = false -- отработали, дальше чужие меню нас не касаются
-
-    -- Пункты игра создаёт и раскрашивает уже ПОСЛЕ того, как отработает наш хук,
-    -- поэтому оформляем их следующим кадром, иначе стилить нечего. Кнопки берём
-    -- перебором детей списка: имена у них от версии клиента зависят.
-    if list:IsShown() then
-        for _, button in ipairs({ list:GetChildren() }) do
-            if button.GetHighlightTexture then
-                local highlight = button:GetHighlightTexture()
-                if highlight then
-                    highlight:SetTexture(nil)
-                    highlight:SetColorTexture(C.text3[1], C.text3[2], C.text3[3], 0.18)
-                end
-
-                local buttonName = button.GetName and button:GetName()
-                if buttonName then
-                    -- Родные отметки берём по именам из шаблона: искать по пути
-                    -- текстуры бесполезно, они заданы атласом и путь пустой.
-                    local check = _G[buttonName .. "Check"]
-                    local uncheck = _G[buttonName .. "UnCheck"]
-                    if check then check:SetAlpha(0) end
-                    if uncheck then uncheck:SetAlpha(0) end
-
-                    -- Своя точка: видна ровно тогда, когда игра показывает
-                    -- родную отметку выбранного пункта.
-                    local dot = button.tgfDot
-                    if not dot then
-                        dot = button:CreateTexture(nil, "OVERLAY")
-                        dot:SetTexture(DOT_TEXTURE)
-                        dot:SetSize(7, 7)
-                        dot:SetPoint("LEFT", button, "LEFT", 6, 0)
-                        dot:SetVertexColor(C.text[1], C.text[2], C.text[3])
-                        button.tgfDot = dot
-                    end
-                    dot:SetShown(check ~= nil and check:IsShown())
-                end
-
-                if buttonName then
-                    local text = _G[buttonName .. "NormalText"]
-                    if text then text:SetTextColor(C.text2[1], C.text2[2], C.text2[3]) end
-                end
-            end
-        end
-    end
-end
-
--- Ловим показ самого списка, а не вызов ToggleDropDownMenu: игра открывает меню
--- разными путями, и хук на функцию срабатывал не всегда. Владельца берём из
--- UIDROPDOWNMENU_OPEN_MENU - это текущее открытое меню.
-for level = 1, 2 do
-    local list = _G["DropDownList" .. level]
-    if list then
-        list:HookScript("OnShow", function()
-            if not listOpenedByUs then return end
-            -- Размеры и части списка игра доделывает уже после OnShow, поэтому
-            -- оформляем следующим кадром. Второй проход - для самого первого
-            -- открытия: там фон и кнопки создаются лениво и к первому кадру
-            -- ещё не существуют.
-            C_Timer.After(0, function() SkinDropDownList(level) end)
-            C_Timer.After(0.05, function() SkinDropDownList(level) end)
-        end)
-    end
-end
-
-local function StyleDropdown(drop)
-    local name = drop:GetName()
-    ourDropdowns[drop] = true
-    drop:HookScript("OnMouseDown", function() listOpenedByUs = true end)
-    StripTextures(drop)
-
-    local button = _G[name .. "Button"]
-    if button then
-        -- Как и у полосы прокрутки: игра возвращает свои текстуры при каждом
-        -- открытии списка, поэтому кнопку прячем целиком, а рисуем поверх.
-        button:SetAlpha(0)
-        button:SetSize(20, 20)
-        button:ClearAllPoints()
-        button:SetPoint("RIGHT", drop, "RIGHT", -18, 2)
-
-        local skin = CreateFrame("Frame", nil, drop)
-        skin:SetAllPoints(button)
-        skin:SetFrameLevel(drop:GetFrameLevel() + 3)
-
-        local arrow = skin:CreateTexture(nil, "OVERLAY")
-        arrow:SetTexture(ARROW_TEXTURE)
-        arrow:SetSize(9, 9)
-        arrow:SetPoint("CENTER")
-        arrow:SetTexCoord(0, 1, 1, 0)
-        arrow:SetVertexColor(C.text3[1], C.text3[2], C.text3[3])
-
-        button:HookScript("OnEnter", function()
-            arrow:SetVertexColor(C.warm[1], C.warm[2], C.warm[3])
-        end)
-        button:HookScript("OnLeave", function()
-            arrow:SetVertexColor(C.text3[1], C.text3[2], C.text3[3])
-        end)
-        button:HookScript("OnClick", function() listOpenedByUs = true end)
-    end
-
-    -- Внутренние отступы шаблона: видимая часть уже самого фрейма на 16 слева
-    -- и справа, поэтому подложку сажаем по этим границам, а не по краю.
-    local plate = CreateFrame("Frame", nil, drop)
-    plate:SetPoint("TOPLEFT", drop, "TOPLEFT", 16, -3)
-    plate:SetPoint("BOTTOMRIGHT", drop, "BOTTOMRIGHT", -16, 3)
-    plate:SetFrameLevel(math.max(0, drop:GetFrameLevel() - 1))
-    RoundedPanel(plate, C.block2, C.borderSoft)
-
-    local text = _G[name .. "Text"]
-    if text then
-        text:SetTextColor(C.text2[1], C.text2[2], C.text2[3])
-        text:ClearAllPoints()
-        text:SetPoint("LEFT", plate, "LEFT", 8, 0)
-        text:SetPoint("RIGHT", plate, "RIGHT", -22, 0)
-        text:SetJustifyH("LEFT")
-    end
-end
-
 ------------------------------------------------------------
 -- Свой выпадающий список.
 --
@@ -635,6 +466,20 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
         openMenu = menu
     end)
 
+    -- Смена значения из кода: автовыбор класса при входе и сброс фильтров,
+    -- когда прячем колонки статов.
+    function button:SetSelected(key)
+        self.selectedKey = key or "ALL"
+        local caption = "Все"
+        for _, row in ipairs(menu.rows) do
+            if row.entryKey == self.selectedKey then
+                caption = row.text:GetText()
+                break
+            end
+        end
+        self.text:SetText(self.label .. ": " .. caption)
+    end
+
     button:SetScript("OnEnter", function()
         button.arrow:SetVertexColor(C.warm[1], C.warm[2], C.warm[3])
     end)
@@ -645,58 +490,20 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
     return button
 end
 
-local function CreateFilterDropdown(name, anchorTo, label, options, getKey, getLabel, onSelect)
-    local drop = CreateFrame("Frame", name, footer, "UIDropDownMenuTemplate")
-    if anchorTo then
-        drop:SetPoint("LEFT", anchorTo, "RIGHT", 4, 0)
-    else
-        drop:SetPoint("LEFT", footer, "LEFT", -16, 0)
-    end
-    UIDropDownMenu_SetWidth(drop, 130)
-    UIDropDownMenu_SetText(drop, label .. ": Все")
-    StyleDropdown(drop)
-
-    UIDropDownMenu_Initialize(drop, function(_, level)
-        local info = UIDropDownMenu_CreateInfo()
-        info.text = "Все"
-        info.func = function()
-            onSelect("ALL")
-            UIDropDownMenu_SetText(drop, label .. ": Все")
-        end
-        UIDropDownMenu_AddButton(info, level)
-
-        for _, opt in ipairs(options) do
-            local key = getKey(opt)
-            local text = getLabel(opt)
-            info = UIDropDownMenu_CreateInfo()
-            info.text = text
-            info.func = function()
-                onSelect(key)
-                UIDropDownMenu_SetText(drop, label .. ": " .. text)
-            end
-            UIDropDownMenu_AddButton(info, level)
-        end
-    end)
-
-    return drop
-end
-
--- Первый фильтр на своём списке. Остальные три пока на UIDropDownMenu -
--- переведём, когда этот покажет себя в игре.
 local slotDrop = CreateSelect("TwinkGearFinderSlotDrop", nil, "Слот", VISIBLE_SLOT_DEFS,
     function(o) return o.key end, function(o) return o.label end,
     function(key) filters.slot = key; RefreshResults() end)
 
-local classDrop = CreateFilterDropdown("TwinkGearFinderClassDrop", slotDrop, "Класс", CLASS_SORT_ORDER,
+local classDrop = CreateSelect("TwinkGearFinderClassDrop", slotDrop, "Класс", CLASS_SORT_ORDER,
     function(c) return c end,
     function(c) return CLASS_RU[c] or (LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[c]) or c end,
     function(key) filters.class = key; RefreshResults() end)
 
-local armorDrop = CreateFilterDropdown("TwinkGearFinderArmorDrop", classDrop, "Броня", ARMOR_SUBCLASSES,
+local armorDrop = CreateSelect("TwinkGearFinderArmorDrop", classDrop, "Броня", ARMOR_SUBCLASSES,
     function(a) return a.id end, function(a) return a.label end,
     function(key) filters.armor = key; RefreshResults() end)
 
-local sourceDrop = CreateFilterDropdown("TwinkGearFinderSourceDrop", armorDrop, "Источник", SOURCE_TYPES,
+local sourceDrop = CreateSelect("TwinkGearFinderSourceDrop", armorDrop, "Источник", SOURCE_TYPES,
     function(s) return s.key end, function(s) return s.label end,
     function(key) filters.sourceType = key; RefreshResults() end)
 
@@ -1726,8 +1533,8 @@ local function ApplyStatsLayout()
         -- Hiding a dropdown that still has a selection would filter the list with
         -- no visible reason, so reset both back to Все.
         filters.armor, filters.sourceType = "ALL", "ALL"
-        UIDropDownMenu_SetText(armorDrop, "Броня: Все")
-        UIDropDownMenu_SetText(sourceDrop, "Источник: Все")
+        armorDrop:SetSelected("ALL")
+        sourceDrop:SetSelected("ALL")
     end
     -- Filters are centred as a group: width is measured from the actual dropdowns
     -- so it works for two of them as well as four. The rest chain off the first.
@@ -2097,7 +1904,7 @@ frame:SetScript("OnEvent", function(self, event, addonName)
         local _, classToken = UnitClass("player")
         if classToken then
             filters.class = classToken
-            UIDropDownMenu_SetText(classDrop, "Класс: " .. (CLASS_RU[classToken] or classToken))
+            classDrop:SetSelected(classToken)
         end
         return
     end
@@ -2315,27 +2122,6 @@ SlashCmdList["TWINKGEARFINDER"] = function(msg)
     end
 
     -- Диагностика полосы прокрутки: как называются её части в этой версии клиента.
-    -- Диагностика выпадающего списка: кто владелец, какие кнопки внутри.
-    if msg == "list" then
-        local list = _G["DropDownList1"]
-        print("|cFFFFD100[TGF]|r владелец: " .. tostring(UIDROPDOWNMENU_OPEN_MENU and UIDROPDOWNMENU_OPEN_MENU:GetName()))
-        print("   наш ли он: " .. tostring(ourDropdowns[UIDROPDOWNMENU_OPEN_MENU] ~= nil))
-        print("   список показан: " .. tostring(list and list:IsShown()))
-        if list then
-            local n = 0
-            for _, child in ipairs({ list:GetChildren() }) do
-                n = n + 1
-                if n <= 3 then
-                    print(string.format("   кнопка %s | подсветка: %s", tostring(child:GetName()),
-                        tostring(child.GetHighlightTexture and child:GetHighlightTexture() and
-                            child:GetHighlightTexture():GetTexture())))
-                end
-            end
-            print("   всего кнопок: " .. n)
-        end
-        return
-    end
-
     if msg == "ui" then
         local bar = scrollFrame.ScrollBar or _G["TwinkGearFinderScrollScrollBar"]
         if not bar then
