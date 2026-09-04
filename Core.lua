@@ -162,6 +162,37 @@ end
 
 -- Рамка в один пиксель из четырёх полосок: скруглений в WoW без своих текстур
 -- не сделать, поэтому строгие прямые линии - как на сайте.
+-- Скруглённая подложка. Движок не умеет скруглять прямоугольники - всё круглое
+-- в игре это заранее нарисованные картинки. roundrect.png (32x32, радиус 10)
+-- нарисован для этого аддона; SetTextureSliceMargins растягивает середину,
+-- оставляя углы нетронутыми, поэтому одна картинка годится для любого размера.
+local ROUND_TEXTURE = "Interface/AddOns/TwinkGearFinder/roundrect"
+
+local function RoundedTexture(parent, layer, color, sublevel)
+    local t = parent:CreateTexture(nil, layer, nil, sublevel)
+    t:SetTexture(ROUND_TEXTURE)
+    if t.SetTextureSliceMargins then
+        t:SetTextureSliceMargins(10, 10, 10, 10)
+        if t.SetTextureSliceMode and Enum and Enum.UITextureSliceMode then
+            t:SetTextureSliceMode(Enum.UITextureSliceMode.Stretched)
+        end
+    end
+    t:SetVertexColor(color[1], color[2], color[3], 1)
+    return t
+end
+
+-- Блок с рамкой: две скруглённые текстуры, нижняя на пиксель больше и цветом
+-- рамки - так рамка получается ровной по всему контуру, включая углы.
+local function RoundedPanel(parent, fill, border, layer, sublevel)
+    layer, sublevel = layer or "BACKGROUND", sublevel or 0
+    local edge = RoundedTexture(parent, layer, border, sublevel)
+    edge:SetAllPoints()
+    local body = RoundedTexture(parent, layer, fill, sublevel + 1)
+    body:SetPoint("TOPLEFT", parent, "TOPLEFT", 1, -1)
+    body:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -1, 1)
+    return body, edge
+end
+
 local function AddBorder(parent, color, inset)
     inset = inset or 0
     local sides = {}
@@ -217,10 +248,7 @@ StripTextures(frame.Inset and frame.Inset.NineSlice)
 StripTextures(frame.TitleContainer)
 if frame.PortraitContainer then frame.PortraitContainer:Hide() end
 
-frame.backdrop = frame:CreateTexture(nil, "BACKGROUND", nil, -8)
-frame.backdrop:SetAllPoints()
-Fill(frame.backdrop, C.bg)
-AddBorder(frame, C.border)
+frame.backdrop, frame.backdropEdge = RoundedPanel(frame, C.bg, C.border, "BACKGROUND", -8)
 
 -- Blizzard's own title-bar art is a fixed-width piece sized just for the title
 -- text, so it doesn't stretch to also cover the search box - this draws our own
@@ -308,10 +336,7 @@ local function StyleDropdown(drop)
     plate:SetPoint("TOPLEFT", drop, "TOPLEFT", 16, -3)
     plate:SetPoint("BOTTOMRIGHT", drop, "BOTTOMRIGHT", -16, 3)
     plate:SetFrameLevel(math.max(0, drop:GetFrameLevel() - 1))
-    local bg = plate:CreateTexture(nil, "BACKGROUND")
-    bg:SetAllPoints()
-    Fill(bg, C.block2)
-    AddBorder(plate, C.borderSoft)
+    RoundedPanel(plate, C.block2, C.borderSoft)
 
     local text = _G[name .. "Text"]
     if text then
