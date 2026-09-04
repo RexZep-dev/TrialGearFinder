@@ -440,11 +440,36 @@ local STAT_FILTER_KEYS = {
 
 local function UpdateHeaderSortIndicators()
     for key, entry in pairs(headerLabels) do
-        local text = entry.text
-        if sortState.key == key then
-            text = text .. (sortState.dir == "DESC" and " v" or " ^")
+        entry.fs:SetText(entry.text)
+
+        -- Направление сортировки показываем тем же треугольником, что у прокрутки
+        -- и фильтров, а не буквами v и ^ в тексте заголовка.
+        local arrow = entry.arrow
+        if arrow then
+            if sortState.key == key then
+                arrow:Show()
+                arrow:SetTexCoord(0, 1, 0, 1)
+                if sortState.dir == "DESC" then
+                    arrow:SetTexCoord(0, 1, 1, 0) -- вершиной вниз
+                end
+                local color = statFilter[key] and C.warm or C.text2
+                arrow:SetVertexColor(color[1], color[2], color[3])
+
+                -- Ставим вплотную к тексту: у колонок разное выравнивание,
+                -- поэтому считаем правый край строки сами.
+                local justify = entry.justify or "LEFT"
+                arrow:ClearAllPoints()
+                if justify == "CENTER" then
+                    arrow:SetPoint("LEFT", entry.fs, "CENTER", entry.fs:GetStringWidth() / 2 + 3, 0)
+                elseif justify == "RIGHT" then
+                    arrow:SetPoint("LEFT", entry.fs, "RIGHT", 3, 0)
+                else
+                    arrow:SetPoint("LEFT", entry.fs, "LEFT", entry.fs:GetStringWidth() + 3, 0)
+                end
+            else
+                arrow:Hide()
+            end
         end
-        entry.fs:SetText(text)
         if statFilter[key] then
             entry.fs:SetTextColor(C.warm[1], C.warm[2], C.warm[3]) -- отмечен как фильтр
         else
@@ -461,6 +486,11 @@ local function AddHeaderLabel(x, width, text, justify, sortKey, fullName)
     fs:SetText(text)
 
     if sortKey then
+        local arrow = header:CreateTexture(nil, "OVERLAY")
+        arrow:SetTexture(ARROW_TEXTURE)
+        arrow:SetSize(8, 8)
+        arrow:Hide()
+
         fs:EnableMouse(true)
         fs:SetScript("OnMouseDown", function()
             if STAT_FILTER_KEYS[sortKey] then
@@ -492,7 +522,7 @@ local function AddHeaderLabel(x, width, text, justify, sortKey, fullName)
             UpdateHeaderSortIndicators()
             RefreshResults()
         end)
-        headerLabels[sortKey] = { fs = fs, text = text }
+        headerLabels[sortKey] = { fs = fs, text = text, arrow = arrow, justify = justify or "LEFT" }
     end
 
     if fullName then
