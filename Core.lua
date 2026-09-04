@@ -340,10 +340,9 @@ local function SkinDropDownList(level)
 
         -- Когда список закрывается, прячем и подложку - иначе она всплывёт
         -- в чужом меню, открытом следующим.
-        list:HookScript("OnHide", function()
-            skin:Hide()
-            listOpenedByUs = false
-        end)
+        -- Флаг тут НЕ сбрасываем: открывая новый список, игра сначала закрывает
+        -- старый, и сброс здесь съедал бы оформление через раз.
+        list:HookScript("OnHide", function() skin:Hide() end)
     end
 
     -- Родные рамки прячем только на время показа нашего списка.
@@ -360,6 +359,7 @@ local function SkinDropDownList(level)
         if backdrop then backdrop:SetAlpha(0) end
     end
     skin:Show()
+    listOpenedByUs = false -- отработали, дальше чужие меню нас не касаются
 
     -- Пункты игра создаёт и раскрашивает уже ПОСЛЕ того, как отработает наш хук,
     -- поэтому оформляем их следующим кадром, иначе стилить нечего. Кнопки берём
