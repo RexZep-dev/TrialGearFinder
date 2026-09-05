@@ -1,0 +1,44 @@
+# Релиз по метке: поставил тег vX.Y.Z и запушил - архив собрался и уехал
+# на CurseForge сам. Раньше это делалось руками, и ровно там легко ошибиться:
+# забыть поднять версию в .toc или собрать zip без папки внутри.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      # Нужно, чтобы упаковщик мог создать релиз на GitHub рядом с меткой.
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Упаковщик строит список изменений по истории коммитов,
+          # поэтому ему нужна вся история, а не последний коммит.
+          fetch-depth: 0
+
+      - name: Подставить версию из метки в .toc
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          sed -i "s/^## Version:.*/## Version: ${VERSION}/" TrialGearFinder.toc
+          echo "Версия в архиве: ${VERSION}"
+          grep "^## Version:" TrialGearFinder.toc
+
+      # Версию подставляем здесь, а не держим в .toc как @project-version@,
+      # хотя так принято. Причина местная: папка аддона в игре И ЕСТЬ рабочая
+      # копия этого репозитория, и подстановочная строка висела бы у автора
+      # в списке аддонов вместо номера версии каждый день. Номер в .toc
+      # справочный, настоящий берётся из метки.
+
+      - name: Собрать и выложить
+        uses: BigWigsMods/packager@master
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          # Выдаётся GitHub автоматически, заводить секрет не нужно.
+          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
