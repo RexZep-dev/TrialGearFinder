@@ -1408,7 +1408,18 @@ local function SetSourceWaypoint(sourceName, sourceType, itemID)
 
     -- Open the map on that zone too, so the pin is on screen straight away
     -- instead of only as an arrow somewhere off to the side.
-    if OpenWorldMap then OpenWorldMap(uiMapID) end
+    --
+    -- Через C_Map, а не через глобальную OpenWorldMap. Та живёт в Lua
+    -- (Blizzard_WorldMap.lua) и, вызванная из аддона, пачкает WorldMapFrame:
+    -- дальше встроенный поставщик меток бонусных заданий упирается в защищённую
+    -- SetPassThroughButtons, та не срабатывает, и игра винит в этом нас -
+    -- ADDON_ACTION_BLOCKED с нашим именем в чужой цепочке вызовов.
+    -- C_Map.OpenWorldMap открывает карту из защищённого слоя, и цепочка чистая.
+    if C_Map.OpenWorldMap then
+        C_Map.OpenWorldMap(uiMapID)
+    elseif OpenWorldMap then
+        OpenWorldMap(uiMapID)
+    end
     print("|cFFFFD100[TGF]|r " .. sourceName .. ": " .. WaypointLink(uiMapID, x, y, "метка на карте"))
 end
 
