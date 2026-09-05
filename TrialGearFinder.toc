@@ -1,7 +1,7 @@
 ## Interface: 120007, 120100
 ## Title: |cFF86C7BDTrial Gear Finder|r
-## Notes: BiS gear finder for level 20 twinks - dungeon bosses, mobs, quests, world drops.
-## Notes-ruRU: Поиск лучшего снаряжения для твинков 20 уровня.
+## Notes: BiS gear finder for level 20 trial accounts - dungeon bosses, mobs, quests, world drops.
+## Notes-ruRU: Поиск лучшего снаряжения для триалов 20 уровня.
 ## Author: RexZep
 ## X-License: MIT (код) - данные с сайта «Отвергнутые и Забытые», см. LICENSE.txt
 ## X-Curse-Project-ID: 1681964
