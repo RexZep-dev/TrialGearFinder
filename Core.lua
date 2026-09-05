@@ -1,10 +1,20 @@
 local addonName, ns = ...
 
 local ROW_WIDTH, ROW_HEIGHT, ROW_SPACING = 800, 46, 2
+-- Шаг между строками. В расчёт прокрутки идёт именно он, а не ROW_HEIGHT:
+-- строки стоят через 48 пикселей, и по 46 счёт медленно уползал.
+local ROW_PITCH = ROW_HEIGHT + ROW_SPACING
 -- Девятая строка занимает пустую полосу над фильтрами: окно фиксированной
 -- высоты, а строк помещалось восемь, и снизу оставалась мёртвая щель ровно
 -- в одну строку. Ход полосы прокрутки считается от этого же числа.
 local NUM_VISIBLE_ROWS = 9
+
+-- Признак ежедневного рарника: слово в тексте источника. Отсюда зависят две
+-- вещи - сброс отметок на дневном сбросе и смысл самой жёлтой отметки.
+-- У ежедневного она значит «приходи завтра», у того, что берётся раз
+-- на персонажа, - «второго шанса не будет». Объявлен здесь, а не рядом
+-- со сбросом: строки списка нужны раньше.
+local DAILY_SOURCE_MARK = "раз в день"
 local TWINK_LEVEL = 20
 
 -- Подсказка на ЧУЖИХ тултипах: наводишь на любую вещь в мире, аддон ищет
@@ -861,7 +871,9 @@ local function StyleScrollBar(bar)
     -- гасить остальные, иначе спрячем заодно и его.
     local thumb = bar.GetThumbTexture and bar:GetThumbTexture()
     StripTextures(bar)
-    bar:SetWidth(8)
+    -- 12, а не 8: ширина полосы - это область захвата мышью. На восьми
+    -- пикселях тестер в неё не попадал. Сам ползунок рисуем уже, отступом.
+    bar:SetWidth(12)
 
     -- Во всю высоту полосы. Раньше стоял отступ 14 сверху и снизу "под стрелки",
     -- но стрелки шаблона висят СНАРУЖИ полосы (кнопка вверх прицеплена низом
@@ -882,12 +894,21 @@ local function StyleScrollBar(bar)
         -- Сам ползунок игра перерисовывает при каждой прокрутке, поэтому его
         -- текстуру не трогаем, а делаем свою и вешаем ровно на него - она
         -- поедет следом сама.
+        --
+        -- РАЗМЕР ПОЛЗУНКА НЕ ЗАДАВАТЬ. Здесь стояло thumb:SetSize(8, 44), и это
+        -- ломало прокрутку: игра считает высоту ползунка сама, по доле видимого
+        -- списка, и от неё же считает ход при перетаскивании. С прибитой высотой
+        -- её математика расходилась с нарисованным - полоса то прыгала, то
+        -- не двигалась вовсе. Поймано по жалобе тестера.
         thumb:SetAlpha(0)
-        thumb:SetSize(8, 44)
 
+        -- Пилюля берёт у ползунка только высоту, ширину - у полосы с отступом.
+        -- Так игра свободно меняет размер ползунка, а вид остаётся тонким.
         local pill = bar:CreateTexture(nil, "ARTWORK")
-        pill:SetPoint("TOPLEFT", thumb, "TOPLEFT", 0, 0)
-        pill:SetPoint("BOTTOMRIGHT", thumb, "BOTTOMRIGHT", 0, 0)
+        pill:SetPoint("TOP", thumb, "TOP", 0, 0)
+        pill:SetPoint("BOTTOM", thumb, "BOTTOM", 0, 0)
+        pill:SetPoint("LEFT", bar, "LEFT", 2, 0)
+        pill:SetPoint("RIGHT", bar, "RIGHT", -2, 0)
         pill:SetTexture(PILL_TEXTURE)
         if pill.SetTextureSliceMargins then
             pill:SetTextureSliceMargins(0, 4, 0, 4)
@@ -1663,16 +1684,32 @@ local function CreateRow(index)
         if row.ownedDiffs == false then
             GameTooltip:AddLine("Вещь есть, но сверить не удалось", 0.7, 0.72, 0.75)
             GameTooltip:AddLine("Копия не в сумках и не надета - похоже, лежит в банке. Открой банк и наведись снова.",
-                0.6, 0.6, 0.6, true)
+                1, 1, 1, true)
         elseif row.owned and row.ownedDiffs ~= true then
             GameTooltip:AddLine("Вещь есть, но отличается от BiS-версии:", 1, 0.2, 0.2)
             for _, d in ipairs(type(row.ownedDiffs) == "table" and row.ownedDiffs or {}) do
-                GameTooltip:AddLine("  " .. FormatDiffLine(d), 1, 0.6, 0.6)
+                GameTooltip:AddLine("  " .. FormatDiffLine(d), 1, 1, 1)
             end
         elseif row.owned then
             GameTooltip:AddLine("Вещь есть, совпадает с BiS", 0.2, 1, 0.2)
-        else
+        elseif not self:GetChecked() then
             GameTooltip:AddLine("Отметить: рарник убит, лут не выпал", 1, 0.82, 0)
+        else
+            -- Отмечено, но вещи нет. Смысл отметки зависит от того, как часто
+            -- рарник отдаёт лут: у ежедневного будет ещё попытка, у того, что
+            -- берётся раз на персонажа, - уже нет. Раньше текст был один
+            -- на оба случая и обнадёживал зря.
+            local daily = row.fullSource
+                and row.fullSource:find(DAILY_SOURCE_MARK, 1, true) ~= nil
+            if daily then
+                GameTooltip:AddLine("Рарник убит, лут не выпал", 1, 0.82, 0)
+                GameTooltip:AddLine("Отметка снимется на дневном сбросе - можно прийти снова.",
+                    1, 1, 1, true)
+            else
+                GameTooltip:AddLine("Ты уже убивал этого рарника", 1, 0.2, 0.2)
+                GameTooltip:AddLine("Вещь даётся раз на персонажа, и она не выпала. Больше не выпадет - слот придётся закрывать другой вещью.",
+                    1, 1, 1, true)
+            end
         end
         GameTooltip:Show()
     end)
@@ -1768,8 +1805,14 @@ local function CreateRow(index)
                         tex:SetVertexColor(1, 0.2, 0.2)   -- есть, но не BiS-версия
                     elseif data.owned then
                         tex:SetVertexColor(0.2, 1, 0.2)   -- получил, всё сходится
+                    elseif data.source
+                        and data.source:find(DAILY_SOURCE_MARK, 1, true) then
+                        tex:SetVertexColor(1, 0.82, 0)    -- убил, не выпало; будет ещё попытка
                     else
-                        tex:SetVertexColor(1, 0.82, 0)    -- убил, не выпало
+                        -- Убил, не выпало, и рарник отдаёт лут раз на персонажа:
+                        -- второй попытки не будет. Жёлтый тут обнадёживал зря,
+                        -- он означает «приходи ещё» - а приходить некуда.
+                        tex:SetVertexColor(1, 0.2, 0.2)
                     end
                 end
             end
@@ -1797,11 +1840,23 @@ local function CreateRow(index)
     return row
 end
 
+-- Окно, за края которого строкам выезжать нельзя. Нужно ради плавной прокрутки:
+-- при дробном смещении верхняя и нижняя строки видны наполовину, и без обрезки
+-- они лезли бы на шапку и на фильтры.
+local listClip = CreateFrame("Frame", nil, frame)
+listClip:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -6)
+listClip:SetPoint("TOPRIGHT", header, "BOTTOMRIGHT", 0, -6)
+listClip:SetHeight(LIST_HEIGHT)
+listClip:SetClipsChildren(true)
+
+-- Строк на одну больше, чем помещается: при дробном смещении сверху и снизу
+-- видно по половинке, и без запасной внизу оставалась бы дыра.
 local rows = {}
-for i = 1, NUM_VISIBLE_ROWS do
+for i = 1, NUM_VISIBLE_ROWS + 1 do
     local row = CreateRow(i)
+    row:SetParent(listClip)
     if i == 1 then
-        row:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -6)
+        row:SetPoint("TOPLEFT", listClip, "TOPLEFT", 0, 0)
     else
         row:SetPoint("TOPLEFT", rows[i - 1], "BOTTOMLEFT", 0, -ROW_SPACING)
     end
@@ -1816,10 +1871,11 @@ end
 -- Держится на том, что NUM_VISIBLE_ROWS нечётное. Станет чётным - у последней
 -- строки появится своя заливка, и низ снова будет прямым: тогда прозрачной
 -- делать по краям стопки, а не по чётности.
+-- Привязана к окну обрезки, а не к строкам: строки теперь ездят, а подложка
+-- со скруглением и рамкой должна стоять на месте.
 local listBg = CreateFrame("Frame", nil, frame)
 listBg:SetFrameLevel(frame:GetFrameLevel()) -- под строками, они на уровень выше
-listBg:SetPoint("TOPLEFT", rows[1], "TOPLEFT", 0, 0)
-listBg:SetPoint("BOTTOMRIGHT", rows[#rows], "BOTTOMRIGHT", 0, 0)
+listBg:SetAllPoints(listClip)
 -- Рамкой, а не осветлением блока: фон окна #060708 и блок #101113 по яркости
 -- почти совпадают, и поднимать блок пришлось бы заметно - он перестал бы быть
 -- фоном для строк. Контур даёт границу, не трогая заливку.
@@ -2187,7 +2243,7 @@ RefreshResults = function()
 
     if #matches == 0 then
         for _, row in ipairs(rows) do row:Hide() end
-        FauxScrollFrame_Update(scrollFrame, 0, NUM_VISIBLE_ROWS, ROW_HEIGHT)
+        FauxScrollFrame_Update(scrollFrame, 0, NUM_VISIBLE_ROWS, ROW_PITCH)
         emptyText:Show()
         emptyText:SetText(pending and "|cFF888888Загрузка данных...|r"
             or "|cFF888888Нет предметов под эти фильтры.|r")
@@ -2237,24 +2293,47 @@ RefreshResults = function()
     end
 
     emptyText:Hide()
-    local offset = FauxScrollFrame_GetOffset(scrollFrame)
+
+    -- Плавная прокрутка. Значение полосы - в пикселях, и мы разводим его надвое:
+    -- целая часть даёт номер первой видимой строки, дробная сдвигает всю стопку
+    -- вверх внутри окна обрезки. Раньше бралась только целая, оттого список
+    -- и прыгал строкой за раз.
+    local bar = scrollFrame.ScrollBar or _G["TrialGearFinderScrollScrollBar"]
+    local value = bar and bar:GetValue() or 0
+    local offset = math.floor(value / ROW_PITCH)
+    local shift = value - offset * ROW_PITCH
+
+    rows[1]:SetPoint("TOPLEFT", listClip, "TOPLEFT", 0, shift)
+
     for i, row in ipairs(rows) do
         row:SetData(matches[i + offset])
     end
-    FauxScrollFrame_Update(scrollFrame, #matches, NUM_VISIBLE_ROWS, ROW_HEIGHT)
+    -- Видимых строк на одну больше: последняя выезжает снизу и держит запас,
+    -- чтобы при дробном сдвиге внизу не открывалась пустота.
+    FauxScrollFrame_Update(scrollFrame, #matches, NUM_VISIBLE_ROWS, ROW_PITCH)
+
+    -- ОБЯЗАТЕЛЬНО после Update. Он ставит полосе шаг, равный переданной высоте
+    -- строки, и полоса начинает округлять к нему любое значение - мой сдвиг
+    -- на треть строки просто отбрасывался, и список продолжал прыгать рядами.
+    -- Шаг в пиксель снимает округление, и прокрутка становится плавной.
+    if bar then
+        bar:SetValueStep(1)
+        if bar.SetObeyStepOnDrag then bar:SetObeyStepOnDrag(false) end
+    end
 end
 
 scrollFrame:SetScript("OnVerticalScroll", function(self, offset)
-    FauxScrollFrame_OnVerticalScroll(self, offset, ROW_HEIGHT, RefreshResults)
+    FauxScrollFrame_OnVerticalScroll(self, offset, ROW_PITCH, RefreshResults)
 end)
 
--- One row per wheel notch. Without this the template's own handler decides the
--- step (it was jumping several rows at a time), and SetValue is clamped to the
--- scrollbar's own min/max, so no bounds check is needed here.
+-- Треть строки на щелчок колеса. Раньше был ровно один ряд, и список
+-- перескакивал ступенькой; теперь между ступеньками есть промежуточные
+-- положения, и движение читается как плавное. SetValue сама зажата
+-- в пределы полосы, проверять границы не нужно.
 scrollFrame:SetScript("OnMouseWheel", function(self, delta)
     local scrollBar = self.ScrollBar or _G[self:GetName() .. "ScrollBar"]
     if not scrollBar then return end
-    scrollBar:SetValue(scrollBar:GetValue() - delta * ROW_HEIGHT)
+    scrollBar:SetValue(scrollBar:GetValue() - delta * (ROW_PITCH / 3))
 end)
 
 -- Автоотметка «был здесь». Скрытый квестовый флаг рарника знал бы это точно, но
@@ -2362,8 +2441,6 @@ end)
 -- Час сброса у самой игры, а не «5 утра» числом: он разный по регионам,
 -- и серверное время не совпадает с местным - у пользователя разница в час.
 ------------------------------------------------------------
-
-local DAILY_SOURCE_MARK = "раз в день"
 
 local function NextDailyReset()
     if C_DateAndTime and C_DateAndTime.GetSecondsUntilDailyReset then
