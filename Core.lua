@@ -1639,21 +1639,33 @@ local function CreateRow(index)
             self:SetChecked(true)
             return
         end
-        if row.autoLocked then -- аддон видел смерть, лут раз на персонажа: то же
+        -- Рарник отдаёт лут раз на персонажа и уже отмечен: снимать нечего,
+        -- факт случился. Проверяем ПРЕЖНЕЕ состояние - к этому моменту щелчок
+        -- уже перевернул галочку, и GetChecked показывает не то, что было.
+        -- Ctrl - лазейка на случай промаха: без неё одна ошибка выбивала бы
+        -- строку из списка навсегда.
+        if row.markLocked and not IsControlKeyDown() then
             self:SetChecked(true)
             return
         end
         TrialGearFinderDB = TrialGearFinderDB or {}
         TrialGearFinderDB.done = TrialGearFinderDB.done or {}
         TrialGearFinderDB.done[row.itemID] = self:GetChecked() and true or nil
+        row.markLocked = (row.lockable and self:GetChecked()) and true or false
         row:SetAlpha(self:GetChecked() and 0.45 or 1)
     end)
     row.done:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         if row.ownedDiffs == false then
             GameTooltip:AddLine("Вещь есть, но сверить не удалось", 0.7, 0.72, 0.75)
-            GameTooltip:AddLine("Копия не в сумках и не надета - похоже, лежит в банке. Открой банк и наведись снова.",
-                1, 1, 1, true)
+            -- Число, а не только словами: именно по нему аддон решил, что вещь
+            -- есть, и если игрок уверен, что её у него нет, - расхождение видно
+            -- сразу, а не после разбирательств.
+            GameTooltip:AddLine(string.format(
+                "Игра насчитала копий: %d. Ни одной нет ни на персонаже, ни в сумках, ни в банке.",
+                row.ownedCount or 0), 1, 1, 1, true)
+            GameTooltip:AddLine("Открой банк и наведись снова. Если банк открыт и вещи там нет - счётчик считает копию у другого персонажа, скажи об этом.",
+                0.7, 0.72, 0.75, true)
         elseif row.owned and row.ownedDiffs ~= true then
             GameTooltip:AddLine("Вещь есть, но отличается от BiS-версии:", 1, 0.2, 0.2)
             for _, d in ipairs(type(row.ownedDiffs) == "table" and row.ownedDiffs or {}) do
@@ -1678,10 +1690,8 @@ local function CreateRow(index)
                 GameTooltip:AddLine("Ты уже убивал этого рарника", 1, 0.2, 0.2)
                 GameTooltip:AddLine("Вещь даётся раз на персонажа, и она не выпала. Больше не выпадет - слот придётся закрывать другой вещью.",
                     1, 1, 1, true)
-                if row.autoLocked then
-                    GameTooltip:AddLine("Отметку поставил аддон, увидев смерть рарника, - снять её нельзя.",
-                        0.7, 0.72, 0.75, true)
-                end
+                GameTooltip:AddLine("Щелчком отметка не снимается: это уже случившийся факт. Отметил по ошибке - Ctrl+щелчок.",
+                    0.7, 0.72, 0.75, true)
             end
         end
         GameTooltip:Show()
@@ -1759,7 +1769,7 @@ local function CreateRow(index)
         self.done:SetShown(trackable)
         if not trackable then
             self.owned = nil
-            self.autoLocked = nil
+            self.lockable, self.markLocked = nil, nil
             self:SetAlpha(1)
         else
             -- Два состояния: зелёная - вещь на руках (ставится сама), жёлтая - рарник
@@ -1767,14 +1777,16 @@ local function CreateRow(index)
             local manual = TrialGearFinderDB and TrialGearFinderDB.done and TrialGearFinderDB.done[data.itemID]
             local done = data.owned or manual
             local daily = data.source and data.source:find(DAILY_SOURCE_MARK, 1, true) ~= nil
-            -- Отметку, которую поставил сам аддон по смерти рарника, снять
-            -- нельзя, если лут даётся раз на персонажа: факт уже случился,
-            -- и снятая галочка была бы враньём. Ручную снять можно - это
-            -- утверждение игрока, и промахнуться по галочке он вправе.
-            self.autoLocked = (manual == "auto") and not daily
+            -- Отметку у рарника, который отдаёт лут раз на персонажа, снять
+            -- нельзя: факт случился, и снятая галочка была бы враньём. У
+            -- ежедневного - можно: она и сама уйдёт на дневном сбросе.
+            -- Кто поставил отметку, аддон или игрок, роли не играет.
+            self.lockable = not daily
+            self.markLocked = (manual ~= nil) and not daily
             self.owned = data.owned
             self.done:SetChecked(done and true or false)
             self.ownedDiffs = data.ownedDiffs
+            self.ownedCount = data.ownedCount
             if done then
                 local tex = self.done:GetCheckedTexture()
                 if tex then
@@ -2112,7 +2124,11 @@ local function BuildRowData(item)
     -- Вещь на руках сверяем с базой: рарник мог упасть без суффикса или другого
     -- уровня, и тогда это не тот предмет, который расписан как BiS.
     -- Считается только для реально имеющихся вещей, поэтому дёшево.
-    local owned = (C_Item.GetItemCount(item.itemID, true, false, true) or 0) > 0
+    -- Счётчик держим числом, а не превращаем сразу в да/нет: когда вещь
+    -- числится, но найти её негде, единственное, что можно показать игроку, -
+    -- это само число, по которому аддон и решил, что вещь есть.
+    local ownedCount = C_Item.GetItemCount(item.itemID, true, false, true) or 0
+    local owned = ownedCount > 0
     local ownedDiffs
     if owned then
         local ownedLink = FindOwnedLink(item.itemID)
@@ -2180,6 +2196,7 @@ local function BuildRowData(item)
         -- Совпадает ли выпавшая копия с тем, что записано как BiS. nil - вещи нет,
         -- true - всё сходится, иначе список расхождений для подсказки.
         ownedDiffs = ownedDiffs,
+        ownedCount = ownedCount,
         -- Номер карты из метки: по нему рарники группируются по зонам.
         mapID = (function()
             local key = PinKey(item.sourceType, item.itemID, item.source)
@@ -2347,27 +2364,17 @@ local function MarkKilledByName(name)
     TrialGearFinderDB = TrialGearFinderDB or {}
     TrialGearFinderDB.done = TrialGearFinderDB.done or {}
     local needle = NormalizeName(name)
-    local marked, changed
+    local marked
     for _, entry in ipairs(rareItems) do
-        if entry.note:find(needle, 1, true) then
-            -- "auto", а не true: по этому значению строка отличает свою отметку
-            -- от поставленной игроком и не даёт снять первую. Значение остаётся
-            -- истинным, поэтому все прежние проверки `if done[id]` целы.
-            -- Ручную отметку тоже поднимаем до "auto": раз смерть увидели сами,
-            -- откуда взялась галочка, уже неважно. Заодно так чинятся отметки,
-            -- поставленные до появления этого различия.
-            local was = TrialGearFinderDB.done[entry.item.itemID]
-            if was ~= "auto" then
-                TrialGearFinderDB.done[entry.item.itemID] = "auto"
-                changed = true
-                if not was then marked = name end -- сообщаем только о новой
-            end
+        if entry.note:find(needle, 1, true) and not TrialGearFinderDB.done[entry.item.itemID] then
+            TrialGearFinderDB.done[entry.item.itemID] = true
+            marked = name
         end
     end
     if marked then
         print(string.format("|cFFFFD100[TGF]|r Отмечен как убитый: %s", marked))
+        if frame:IsShown() then RefreshResults() end
     end
-    if changed and frame:IsShown() then RefreshResults() end
 end
 
 frame:RegisterEvent("GET_ITEM_INFO_RECEIVED")
