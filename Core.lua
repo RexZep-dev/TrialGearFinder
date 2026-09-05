@@ -2275,7 +2275,26 @@ end
 -- Автоотметка «был здесь». Скрытый квестовый флаг рарника знал бы это точно, но
 -- его id в базе нет ни для одного моба. Поэтому ловим смерть моба в боевом логе:
 -- цель после смерти рарника обычно уже сброшена, а лог называет погибшего прямо.
--- Имя из лога и note - оба на языке клиента, так что сравнение прямое.
+-- Имя из лога и note - оба на языке клиента, но РЕГИСТР У НИХ РАЗНЫЙ: в игре
+-- «Сквиргл-Из-Глубин», в заметке «Сквиргл-из-Глубин». Прямое сравнение такое
+-- имя пропускало, и убитый рарник не отмечался. Сравниваем в нижнем регистре.
+--
+-- string.lower кириллицу не берёт: она в UTF-8 двухбайтная, а lower работает
+-- побайтно. Хуже того, на байты выше 127 он смотрит по локали, и предсказать
+-- его поведение нельзя - в кодировке Windows-1251 он бы порвал UTF-8 пополам.
+-- Поэтому не зовём его вовсе, а переводим сами: латиницу по A-Z, кириллицу
+-- по таблице. А-Я это D0 90..AF, при этом D0 90..9F → D0 B0..BF,
+-- а D0 A0..AF → D1 80..8F; отдельно Ё (D0 81) → ё (D1 91).
+local function LowerRU(s)
+    s = s:gsub("[A-Z]", function(c) return string.char(c:byte() + 32) end)
+    s = s:gsub("\208([\144-\175])", function(c)
+        local b = c:byte()
+        if b <= 0x9F then return "\208" .. string.char(b + 0x20) end
+        return "\209" .. string.char(b - 0x20)
+    end)
+    return (s:gsub("\208\129", "\209\145"))
+end
+
 -- Считается один раз: в бою эта функция вызывается на каждую смерть, и перебирать
 -- всю базу из 122 записей там ни к чему - рарников всего два с половиной десятка.
 local rareItems
@@ -2286,17 +2305,19 @@ local function MarkKilledByName(name)
         rareItems = {}
         for _, item in ipairs(ns.Items) do
             if item.sourceType == "World" and item.note then
-                table.insert(rareItems, item)
+                -- Заметку опускаем один раз при сборке, а не на каждую смерть.
+                table.insert(rareItems, { item = item, note = LowerRU(item.note) })
             end
         end
     end
 
     TrialGearFinderDB = TrialGearFinderDB or {}
     TrialGearFinderDB.done = TrialGearFinderDB.done or {}
+    local needle = LowerRU(name)
     local marked
-    for _, item in ipairs(rareItems) do
-        if item.note:find(name, 1, true) and not TrialGearFinderDB.done[item.itemID] then
-            TrialGearFinderDB.done[item.itemID] = true
+    for _, entry in ipairs(rareItems) do
+        if entry.note:find(needle, 1, true) and not TrialGearFinderDB.done[entry.item.itemID] then
+            TrialGearFinderDB.done[entry.item.itemID] = true
             marked = name
         end
     end
