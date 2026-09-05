@@ -6,7 +6,7 @@ local ROW_WIDTH, ROW_HEIGHT, ROW_SPACING = 800, 46, 2
 local ROW_PITCH = ROW_HEIGHT + ROW_SPACING
 -- Девятая строка занимает пустую полосу над фильтрами: окно фиксированной
 -- высоты, а строк помещалось восемь, и снизу оставалась мёртвая щель ровно
--- в одну строку. Ход полосы прокрутки считается от этого же числа.
+-- в одну строку. Отсюда же берётся высота видимой области списка.
 local NUM_VISIBLE_ROWS = 9
 
 -- Признак ежедневного рарника: слово в тексте источника. Отсюда зависят две
@@ -859,120 +859,57 @@ AddHeaderLabel(COL_SOURCE_X, COL_SOURCE_W, "Источник", "CENTER", "source
 ------------------------------------------------------------
 -- Scroll area + rows
 ------------------------------------------------------------
-
--- Полоса прокрутки: стрелки сверху и снизу убираем совсем, трек делаем тонкой
--- тёмной дорожкой, ползунок - светлой скруглённой пилюлей. Как в вебе, где
--- полоса не спорит с содержимым.
-local function StyleScrollBar(bar)
-    if not bar then return end
-    local barName = bar.GetName and bar:GetName()
-
-    -- Ползунок - тоже текстура полосы, поэтому его надо забрать ДО того, как
-    -- гасить остальные, иначе спрячем заодно и его.
-    local thumb = bar.GetThumbTexture and bar:GetThumbTexture()
-    StripTextures(bar)
-    -- 12, а не 8: ширина полосы - это область захвата мышью. На восьми
-    -- пикселях тестер в неё не попадал. Сам ползунок рисуем уже, отступом.
-    bar:SetWidth(12)
-
-    -- Во всю высоту полосы. Раньше стоял отступ 14 сверху и снизу "под стрелки",
-    -- но стрелки шаблона висят СНАРУЖИ полосы (кнопка вверх прицеплена низом
-    -- к её верху), место под них уже вычтено - и дорожка выходила короче хода
-    -- ползунка, не доставая до конца.
-    local track = bar:CreateTexture(nil, "BACKGROUND")
-    track:SetAllPoints(bar)
-    track:SetTexture(PILL_TEXTURE)
-    if track.SetTextureSliceMargins then
-        track:SetTextureSliceMargins(0, 4, 0, 4)
-        if track.SetTextureSliceMode and Enum and Enum.UITextureSliceMode then
-            track:SetTextureSliceMode(Enum.UITextureSliceMode.Stretched)
-        end
-    end
-    track:SetVertexColor(C.block2[1], C.block2[2], C.block2[3], 1)
-
-    if thumb then
-        -- Сам ползунок игра перерисовывает при каждой прокрутке, поэтому его
-        -- текстуру не трогаем, а делаем свою и вешаем ровно на него - она
-        -- поедет следом сама.
-        --
-        -- РАЗМЕР ПОЛЗУНКА НЕ ЗАДАВАТЬ. Здесь стояло thumb:SetSize(8, 44), и это
-        -- ломало прокрутку: игра считает высоту ползунка сама, по доле видимого
-        -- списка, и от неё же считает ход при перетаскивании. С прибитой высотой
-        -- её математика расходилась с нарисованным - полоса то прыгала, то
-        -- не двигалась вовсе. Поймано по жалобе тестера.
-        thumb:SetAlpha(0)
-
-        -- Пилюля берёт у ползунка только высоту, ширину - у полосы с отступом.
-        -- Так игра свободно меняет размер ползунка, а вид остаётся тонким.
-        local pill = bar:CreateTexture(nil, "ARTWORK")
-        pill:SetPoint("TOP", thumb, "TOP", 0, 0)
-        pill:SetPoint("BOTTOM", thumb, "BOTTOM", 0, 0)
-        pill:SetPoint("LEFT", bar, "LEFT", 2, 0)
-        pill:SetPoint("RIGHT", bar, "RIGHT", -2, 0)
-        pill:SetTexture(PILL_TEXTURE)
-        if pill.SetTextureSliceMargins then
-            pill:SetTextureSliceMargins(0, 4, 0, 4)
-            if pill.SetTextureSliceMode and Enum and Enum.UITextureSliceMode then
-                pill:SetTextureSliceMode(Enum.UITextureSliceMode.Stretched)
-            end
-        end
-        pill:SetVertexColor(C.text2[1], C.text2[2], C.text2[3], 1)
-    end
-
-    -- Стрелки. Игра включает и выключает эти кнопки при каждой прокрутке и на
-    -- каждом переключении заново ставит свои текстуры - поэтому подменять их
-    -- бесполезно. Прячем кнопку целиком через прозрачность (её альфа не
-    -- сбрасывается) и рисуем свою поверх, а клики по-прежнему ловит штатная.
-    for _, suffix in ipairs({ "ScrollUpButton", "ScrollDownButton" }) do
-        local arrow = bar[suffix] or (barName and _G[barName .. suffix])
-        if arrow then
-            arrow:SetAlpha(0)
-
-            -- Рамка вокруг стрелки убрана: голый треугольник на фоне окна, как
-            -- у заголовков и фильтров. Сам skin оставлен - он держит стрелку
-            -- поверх полосы и служит ей якорем.
-            local skin = CreateFrame("Frame", nil, bar)
-            skin:SetAllPoints(arrow)
-            skin:SetFrameLevel(bar:GetFrameLevel() + 3)
-
-            local glyph = skin:CreateTexture(nil, "OVERLAY")
-            glyph:SetTexture(ARROW_TEXTURE)
-            glyph:SetSize(ARROW_SIZE, ARROW_SIZE)
-            glyph:SetPoint("CENTER")
-            if suffix == "ScrollDownButton" then
-                glyph:SetTexCoord(0, 1, 1, 0) -- та же картинка вверх ногами
-            end
-            glyph:SetVertexColor(C.text2[1], C.text2[2], C.text2[3])
-
-            arrow:HookScript("OnEnter", function()
-                glyph:SetVertexColor(C.warm[1], C.warm[2], C.warm[3])
-            end)
-            arrow:HookScript("OnLeave", function()
-                glyph:SetVertexColor(C.text2[1], C.text2[2], C.text2[3])
-            end)
-        end
-    end
-end
-
--- Высота области прокрутки = ровно стопка строк. Раньше низ был привязан
--- к футеру, и область свисала ниже последней строки - а стрелки шаблона стоят
--- в её верхней и нижней полосе по 16 пикселей, поэтому нижняя уезжала вниз
--- на всю эту разницу. Считаем от строк, чтобы не разъезжалось снова при смене
--- их числа.
+-- Высота видимой области = ровно стопка строк. Считаем от них, а не от футера:
+-- иначе при смене их числа область и список разъезжаются.
 local LIST_HEIGHT = NUM_VISIBLE_ROWS * ROW_HEIGHT + (NUM_VISIBLE_ROWS - 1) * ROW_SPACING
 
-local scrollFrame = CreateFrame("ScrollFrame", "TrialGearFinderScroll", frame, "FauxScrollFrameTemplate")
-scrollFrame:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -6)
--- Правый край через header, а не через footer: header центрируется вместе
--- со списком в обоих режимах, footer тянется во всю ширину окна. Цифра та же,
--- зато полоса теперь держится за список, а не за окно.
-scrollFrame:SetPoint("TOPRIGHT", header, "BOTTOMRIGHT", 4, -6)
-scrollFrame:SetHeight(LIST_HEIGHT)
+------------------------------------------------------------
+-- Прокрутка на WowScrollBox - штатной современной системе игры.
+--
+-- До этого стоял FauxScrollFrameTemplate: девять строк переиспользовались,
+-- а полоса двигалась ступенькой в ряд. Плавность на нём не вышла - полоса
+-- округляет значение к шагу, и все обходные приёмы упирались в это.
+--
+-- Здесь всё содержимое лежит в одном длинном блоке content, а scrollBox
+-- двигает его целиком и по пикселям. Строки создаются по мере надобности
+-- и переиспользуются между обновлениями - список не пересобирается заново.
+------------------------------------------------------------
 
-StyleScrollBar(scrollFrame.ScrollBar or _G["TrialGearFinderScrollScrollBar"])
+local SCROLLBAR_PAD = 16 -- место справа под полосу
+
+local scrollArea = CreateFrame("Frame", nil, frame)
+scrollArea:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -6)
+-- Область шире списка ровно на полосу прокрутки: сам scrollBox тогда выходит
+-- по ширине в список (он же строка), а полоса встаёт за его правым краем.
+scrollArea:SetPoint("TOPRIGHT", header, "BOTTOMRIGHT", SCROLLBAR_PAD, -6)
+scrollArea:SetHeight(LIST_HEIGHT)
+
+local scrollBox = CreateFrame("Frame", "TrialGearFinderScrollBox", scrollArea, "WowScrollBox")
+scrollBox:SetPoint("TOPLEFT", scrollArea, "TOPLEFT", 0, 0)
+scrollBox:SetPoint("BOTTOMRIGHT", scrollArea, "BOTTOMRIGHT", -SCROLLBAR_PAD, 0)
+
+local scrollBar = CreateFrame("EventFrame", nil, scrollArea, "MinimalScrollBar")
+scrollBar:SetPoint("TOPLEFT", scrollBox, "TOPRIGHT", 6, 0)
+scrollBar:SetPoint("BOTTOMLEFT", scrollBox, "BOTTOMRIGHT", 6, 0)
+if scrollBar.SetHideIfUnscrollable then scrollBar:SetHideIfUnscrollable(true) end
+
+local content = CreateFrame("Frame", nil, scrollBox)
+content.scrollable = true -- по этому полю scrollBox узнаёт, что двигать
+content:SetWidth(1)
+
+-- Дети уже перепривязываются внутри SetView; без этого флага повторная
+-- привязка регистрирует тот же фрейм дважды и содержимое уезжает вниз.
+if scrollBox.SetAlignmentOverlapIgnored then scrollBox:SetAlignmentOverlapIgnored(true) end
+
+local scrollView = CreateScrollBoxLinearView(0, 0, 0, 0, 0)
+if scrollView.SetElementStretchDisabled then scrollView:SetElementStretchDisabled(true) end
+-- Шаг колеса. Без него у вида с одним длинным блоком шага нет вовсе, и колесо
+-- либо не работает, либо прокручивает на случайную величину. Строка за щелчок.
+if scrollView.SetPanExtent then scrollView:SetPanExtent(ROW_PITCH) end
+ScrollUtil.InitScrollBoxWithScrollBar(scrollBox, scrollBar, scrollView)
 
 local emptyText = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-emptyText:SetPoint("TOPLEFT", scrollFrame, "TOPLEFT", 4, -4)
+emptyText:SetPoint("TOPLEFT", scrollArea, "TOPLEFT", 4, -4)
 emptyText:SetJustifyH("LEFT")
 emptyText:SetJustifyV("TOP")
 emptyText:Hide()
@@ -1522,25 +1459,30 @@ local function CreateRow(index)
     -- угол круглый, поджимаем её внутрь на радиус и берём капсулу: торцы
     -- получаются скруглёнными.
     local topInset = (index == 1) and 6 or 0
-    local bottomInset = (index == NUM_VISIBLE_ROWS) and 6 or 0
 
     row.hoverBar = row:CreateTexture(nil, "ARTWORK")
     row.hoverBar:SetWidth(2)
     row.hoverBar:SetPoint("TOPLEFT", row, "TOPLEFT", 0, -topInset)
-    row.hoverBar:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", 0, bottomInset)
-    if topInset > 0 or bottomInset > 0 then
-        row.hoverBar:SetTexture(PILL_TEXTURE)
-        if row.hoverBar.SetTextureSliceMargins then
-            row.hoverBar:SetTextureSliceMargins(0, 4, 0, 4)
-            if row.hoverBar.SetTextureSliceMode and Enum and Enum.UITextureSliceMode then
-                row.hoverBar:SetTextureSliceMode(Enum.UITextureSliceMode.Stretched)
-            end
+    row.hoverBar:SetPoint("BOTTOMLEFT", row, "BOTTOMLEFT", 0, 0)
+    row.hoverBar:SetTexture(PILL_TEXTURE)
+    if row.hoverBar.SetTextureSliceMargins then
+        row.hoverBar:SetTextureSliceMargins(0, 4, 0, 4)
+        if row.hoverBar.SetTextureSliceMode and Enum and Enum.UITextureSliceMode then
+            row.hoverBar:SetTextureSliceMode(Enum.UITextureSliceMode.Stretched)
         end
-        row.hoverBar:SetVertexColor(C.text[1], C.text[2], C.text[3], 1)
-    else
-        Fill(row.hoverBar, C.text)
     end
+    row.hoverBar:SetVertexColor(C.text[1], C.text[2], C.text[3], 1)
     row.hoverBar:Hide()
+
+    -- Какая строка последняя - знает только список: он теперь длиной во все
+    -- найденные вещи, а не в девять строк. Метку ставит RefreshResults.
+    function row:SetLastInList(isLast)
+        self.hoverBar:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", 0, isLast and 6 or 0)
+        -- Заливка строки прямоугольная и срезала бы скруглённый нижний угол
+        -- списка. Последняя строка отдаёт угол подложке - как первая, она
+        -- прозрачна по чётности.
+        self.bgAlt:SetShown(not isLast)
+    end
 
     -- Отдельными методами, а не двумя замыканиями на месте: те же самые
     -- показать-спрятать нужны детям строки, у которых своя мышь (см. ниже).
@@ -1840,42 +1782,43 @@ local function CreateRow(index)
     return row
 end
 
--- Окно, за края которого строкам выезжать нельзя. Нужно ради плавной прокрутки:
--- при дробном смещении верхняя и нижняя строки видны наполовину, и без обрезки
--- они лезли бы на шапку и на фильтры.
-local listClip = CreateFrame("Frame", nil, frame)
-listClip:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -6)
-listClip:SetPoint("TOPRIGHT", header, "BOTTOMRIGHT", 0, -6)
-listClip:SetHeight(LIST_HEIGHT)
-listClip:SetClipsChildren(true)
-
--- Строк на одну больше, чем помещается: при дробном смещении сверху и снизу
--- видно по половинке, и без запасной внизу оставалась бы дыра.
+-- Строки лежат в content одной длинной стопкой и создаются по мере надобности:
+-- сколько предметов в списке, столько и строк. Прокрутка двигает весь блок
+-- целиком, поэтому ни окна обрезки, ни подмены данных при сдвиге больше нет -
+-- scrollBox сам не рисует то, что вышло за его края.
 local rows = {}
-for i = 1, NUM_VISIBLE_ROWS + 1 do
-    local row = CreateRow(i)
-    row:SetParent(listClip)
-    if i == 1 then
-        row:SetPoint("TOPLEFT", listClip, "TOPLEFT", 0, 0)
+
+local function GetRow(index)
+    local row = rows[index]
+    if row then return row end
+
+    row = CreateRow(index)
+    row:SetParent(content)
+    if index == 1 then
+        row:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
     else
-        row:SetPoint("TOPLEFT", rows[i - 1], "BOTTOMLEFT", 0, -ROW_SPACING)
+        row:SetPoint("TOPLEFT", GetRow(index - 1), "BOTTOMLEFT", 0, -ROW_SPACING)
     end
-    rows[i] = row
+    row:Hide() -- пустая строка до первого SetData
+    rows[index] = row
+    return row
 end
+
+-- Экран строк вперёд: ApplyStatsLayout раскладывает уже созданные, и при первом
+-- проходе ему нужно что-то разложить.
+for i = 1, NUM_VISIBLE_ROWS do GetRow(i) end
 
 -- Подложка под всю стопку: скруглить углы у отдельной строки нельзя - текстура
 -- скругляет сразу все четыре, и по краям стопки вылезли бы насечки. Поэтому
 -- один скруглённый блок под списком, а нечётные строки прозрачные и показывают
--- его - первая и девятая как раз нечётные, их углы и скруглены.
---
--- Держится на том, что NUM_VISIBLE_ROWS нечётное. Станет чётным - у последней
--- строки появится своя заливка, и низ снова будет прямым: тогда прозрачной
--- делать по краям стопки, а не по чётности.
--- Привязана к окну обрезки, а не к строкам: строки теперь ездят, а подложка
+-- его - первая как раз нечётная, её верхний угол и скруглён. Нижний отдаёт
+-- подложке последняя строка, см. SetLastInList: какая она - зависит от фильтра.
+-- Привязана к видимой области, а не к строкам: строки ездят, а подложка
 -- со скруглением и рамкой должна стоять на месте.
 local listBg = CreateFrame("Frame", nil, frame)
 listBg:SetFrameLevel(frame:GetFrameLevel()) -- под строками, они на уровень выше
-listBg:SetAllPoints(listClip)
+listBg:SetPoint("TOPLEFT", scrollArea, "TOPLEFT", 0, 0)
+listBg:SetPoint("BOTTOMRIGHT", scrollArea, "BOTTOMRIGHT", -SCROLLBAR_PAD, 0)
 -- Рамкой, а не осветлением блока: фон окна #060708 и блок #101113 по яркости
 -- почти совпадают, и поднимать блок пришлось бы заметно - он перестал бы быть
 -- фоном для строк. Контур даёт границу, не трогая заливку.
@@ -2243,7 +2186,8 @@ RefreshResults = function()
 
     if #matches == 0 then
         for _, row in ipairs(rows) do row:Hide() end
-        FauxScrollFrame_Update(scrollFrame, 0, NUM_VISIBLE_ROWS, ROW_PITCH)
+        content:SetHeight(1)
+        scrollBox:FullUpdate(ScrollBoxConstants.UpdateImmediately)
         emptyText:Show()
         emptyText:SetText(pending and "|cFF888888Загрузка данных...|r"
             or "|cFF888888Нет предметов под эти фильтры.|r")
@@ -2294,47 +2238,27 @@ RefreshResults = function()
 
     emptyText:Hide()
 
-    -- Плавная прокрутка. Значение полосы - в пикселях, и мы разводим его надвое:
-    -- целая часть даёт номер первой видимой строки, дробная сдвигает всю стопку
-    -- вверх внутри окна обрезки. Раньше бралась только целая, оттого список
-    -- и прыгал строкой за раз.
-    local bar = scrollFrame.ScrollBar or _G["TrialGearFinderScrollScrollBar"]
-    local value = bar and bar:GetValue() or 0
-    local offset = math.floor(value / ROW_PITCH)
-    local shift = value - offset * ROW_PITCH
-
-    rows[1]:SetPoint("TOPLEFT", listClip, "TOPLEFT", 0, shift)
-
-    for i, row in ipairs(rows) do
-        row:SetData(matches[i + offset])
+    -- Строк ровно столько, сколько предметов. Высота content - вся стопка,
+    -- по ней игра сама считает и ход полосы, и размер ползунка, и прокручивает
+    -- по пикселям. Лишние строки прячем, а не удаляем: при следующем показе
+    -- пригодятся.
+    local poolSize = #rows
+    for i = 1, #matches do
+        local row = GetRow(i)
+        row:SetData(matches[i])
+        row:SetLastInList(i == #matches)
     end
-    -- Видимых строк на одну больше: последняя выезжает снизу и держит запас,
-    -- чтобы при дробном сдвиге внизу не открывалась пустота.
-    FauxScrollFrame_Update(scrollFrame, #matches, NUM_VISIBLE_ROWS, ROW_PITCH)
-
-    -- ОБЯЗАТЕЛЬНО после Update. Он ставит полосе шаг, равный переданной высоте
-    -- строки, и полоса начинает округлять к нему любое значение - мой сдвиг
-    -- на треть строки просто отбрасывался, и список продолжал прыгать рядами.
-    -- Шаг в пиксель снимает округление, и прокрутка становится плавной.
-    if bar then
-        bar:SetValueStep(1)
-        if bar.SetObeyStepOnDrag then bar:SetObeyStepOnDrag(false) end
+    for i = #matches + 1, #rows do
+        rows[i]:Hide()
     end
+    -- Новые строки рождаются с шириной и колонками по умолчанию; раскладка
+    -- знает текущий режим Мин-Макс и приводит их в общий вид.
+    if #rows > poolSize then ApplyStatsLayout() end
+
+    content:SetWidth(math.max(scrollBox:GetWidth(), 1))
+    content:SetHeight(#matches * ROW_PITCH - ROW_SPACING)
+    scrollBox:FullUpdate(ScrollBoxConstants.UpdateImmediately)
 end
-
-scrollFrame:SetScript("OnVerticalScroll", function(self, offset)
-    FauxScrollFrame_OnVerticalScroll(self, offset, ROW_PITCH, RefreshResults)
-end)
-
--- Треть строки на щелчок колеса. Раньше был ровно один ряд, и список
--- перескакивал ступенькой; теперь между ступеньками есть промежуточные
--- положения, и движение читается как плавное. SetValue сама зажата
--- в пределы полосы, проверять границы не нужно.
-scrollFrame:SetScript("OnMouseWheel", function(self, delta)
-    local scrollBar = self.ScrollBar or _G[self:GetName() .. "ScrollBar"]
-    if not scrollBar then return end
-    scrollBar:SetValue(scrollBar:GetValue() - delta * (ROW_PITCH / 3))
-end)
 
 -- Автоотметка «был здесь». Скрытый квестовый флаг рарника знал бы это точно, но
 -- его id в базе нет ни для одного моба. Поэтому ловим смерть моба в боевом логе:
@@ -2805,7 +2729,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
 
     -- Диагностика полосы прокрутки: как называются её части в этой версии клиента.
     if msg == "ui" then
-        local bar = scrollFrame.ScrollBar or _G["TrialGearFinderScrollScrollBar"]
+        local bar = scrollBar
         if not bar then
             print("|cFFFFD100[TGF]|r Полоса прокрутки не найдена вовсе.")
             return
