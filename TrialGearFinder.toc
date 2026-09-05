@@ -4,6 +4,7 @@
 ## Notes-ruRU: Поиск лучшего снаряжения для твинков 20 уровня.
 ## Author: RexZep
 ## X-License: MIT (код) - данные с сайта «Отвергнутые и Забытые», см. LICENSE.txt
+## X-Curse-Project-ID: 1681964
 ## Category: LvL20
 ## IconTexture: Interface\AddOns\TrialGearFinder\icon
 ## Version: 1.0.0
