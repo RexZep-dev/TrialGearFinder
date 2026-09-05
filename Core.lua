@@ -1628,6 +1628,10 @@ local function CreateRow(index)
             self:SetChecked(true)
             return
         end
+        if row.autoLocked then -- аддон видел смерть, лут раз на персонажа: то же
+            self:SetChecked(true)
+            return
+        end
         TrialGearFinderDB = TrialGearFinderDB or {}
         TrialGearFinderDB.done = TrialGearFinderDB.done or {}
         TrialGearFinderDB.done[row.itemID] = self:GetChecked() and true or nil
@@ -1663,6 +1667,10 @@ local function CreateRow(index)
                 GameTooltip:AddLine("Ты уже убивал этого рарника", 1, 0.2, 0.2)
                 GameTooltip:AddLine("Вещь даётся раз на персонажа, и она не выпала. Больше не выпадет - слот придётся закрывать другой вещью.",
                     1, 1, 1, true)
+                if row.autoLocked then
+                    GameTooltip:AddLine("Отметку поставил аддон, увидев смерть рарника, - снять её нельзя.",
+                        0.7, 0.72, 0.75, true)
+                end
             end
         end
         GameTooltip:Show()
@@ -1740,12 +1748,19 @@ local function CreateRow(index)
         self.done:SetShown(trackable)
         if not trackable then
             self.owned = nil
+            self.autoLocked = nil
             self:SetAlpha(1)
         else
             -- Два состояния: зелёная - вещь на руках (ставится сама), жёлтая - рарник
             -- убит, но лут не выпал (ставится щелчком). Пустая - ещё не был.
             local manual = TrialGearFinderDB and TrialGearFinderDB.done and TrialGearFinderDB.done[data.itemID]
             local done = data.owned or manual
+            local daily = data.source and data.source:find(DAILY_SOURCE_MARK, 1, true) ~= nil
+            -- Отметку, которую поставил сам аддон по смерти рарника, снять
+            -- нельзя, если лут даётся раз на персонажа: факт уже случился,
+            -- и снятая галочка была бы враньём. Ручную снять можно - это
+            -- утверждение игрока, и промахнуться по галочке он вправе.
+            self.autoLocked = (manual == "auto") and not daily
             self.owned = data.owned
             self.done:SetChecked(done and true or false)
             self.ownedDiffs = data.ownedDiffs
@@ -1759,8 +1774,7 @@ local function CreateRow(index)
                         tex:SetVertexColor(1, 0.2, 0.2)   -- есть, но не BiS-версия
                     elseif data.owned then
                         tex:SetVertexColor(0.2, 1, 0.2)   -- получил, всё сходится
-                    elseif data.source
-                        and data.source:find(DAILY_SOURCE_MARK, 1, true) then
+                    elseif daily then
                         tex:SetVertexColor(1, 0.82, 0)    -- убил, не выпало; будет ещё попытка
                     else
                         -- Убил, не выпало, и рарник отдаёт лут раз на персонажа:
@@ -2314,17 +2328,27 @@ local function MarkKilledByName(name)
     TrialGearFinderDB = TrialGearFinderDB or {}
     TrialGearFinderDB.done = TrialGearFinderDB.done or {}
     local needle = LowerRU(name)
-    local marked
+    local marked, changed
     for _, entry in ipairs(rareItems) do
-        if entry.note:find(needle, 1, true) and not TrialGearFinderDB.done[entry.item.itemID] then
-            TrialGearFinderDB.done[entry.item.itemID] = true
-            marked = name
+        if entry.note:find(needle, 1, true) then
+            -- "auto", а не true: по этому значению строка отличает свою отметку
+            -- от поставленной игроком и не даёт снять первую. Значение остаётся
+            -- истинным, поэтому все прежние проверки `if done[id]` целы.
+            -- Ручную отметку тоже поднимаем до "auto": раз смерть увидели сами,
+            -- откуда взялась галочка, уже неважно. Заодно так чинятся отметки,
+            -- поставленные до появления этого различия.
+            local was = TrialGearFinderDB.done[entry.item.itemID]
+            if was ~= "auto" then
+                TrialGearFinderDB.done[entry.item.itemID] = "auto"
+                changed = true
+                if not was then marked = name end -- сообщаем только о новой
+            end
         end
     end
     if marked then
         print(string.format("|cFFFFD100[TGF]|r Отмечен как убитый: %s", marked))
-        if frame:IsShown() then RefreshResults() end
     end
+    if changed and frame:IsShown() then RefreshResults() end
 end
 
 frame:RegisterEvent("GET_ITEM_INFO_RECEIVED")
