@@ -908,6 +908,18 @@ if scrollView.SetElementStretchDisabled then scrollView:SetElementStretchDisable
 if scrollView.SetPanExtent then scrollView:SetPanExtent(ROW_PITCH) end
 ScrollUtil.InitScrollBoxWithScrollBar(scrollBox, scrollBar, scrollView)
 
+-- Полосу трудно поймать мышью: она тонкая, и попадать надо ровно в ползунок.
+-- Ширину не трогаем - вид должен остаться тонким, - а расширяем область захвата
+-- отрицательными отступами хитбокса. Влево ровно на зазор до списка: дальше
+-- начинаются строки, и они перехватят мышь у полосы.
+local GRAB = 6
+if scrollBar.Track then
+    scrollBar.Track:SetHitRectInsets(-GRAB, -GRAB, 0, 0)
+    if scrollBar.Track.Thumb then
+        scrollBar.Track.Thumb:SetHitRectInsets(-GRAB, -GRAB, 0, 0)
+    end
+end
+
 local emptyText = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 emptyText:SetPoint("TOPLEFT", scrollArea, "TOPLEFT", 4, -4)
 emptyText:SetJustifyH("LEFT")
