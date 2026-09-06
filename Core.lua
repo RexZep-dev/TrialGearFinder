@@ -1412,9 +1412,9 @@ local function WaypointLink(uiMapID, x, y, label)
         uiMapID, math.floor(x * 100 + 0.5), math.floor(y * 100 + 0.5), label)
 end
 
--- Rare mobs all share one source string ("Кул-Тирас/Зандалар (рарники...)"), so a
--- pin per source would be useless there: every item drops from its own mob in its
--- own spot. Those are keyed by item instead - "item:158583".
+-- У рарников источник называет материк ("Кул-Тирас (рарники...)"), а не точку:
+-- метка на источник была бы там бесполезна - каждая вещь падает со своего моба
+-- в своём месте. Поэтому они ключуются по вещи - "item:158583".
 local function PinKey(sourceType, itemID, source)
     if sourceType == "World" and itemID then return "item:" .. itemID end
     return source
@@ -2332,6 +2332,14 @@ RefreshResults = function()
         -- Exception: with the Рарники filter on, zone comes first - they are
         -- farmed by flying around a zone, not by gear slot.
         table.sort(matches, function(a, b)
+            -- При фильтре по рарникам сперва группируем по месту: список тогда
+            -- читается как маршрут - Зандалар отдельно, Кул-Тирас отдельно,
+            -- Дренор отдельно, - а не как набор слотов вразнобой. Раньше здесь
+            -- стоял только mapID, а у рарников он не проставлен, и группировка
+            -- молча не работала.
+            if filters.sourceType == "World" and (a.source or "") ~= (b.source or "") then
+                return (a.source or "") < (b.source or "")
+            end
             if filters.sourceType == "World" and (a.mapID or 9999) ~= (b.mapID or 9999) then
                 return (a.mapID or 9999) < (b.mapID or 9999)
             end
