@@ -1728,15 +1728,15 @@ local function CreateRow(index)
             GameTooltip:AddLine("Рарник убит, лут не выпал", 1, 0.82, 0)
             GameTooltip:AddLine("Отметка снимется на дневном сбросе - можно прийти снова.",
                 1, 1, 1, true)
-        elseif row.ownedDiffs == false then
-            GameTooltip:AddLine("Вещь числится, но прочитать нечего", 0.7, 0.72, 0.75)
-            GameTooltip:AddLine(string.format(
-                "Игра насчитала копий: %d, но ни одну не удалось прочитать.",
-                row.ownedCount or 0), 1, 1, 1, true)
-            GameTooltip:AddLine("Содержимое банка игра отдаёт только пока он открыт. Открой банк и наведись снова.",
-                0.7, 0.72, 0.75, true)
         else
             GameTooltip:AddLine("Отметить: рарник убит, лут не выпал", 1, 0.82, 0)
+            -- Кружок пустой, но счётчик что-то насчитал - сказать об этом надо,
+            -- иначе игрок пойдёт фармить вещь, которая лежит у него в банке.
+            if row.ownedDiffs == false then
+                GameTooltip:AddLine(string.format(
+                    "Счётчик игры насчитал копий: %d, но прочитать не дал ни одну. Возможно, вещь уже лежит в банке - открой его и наведись снова.",
+                    row.ownedCount or 0), 0.7, 0.72, 0.75, true)
+            end
         end
         GameTooltip:Show()
     end)
@@ -1819,7 +1819,17 @@ local function CreateRow(index)
             -- Два состояния: зелёная - вещь на руках (ставится сама), жёлтая - рарник
             -- убит, но лут не выпал (ставится щелчком). Пустая - ещё не был.
             local manual = TrialGearFinderDB and TrialGearFinderDB.done and TrialGearFinderDB.done[data.itemID]
-            local done = data.owned or manual
+            -- Кружок закрашивается, только когда что-то известно ТОЧНО: вещь
+            -- сверена или рарник отмечен убитым.
+            --
+            -- Недоказанное владение («счётчик насчитал копию, а прочитать
+            -- нечего») кружок больше не закрашивает. Раньше закрашивало серым,
+            -- и выходила путаница: игрок снимал отметку убийства, а кружок
+            -- возвращался серым - будто ничего не снялось. Два разных смысла
+            -- делили один значок и различались лишь оттенком.
+            -- Само число никуда не делось, оно в подсказке.
+            local verified = data.owned and data.ownedDiffs ~= false
+            local done = verified or manual
             local daily = data.source and data.source:find(DAILY_SOURCE_MARK, 1, true) ~= nil
             -- Отметку у рарника, который отдаёт лут раз на персонажа, снять
             -- нельзя: факт случился, и снятая галочка была бы враньём. У
@@ -1856,16 +1866,16 @@ local function CreateRow(index)
                         -- Убил, не выпало, лут раз на персонажа: второй попытки
                         -- не будет. Жёлтый обнадёживал бы зря.
                         tex:SetVertexColor(1, 0.2, 0.2)
-                    elseif manual then
-                        tex:SetVertexColor(1, 0.82, 0)    -- убил; завтра ещё попытка
                     else
-                        -- Вещь числится, но прочитать нечего, и рарник не отмечен.
-                        tex:SetVertexColor(C.text3[1], C.text3[2], C.text3[3])
+                        tex:SetVertexColor(1, 0.82, 0)    -- убил; завтра ещё попытка
                     end
                 end
             end
-            -- Забранное гасим сильнее, чем «был, но не выпало»: туда ещё вернёшься.
-            self:SetAlpha(data.owned and 0.45 or (manual and 0.7 or 1))
+            -- Забранное гасим сильнее, чем «был, но не выпало»: туда ещё
+            -- вернёшься. Гасим по тому же правилу, что красим: недоказанное
+            -- владение строку не приглушает - иначе она выглядела бы закрытой,
+            -- а кружок при этом пустой.
+            self:SetAlpha(verified and 0.45 or (manual and 0.7 or 1))
         end
 
         self.fullSource = data.source
