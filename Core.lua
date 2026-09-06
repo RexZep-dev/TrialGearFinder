@@ -1947,7 +1947,10 @@ RoundedPanel(listBg, C.block, C.border)
 
 local FRAME_WIDTH_FULL, FRAME_WIDTH_NARROW = 880, 660
 -- Simple mode keeps only Слот and Класс; these two are for the full table.
-local FULL_MODE_DROPS = { armorDrop, sourceDrop }
+-- Что прячется в простом режиме. Источник отсюда убран: без него не понять,
+-- куда идти за вещью, а это первое, зачем в список и заходят. Броня остаётся
+-- только в полной таблице - она сужает выбор, а не объясняет его.
+local FULL_MODE_DROPS = { armorDrop }
 -- Rows shrink by exactly as much as the window does, so the list still fills it
 -- edge to edge instead of leaving a dead strip on the right.
 local ROW_WIDTH_NARROW = ROW_WIDTH - (FRAME_WIDTH_FULL - FRAME_WIDTH_NARROW)
@@ -1988,21 +1991,30 @@ local function ApplyStatsLayout()
     -- Header carries the rows with it (row 1 anchors to it), so centring the
     -- header centres the whole list: equal margin left and right.
     header:ClearAllPoints()
-    header:SetPoint("TOP", frame, "TOP", 0, -106)
+    -- Сдвиг влево на пол-полосы. Шапка задаёт положение всего списка, но справа
+    -- к нему прицеплена полоса прокрутки - она висит СНАРУЖИ, за правым краем
+    -- строк. Центрируя одну шапку, мы получали блок «список + полоса», съехавший
+    -- вправо ровно на её ширину. Половину отдаём влево, и видимый блок встаёт
+    -- по центру окна - как футер с фильтрами.
+    header:SetPoint("TOP", frame, "TOP", -SCROLLBAR_PAD / 2, -106)
     header:SetWidth(rowWidth)
     for _, drop in ipairs(FULL_MODE_DROPS) do drop:SetShown(show) end
     if not show then
-        -- Hiding a dropdown that still has a selection would filter the list with
-        -- no visible reason, so reset both back to Все.
-        filters.armor, filters.sourceType = "ALL", "ALL"
+        -- Спрятанный фильтр с выбором отсеивал бы список без видимой причины.
+        filters.armor = "ALL"
         armorDrop:SetSelected("ALL")
-        sourceDrop:SetSelected("ALL")
     end
+    -- Источник цепляется за броню, а она в простом режиме спрятана. Привязка
+    -- к спрятанному фрейму работает, но оставляет на его месте дыру, поэтому
+    -- перецепляем на класс.
+    sourceDrop:ClearAllPoints()
+    sourceDrop:SetPoint("LEFT", show and armorDrop or classDrop, "RIGHT", 4, 0)
+
     -- Filters are centred as a group: width is measured from the actual dropdowns
-    -- so it works for two of them as well as four. The rest chain off the first.
-    local groupWidth = slotDrop:GetWidth() + classDrop:GetWidth() + 4
+    -- so it works for three of them as well as four. The rest chain off the first.
+    local groupWidth = slotDrop:GetWidth() + classDrop:GetWidth() + sourceDrop:GetWidth() + 8
     if show then
-        groupWidth = groupWidth + armorDrop:GetWidth() + sourceDrop:GetWidth() + 8
+        groupWidth = groupWidth + armorDrop:GetWidth() + 4
     end
     slotDrop:ClearAllPoints()
     slotDrop:SetPoint("LEFT", footer, "CENTER", -groupWidth / 2, 0)
