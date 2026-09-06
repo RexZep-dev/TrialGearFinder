@@ -1691,43 +1691,46 @@ local function CreateRow(index)
     end)
     row.done:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        if row.ownedDiffs == false then
-            GameTooltip:AddLine("Вещь есть, но сверить не удалось", 0.7, 0.72, 0.75)
-            -- Число, а не только словами: именно по нему аддон решил, что вещь
-            -- есть, и если игрок уверен, что её у него нет, - расхождение видно
-            -- сразу, а не после разбирательств.
+        -- Порядок ровно как у цвета кружка, иначе подсказка объясняет не тот
+        -- цвет, который человек видит. Сперва проверенное владение, потом
+        -- убийство, и только потом «числится, но прочитать нечего».
+        local daily = row.fullSource
+            and row.fullSource:find(DAILY_SOURCE_MARK, 1, true) ~= nil
+
+        if row.owned and row.ownedDiffs == true then
+            GameTooltip:AddLine("Вещь есть, совпадает с BiS", 0.2, 1, 0.2)
+        elseif type(row.ownedDiffs) == "table" then
+            GameTooltip:AddLine("Вещь есть, но отличается от BiS-версии:", 1, 0.2, 0.2)
+            for _, d in ipairs(row.ownedDiffs) do
+                GameTooltip:AddLine("  " .. FormatDiffLine(d), 1, 1, 1)
+            end
+        elseif row.killed and not daily then
+            GameTooltip:AddLine("Ты уже убивал этого рарника", 1, 0.2, 0.2)
+            GameTooltip:AddLine("Вещь даётся раз на персонажа, и она не выпала. Больше не выпадет - слот придётся закрывать другой вещью.",
+                1, 1, 1, true)
+            if (row.ownedCount or 0) > 0 then
+                -- Копия где-то числится, но прочитать её нельзя. Молчать об этом
+                -- нельзя тоже: иначе непонятно, почему кружок красный, если вещь
+                -- вроде бы есть.
+                GameTooltip:AddLine(string.format(
+                    "Счётчик игры при этом насчитал копий: %d, но прочитать не дал ни одну - похоже, лежит в закрытом банке или у другого персонажа.",
+                    row.ownedCount), 0.7, 0.72, 0.75, true)
+            end
+            GameTooltip:AddLine("Щелчком отметка не снимается: это уже случившийся факт. Отметил по ошибке - Ctrl+щелчок.",
+                0.7, 0.72, 0.75, true)
+        elseif row.killed then
+            GameTooltip:AddLine("Рарник убит, лут не выпал", 1, 0.82, 0)
+            GameTooltip:AddLine("Отметка снимется на дневном сбросе - можно прийти снова.",
+                1, 1, 1, true)
+        elseif row.ownedDiffs == false then
+            GameTooltip:AddLine("Вещь числится, но прочитать нечего", 0.7, 0.72, 0.75)
             GameTooltip:AddLine(string.format(
                 "Игра насчитала копий: %d, но ни одну не удалось прочитать.",
                 row.ownedCount or 0), 1, 1, 1, true)
             GameTooltip:AddLine("Содержимое банка игра отдаёт только пока он открыт. Открой банк и наведись снова.",
                 0.7, 0.72, 0.75, true)
-        elseif row.owned and row.ownedDiffs ~= true then
-            GameTooltip:AddLine("Вещь есть, но отличается от BiS-версии:", 1, 0.2, 0.2)
-            for _, d in ipairs(type(row.ownedDiffs) == "table" and row.ownedDiffs or {}) do
-                GameTooltip:AddLine("  " .. FormatDiffLine(d), 1, 1, 1)
-            end
-        elseif row.owned then
-            GameTooltip:AddLine("Вещь есть, совпадает с BiS", 0.2, 1, 0.2)
-        elseif not self:GetChecked() then
-            GameTooltip:AddLine("Отметить: рарник убит, лут не выпал", 1, 0.82, 0)
         else
-            -- Отмечено, но вещи нет. Смысл отметки зависит от того, как часто
-            -- рарник отдаёт лут: у ежедневного будет ещё попытка, у того, что
-            -- берётся раз на персонажа, - уже нет. Раньше текст был один
-            -- на оба случая и обнадёживал зря.
-            local daily = row.fullSource
-                and row.fullSource:find(DAILY_SOURCE_MARK, 1, true) ~= nil
-            if daily then
-                GameTooltip:AddLine("Рарник убит, лут не выпал", 1, 0.82, 0)
-                GameTooltip:AddLine("Отметка снимется на дневном сбросе - можно прийти снова.",
-                    1, 1, 1, true)
-            else
-                GameTooltip:AddLine("Ты уже убивал этого рарника", 1, 0.2, 0.2)
-                GameTooltip:AddLine("Вещь даётся раз на персонажа, и она не выпала. Больше не выпадет - слот придётся закрывать другой вещью.",
-                    1, 1, 1, true)
-                GameTooltip:AddLine("Щелчком отметка не снимается: это уже случившийся факт. Отметил по ошибке - Ctrl+щелчок.",
-                    0.7, 0.72, 0.75, true)
-            end
+            GameTooltip:AddLine("Отметить: рарник убит, лут не выпал", 1, 0.82, 0)
         end
         GameTooltip:Show()
     end)
@@ -1804,7 +1807,7 @@ local function CreateRow(index)
         self.done:SetShown(trackable)
         if not trackable then
             self.owned = nil
-            self.lockable, self.markLocked = nil, nil
+            self.lockable, self.markLocked, self.killed = nil, nil, nil
             self:SetAlpha(1)
         else
             -- Два состояния: зелёная - вещь на руках (ставится сама), жёлтая - рарник
@@ -1818,6 +1821,10 @@ local function CreateRow(index)
             -- Кто поставил отметку, аддон или игрок, роли не играет.
             self.lockable = not daily
             self.markLocked = (manual ~= nil) and not daily
+            -- Отдельным полем, а не выводом из галочки: галочка стоит и когда
+            -- вещь просто числится у персонажа, а подсказке с цветом нужно знать
+            -- именно про убийство.
+            self.killed = manual ~= nil
             self.owned = data.owned
             self.done:SetChecked(done and true or false)
             self.ownedDiffs = data.ownedDiffs
@@ -1825,20 +1832,29 @@ local function CreateRow(index)
             if done then
                 local tex = self.done:GetCheckedTexture()
                 if tex then
-                    if data.ownedDiffs == false then
-                        -- есть, но сверить не удалось: серым, а не красным
-                        tex:SetVertexColor(C.text3[1], C.text3[2], C.text3[3])
-                    elseif data.owned and data.ownedDiffs ~= true then
-                        tex:SetVertexColor(1, 0.2, 0.2)   -- есть, но не BiS-версия
-                    elseif data.owned then
-                        tex:SetVertexColor(0.2, 1, 0.2)   -- получил, всё сходится
-                    elseif daily then
-                        tex:SetVertexColor(1, 0.82, 0)    -- убил, не выпало; будет ещё попытка
-                    else
-                        -- Убил, не выпало, и рарник отдаёт лут раз на персонажа:
-                        -- второй попытки не будет. Жёлтый тут обнадёживал зря,
-                        -- он означает «приходи ещё» - а приходить некуда.
+                    -- Порядок важен, и он такой не сразу.
+                    --
+                    -- ПРОВЕРЕННОЕ владение бьёт всё: вещь в руках - это факт,
+                    -- и неважно, убивал ты рарника или нет.
+                    --
+                    -- А вот НЕПРОВЕРЕННОЕ («счётчик что-то насчитал, а прочитать
+                    -- нечего») отметку убийства бить не должно. Раньше било,
+                    -- и выходило хуже некуда: рарника убили, лут не выпал,
+                    -- а кружок серый - «не могу сказать». Убийство мы знаем
+                    -- точно, копию - нет; показываем то, что знаем.
+                    if data.owned and data.ownedDiffs == true then
+                        tex:SetVertexColor(0.2, 1, 0.2)   -- сверено: совпадает
+                    elseif type(data.ownedDiffs) == "table" then
+                        tex:SetVertexColor(1, 0.2, 0.2)   -- сверено: версия другая
+                    elseif manual and not daily then
+                        -- Убил, не выпало, лут раз на персонажа: второй попытки
+                        -- не будет. Жёлтый обнадёживал бы зря.
                         tex:SetVertexColor(1, 0.2, 0.2)
+                    elseif manual then
+                        tex:SetVertexColor(1, 0.82, 0)    -- убил; завтра ещё попытка
+                    else
+                        -- Вещь числится, но прочитать нечего, и рарник не отмечен.
+                        tex:SetVertexColor(C.text3[1], C.text3[2], C.text3[3])
                     end
                 end
             end
