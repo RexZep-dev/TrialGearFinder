@@ -1695,9 +1695,9 @@ local function CreateRow(index)
             self:SetChecked(true)
             return
         end
-        TrialGearFinderDB = TrialGearFinderDB or {}
-        TrialGearFinderDB.done = TrialGearFinderDB.done or {}
-        TrialGearFinderDB.done[row.itemID] = self:GetChecked() and true or nil
+        TrialGearFinderCharDB = TrialGearFinderCharDB or {}
+        TrialGearFinderCharDB.done = TrialGearFinderCharDB.done or {}
+        TrialGearFinderCharDB.done[row.itemID] = self:GetChecked() and true or nil
         row.markLocked = (row.lockable and self:GetChecked()) and true or false
         row:SetAlpha(self:GetChecked() and 0.45 or 1)
     end)
@@ -1824,7 +1824,8 @@ local function CreateRow(index)
         else
             -- Два состояния: зелёная - вещь на руках (ставится сама), жёлтая - рарник
             -- убит, но лут не выпал (ставится щелчком). Пустая - ещё не был.
-            local manual = TrialGearFinderDB and TrialGearFinderDB.done and TrialGearFinderDB.done[data.itemID]
+            local manual = TrialGearFinderCharDB and TrialGearFinderCharDB.done
+                and TrialGearFinderCharDB.done[data.itemID]
             -- Кружок закрашивается, только когда что-то известно ТОЧНО: вещь
             -- сверена или рарник отмечен убитым.
             --
@@ -2454,13 +2455,13 @@ local function MarkKilledByName(name)
         end
     end
 
-    TrialGearFinderDB = TrialGearFinderDB or {}
-    TrialGearFinderDB.done = TrialGearFinderDB.done or {}
+    TrialGearFinderCharDB = TrialGearFinderCharDB or {}
+    TrialGearFinderCharDB.done = TrialGearFinderCharDB.done or {}
     local needle = NormalizeName(name)
     local marked
     for _, entry in ipairs(rareItems) do
-        if entry.note:find(needle, 1, true) and not TrialGearFinderDB.done[entry.item.itemID] then
-            TrialGearFinderDB.done[entry.item.itemID] = true
+        if entry.note:find(needle, 1, true) and not TrialGearFinderCharDB.done[entry.item.itemID] then
+            TrialGearFinderCharDB.done[entry.item.itemID] = true
             marked = name
         end
     end
@@ -2501,6 +2502,34 @@ frame:SetScript("OnEvent", function(self, event, addonName)
         -- Фракция для отсева вещей чужой стороны. Здесь же, а не при
         -- выполнении файла: до входа UnitFactionGroup возвращает nil.
         playerFaction = UnitFactionGroup("player")
+
+        -- Разовый перенос старых отметок из общего хранилища в персонажное.
+        --
+        -- Берём их ТОЛЬКО на двадцатке, и вот почему: набивал их тот, кто ходил
+        -- по рарникам, а ходить по ним имеет смысл только двадцаткой - на других
+        -- уровнях аддон и так показывает неверные числа. Если первым зайдёт
+        -- девяностый, он чужих отметок не заберёт и не потеряет их: старая
+        -- таблица остаётся на месте, пока за ней не придёт двадцатка.
+        TrialGearFinderCharDB = TrialGearFinderCharDB or {}
+        if not TrialGearFinderCharDB.migrated and UnitLevel("player") == 20 then
+            local old = TrialGearFinderDB and TrialGearFinderDB.done
+            if old and next(old) then
+                TrialGearFinderCharDB.done = TrialGearFinderCharDB.done or {}
+                local n = 0
+                for itemID, v in pairs(old) do
+                    if TrialGearFinderCharDB.done[itemID] == nil then
+                        TrialGearFinderCharDB.done[itemID] = v
+                        n = n + 1
+                    end
+                end
+                TrialGearFinderCharDB.migrated = true
+                if n > 0 then
+                    print(string.format(
+                        "|cFFFFD100[TGF]|r Отметки рарников теперь у каждого персонажа свои. Перенесено на этого: %d.", n))
+                end
+            end
+        end
+
         if frame:IsShown() then RefreshResults() end
         return
     end
@@ -2520,6 +2549,16 @@ frame:SetScript("OnEvent", function(self, event, addonName)
         end
         TrialGearFinderDB = TrialGearFinderDB or {}
         if TrialGearFinderDB.showStats == nil then TrialGearFinderDB.showStats = false end
+
+        -- Отметки «убит» лежат ОТДЕЛЬНО, на персонажа. Лут у рарников «раз
+        -- на персонажа» игра так и считает, а у нас отметки были общими:
+        -- убил двадцаткой - и на девяностом уровне список показывал рарников
+        -- пройденными. Поймано в игре 7 сентября 2026.
+        --
+        -- Метки карты, замеры вещей и настройки окна остаются общими: они
+        -- от персонажа не зависят.
+        TrialGearFinderCharDB = TrialGearFinderCharDB or {}
+
         ApplyStatsLayout()
         return
     end
@@ -2551,7 +2590,10 @@ local function NextDailyReset()
 end
 
 local function ClearExpiredDailyMarks()
-    local db = TrialGearFinderDB
+    -- Персонажное хранилище: дневной лок у рарников тоже персонажный, и граница
+    -- сброса вместе с отметками должна лежать там же, иначе один персонаж
+    -- сбрасывал бы счётчик другому.
+    local db = TrialGearFinderCharDB
     if not db then return end
 
     -- Первый запуск: границу запоминаем, но ничего не стираем - иначе снесли бы

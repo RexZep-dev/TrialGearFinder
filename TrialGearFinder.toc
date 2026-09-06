@@ -9,6 +9,7 @@
 ## IconTexture: Interface\AddOns\TrialGearFinder\icon
 ## Version: 1.0.0
 ## SavedVariables: TrialGearFinderDB, TwinkGearFinderDB
+## SavedVariablesPerCharacter: TrialGearFinderCharDB
 
 Data.lua
 Core.lua
