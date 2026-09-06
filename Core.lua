@@ -1670,7 +1670,13 @@ local function CreateRow(index)
     StyleCheckBox(row.done, 10)
     row.done:SetScript("OnClick", function(self)
         if not row.itemID then return end
-        if row.owned then -- вещь на руках: отметка не наша, снять нельзя
+        -- Вещь на руках И СВЕРЕНА: отметка не наша, снять нельзя.
+        --
+        -- Условие `ownedDiffs ~= false` тут не придирка. Раньше стояло просто
+        -- `row.owned`, и щелчок глох у вещей, которые лишь ЧИСЛЯТСЯ: счётчик
+        -- насчитал копию, прочитать нечего, а игрок не мог ни поставить,
+        -- ни снять свою отметку. Недоказанное владение чужих отметок не трогает.
+        if row.owned and row.ownedDiffs ~= false then
             self:SetChecked(true)
             return
         end
