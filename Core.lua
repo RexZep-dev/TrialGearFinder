@@ -137,10 +137,16 @@ local CLASS_RU = {
 }
 
 -- key stays in English - it's compared against item.sourceType from Data.lua.
+-- Список должен покрывать ВСЕ значения sourceType из Data.lua. Не покрывал:
+-- тип PvP жил в данных с самого начала, а пункта фильтра у него не было -
+-- две фамильные вещи нельзя было отобрать никак, они показывались только
+-- в «Все». Проверяется хуком pre-commit, чтобы не разошлось снова.
 local SOURCE_TYPES = {
     { key = "Dungeon", label = "Подземелье" },
     { key = "Quest", label = "Квест" },
     { key = "World", label = "Рарники" },
+    { key = "Craft", label = "Крафт" },
+    { key = "PvP", label = "Фамильные вещи" },
 }
 
 local filters = { slot = "ALL", class = "ALL", armor = "ALL", sourceType = "ALL", search = "" }
