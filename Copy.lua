@@ -137,14 +137,23 @@ local function Build()
     end)
 
     local selectAll = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    selectAll:SetHeight(20)
+    selectAll:SetSize(150, 20)
     selectAll:SetPoint("BOTTOMLEFT", 12, 12)
-    selectAll:SetPoint("BOTTOMRIGHT", -12, 12)
     selectAll:SetFrameLevel(frame:GetFrameLevel() + 5)
     selectAll:SetText("Выделить всё")
     selectAll:SetScript("OnClick", function()
         editBox:SetFocus()
         editBox:HighlightText()
+    end)
+
+    -- Переключатель: только строки [TGF] и отчёты / весь видимый чат.
+    frame.modeBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    frame.modeBtn:SetSize(170, 20)
+    frame.modeBtn:SetPoint("BOTTOMRIGHT", -12, 12)
+    frame.modeBtn:SetFrameLevel(frame:GetFrameLevel() + 5)
+    frame.modeBtn:SetScript("OnClick", function()
+        frame.showAll = not frame.showAll
+        ns.ShowCopyWindow(true)
     end)
 
     local grip = CreateFrame("Button", nil, frame)
@@ -160,21 +169,39 @@ local function Build()
     return frame
 end
 
--- Показать. Лог (метки TGF + прогоны) в приоритете; пусто — весь чат.
-function ns.ShowCopyWindow()
+-- Показать. По умолчанию — лог (метки TGF + прогоны). Кнопка переключает
+-- на весь видимый чат. keepMode = не трогать флаг (вызов из кнопки).
+function ns.ShowCopyWindow(keepMode)
     Build()
-    local lines = (#log > 0) and log or GatherChat()
+    if not keepMode and #log == 0 then frame.showAll = true end -- нечего фильтровать
+
+    local lines
+    if frame.showAll then
+        lines = GatherChat()
+        frame.modeBtn:SetText("Показать: весь чат")
+    else
+        lines = log
+        frame.modeBtn:SetText("Показать: только TGF")
+    end
+
     local text = table.concat(lines, "\n")
     if text == "" then
-        print("|cFF86C7BD[TGF]|r Копировать нечего.")
-        return
+        text = frame.showAll
+            and "Чат пуст."
+            or "Строк [TGF] пока нет. Прогони /tgf scan или /tgf gems, либо нажми «весь чат»."
     end
-    editBox:SetWidth(scroll:GetWidth())
-    local _, fh = editBox:GetFont()
-    editBox:SetHeight(math.max(scroll:GetHeight(), (#lines + 1) * (fh or 14) + 16))
-    editBox:SetText(text)
+
     frame:Show()
+    -- Ширину берём от окна, а не от скролла: у только что показанного скролла
+    -- размер ещё может быть не посчитан (был пустой EditBox).
+    local w = math.max(1, (scroll:GetWidth() or 0))
+    if w < 50 then w = frame:GetWidth() - 46 end
+    editBox:SetWidth(w)
+    local _, fh = editBox:GetFont()
+    editBox:SetHeight(math.max(200, (#lines + 3) * (fh or 14) + 16))
+    editBox:SetText(text)
     scroll:SetVerticalScroll(0)
+    editBox:SetCursorPosition(0)
     editBox:SetFocus()
     editBox:HighlightText()
 end
@@ -188,16 +215,21 @@ end
 
 function ns.MakeChatCopyButton()
     if chatBtn then return end
-    chatBtn = CreateFrame("Button", "TrialGearFinderCopyButton", UIParent)
-    chatBtn:SetSize(18, 16)
+    chatBtn = CreateFrame("Button", "TrialGearFinderCopyButton", UIParent, "BackdropTemplate")
+    chatBtn:SetSize(26, 24)
     chatBtn:SetFrameStrata("HIGH")
+    chatBtn:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
+    local bb = C.block or { 0.06, 0.07, 0.08 }
+    chatBtn:SetBackdropColor(bb[1], bb[2], bb[3], 0.9)
+    chatBtn:SetBackdropBorderColor((C.border or { 0.25, 0.25, 0.28 })[1], (C.border or { 0.25, 0.25, 0.28 })[2], (C.border or { 0.25, 0.25, 0.28 })[3], 1)
 
     local t = chatBtn:CreateTexture(nil, "ARTWORK")
-    t:SetAllPoints()
-    t:SetTexture("Interface\\ChatFrame\\UI-ChatIcon-Chat-Up")
-    if C.warm then t:SetVertexColor(C.warm[1], C.warm[2], C.warm[3]) end
+    t:SetPoint("CENTER")
+    t:SetSize(16, 16)
+    t:SetTexture("Interface\\ICONS\\INV_Misc_Note_01")
+    t:SetTexCoord(0.08, 0.92, 0.08, 0.92)
 
-    chatBtn:SetAlpha(0.4)
+    chatBtn:SetAlpha(0.55)
     chatBtn:SetScript("OnEnter", function(self)
         self:SetAlpha(1)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
@@ -206,7 +238,7 @@ function ns.MakeChatCopyButton()
         GameTooltip:Show()
     end)
     chatBtn:SetScript("OnLeave", function(self)
-        self:SetAlpha(0.4)
+        self:SetAlpha(0.55)
         GameTooltip:Hide()
     end)
     chatBtn:SetScript("OnClick", function() ns.ShowCopyWindow() end)
@@ -215,7 +247,7 @@ function ns.MakeChatCopyButton()
         local cf = ActiveChat()
         if not cf then return end
         chatBtn:ClearAllPoints()
-        chatBtn:SetPoint("BOTTOMRIGHT", cf, "BOTTOMRIGHT", -2, 2)
+        chatBtn:SetPoint("BOTTOMLEFT", cf, "BOTTOMRIGHT", 3, 0)
         chatBtn:Show()
     end
     place()
