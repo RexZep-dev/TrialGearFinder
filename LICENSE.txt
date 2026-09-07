@@ -26,11 +26,14 @@ SOFTWARE.
 
 Файл BiS.lua: раскладка окна BiS-сборок и перечисление классов/спеков
 адаптированы из аддона Cap20 (BiS/Menu.lua, BiS/Engine.lua).
-
-    Cap20 — MIT License — Copyright (c) Josh "Kkthnx" Russell
-    https://www.curseforge.com/wow/addons/cap20
-
 Данные предметов из Cap20 не используются.
+
+Файл Copy.lua: иконка копирования на окне чата и приём с многострочным
+полем — по идее из аддона CopyThat (Modules/ChatCopy.lua). Код не копировался.
+
+    Cap20, CopyThat — MIT License — Copyright (c) Josh "Kkthnx" Russell
+    https://www.curseforge.com/wow/addons/cap20
+    https://www.curseforge.com/wow/addons/copythat
 
 ===============================================================================
 
