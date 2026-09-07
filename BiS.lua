@@ -557,18 +557,14 @@ local function BuildPanel()
     local main = _G[MAIN]
     if not main then return end
 
-    -- Дочерний UIParent, а не main: правый край панели заезжает на 16 px под
-    -- основное окно и уровнем ниже — скруглённые правые углы прячутся за его
-    -- фоном, видна только скруглённая слева «боковина». Показ/скрытие —
-    -- хуками OnShow/OnHide основного окна.
-    panel = CreateFrame("Frame", "TrialGearFinderBiSFrame", UIParent, "BackdropTemplate")
-    panel:SetWidth(PANEL_W)
-    -- Впритык к левому краю основного окна, той же высоты. Уровнем выше окна,
+    -- Дочерний основного окна: скрывается вместе с ним, ничего не остаётся
+    -- на экране. Впритык к левому краю, той же высоты. Уровнем выше окна,
     -- чтобы чат за ним не просвечивал; прямоугольник, а не скруглённый блок —
     -- у стыка скругление давало щель.
+    panel = CreateFrame("Frame", "TrialGearFinderBiSFrame", main, "BackdropTemplate")
+    panel:SetWidth(PANEL_W)
     panel:SetPoint("TOPRIGHT", main, "TOPLEFT", 0, 0)
     panel:SetPoint("BOTTOMRIGHT", main, "BOTTOMLEFT", 0, 0)
-    panel:SetFrameStrata(main:GetFrameStrata())
     panel:SetFrameLevel(main:GetFrameLevel() + 2)
     panel:EnableMouse(true) -- иначе клики проваливаются на мир за окном
     local bgcol = C.bg or { 0.02, 0.03, 0.03 }
@@ -703,7 +699,6 @@ local function UpdateArrow()
     if not arrow then return end
     -- свёрнуто → «<» (открыть, панель слева); развёрнуто → «>» (свернуть)
     arrow.glyph:SetText(IsCollapsed() and "<" or ">")
-    arrow:SetShown((_G[MAIN] and _G[MAIN]:IsShown()) and true or false)
 end
 
 local function ApplyCollapsed()
@@ -733,11 +728,13 @@ local function MakeArrow()
     -- Язычок на левой кромке основного окна. Дочерний UIParent (не main и не
     -- панель), самой верхней стратой — иначе панель, которая тоже наверху,
     -- его перекрывала. Показ/скрытие — вместе с основным окном.
-    arrow = CreateFrame("Button", nil, UIParent)
+    -- Дочерний основного окна: сам скрывается/показывается вместе с ним,
+    -- ничего не остаётся на экране после закрытия. Страта выше панели
+    -- (та на DIALOG) — тогда язычок поверх неё и без хуков show/hide.
+    arrow = CreateFrame("Button", nil, main)
     arrow:SetSize(14, 36)
     arrow:SetPoint("RIGHT", main, "LEFT", 8, 0)
-    arrow:SetFrameStrata(main:GetFrameStrata())
-    arrow:SetFrameLevel(main:GetFrameLevel() + 6) -- выше и окна, и панели
+    arrow:SetFrameStrata("FULLSCREEN_DIALOG")
     Bevel(arrow, C.block or { 0.06, 0.07, 0.08 }, C.border or { 0.18, 0.20, 0.22 })
 
     arrow.glyph = arrow:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -757,18 +754,13 @@ end
 -- UIParent, поэтому за окном не следует сама: показ/скрытие вешаем хуками.
 local main = _G[MAIN]
 if main then
-    MakeArrow()
+    MakeArrow() -- дочерний main, скрывается вместе с ним
     main:HookScript("OnShow", function()
-        if arrow then arrow:Show() end
         if not IsCollapsed() then
             if not panel then BuildPanel() end
             Populate()
         end
         ApplyCollapsed()
-    end)
-    main:HookScript("OnHide", function()
-        if panel then panel:Hide() end
-        if arrow then arrow:Hide() end
     end)
     if main:IsShown() then
         if not IsCollapsed() then BuildPanel(); Populate() end
