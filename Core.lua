@@ -2982,6 +2982,9 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
 
     if msg == "gems" then
         if ns.CaptureStart then ns.CaptureStart("gems") end
+        if UnitLevel("player") ~= 20 then
+            print("[TGF] ВНИМАНИЕ: не 20 уровня. Число гнёзд верно, статы и уровень — нет.")
+        end
         local ok, err = pcall(function()
         for _, item in ipairs(ns.Items) do
             local link = FindOwnedLink(item.itemID)
@@ -3012,6 +3015,9 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     -- по нему правится база. Не только расхождения, как /tgf scan, а всё.
     if msg == "ref" then
         if ns.CaptureStart then ns.CaptureStart("ref") end
+        if UnitLevel("player") ~= 20 then
+            print("[TGF] ВНИМАНИЕ: персонаж не 20 уровня — статы и уровни предметов неточны. Слепок годен только с двадцатки.")
+        end
         local ok, err = pcall(function()
             local ORD = { "int", "agi", "str", "stam", "crit", "haste", "iskus", "vers" }
             local n = 0
@@ -3147,6 +3153,9 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
 
     if msg == "scan" then
         if ns.CaptureStart then ns.CaptureStart("scan") end
+        if UnitLevel("player") ~= 20 then
+            print("[TGF] ВНИМАНИЕ: персонаж не 20 уровня — статы масштабируются по уровню, сверка неточна. Прогонять только двадцаткой.")
+        end
         local ok, err = pcall(ScanOwnedItems)
         if ns.CaptureStop then ns.CaptureStop() end -- вернуть print даже при ошибке
         if not ok then error(err) end
