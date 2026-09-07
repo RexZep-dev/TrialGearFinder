@@ -580,7 +580,7 @@ local function BuildPanel()
     header:SetHeight(HEADER_H)
     Bevel(header, C.block or { 0.06, 0.07, 0.08 }, C.border or { 0.18, 0.20, 0.22 })
     local title = header:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    title:SetPoint("LEFT", header, "LEFT", 10, 0)
+    title:SetPoint("CENTER", header, "CENTER", 0, 0)
     title:SetText("BiS-сборки")
     if C.text then title:SetTextColor(C.text[1], C.text[2], C.text[3]) end
 
@@ -699,6 +699,7 @@ local function UpdateArrow()
     if not arrow then return end
     -- свёрнуто → «<» (открыть, панель слева); развёрнуто → «>» (свернуть)
     arrow.glyph:SetText(IsCollapsed() and "<" or ">")
+    arrow:SetShown((_G[MAIN] and _G[MAIN]:IsShown()) and true or false)
 end
 
 local function ApplyCollapsed()
@@ -725,32 +726,27 @@ end
 local function MakeArrow()
     local main = _G[MAIN]
     if not main or arrow then return end
-    -- Узкий тёмный язычок на левой кромке основного окна. Поверх панели,
-    -- чтобы был виден и когда она развёрнута.
-    arrow = CreateFrame("Button", nil, main)
-    arrow:SetSize(13, 34)
-    arrow:SetPoint("RIGHT", main, "LEFT", 10, 0) -- почти целиком на кромке окна
+    -- Язычок на левой кромке основного окна. Дочерний UIParent (не main и не
+    -- панель), самой верхней стратой — иначе панель, которая тоже наверху,
+    -- его перекрывала. Показ/скрытие — вместе с основным окном.
+    arrow = CreateFrame("Button", nil, UIParent)
+    arrow:SetSize(14, 36)
+    arrow:SetPoint("RIGHT", main, "LEFT", 10, 0)
     arrow:SetFrameStrata("FULLSCREEN_DIALOG")
-    arrow:SetFrameLevel(20)
+    arrow:SetFrameLevel(30)
     Bevel(arrow, C.block or { 0.06, 0.07, 0.08 }, C.border or { 0.18, 0.20, 0.22 })
 
-    arrow.glyph = arrow:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    arrow.glyph = arrow:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     arrow.glyph:SetPoint("CENTER", 0, 0)
-    local t2 = C.text2 or { 0.7, 0.7, 0.72 }
-    arrow.glyph:SetTextColor(t2[1], t2[2], t2[3])
+    arrow.glyph:SetTextColor(GOLD[1], GOLD[2], GOLD[3]) -- золотом, как прежняя стрелка
 
     arrow:SetScript("OnClick", Toggle)
     arrow:SetScript("OnEnter", function(self)
-        self.glyph:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
         GameTooltip:AddLine(IsCollapsed() and "Открыть BiS-сборки" or "Свернуть BiS-сборки")
         GameTooltip:Show()
     end)
-    arrow:SetScript("OnLeave", function(self)
-        local c = C.text2 or { 0.7, 0.7, 0.72 }
-        self.glyph:SetTextColor(c[1], c[2], c[3])
-        GameTooltip:Hide()
-    end)
+    arrow:SetScript("OnLeave", function() GameTooltip:Hide() end)
 end
 
 -- Основное окно уже создано (Core.lua грузится раньше). Панель — дочерний
@@ -759,16 +755,21 @@ local main = _G[MAIN]
 if main then
     MakeArrow()
     main:HookScript("OnShow", function()
+        if arrow then arrow:Show() end
         if not IsCollapsed() then
             if not panel then BuildPanel() end
             Populate()
-            ApplyCollapsed()
         end
+        ApplyCollapsed()
     end)
     main:HookScript("OnHide", function()
         if panel then panel:Hide() end
+        if arrow then arrow:Hide() end
     end)
-    UpdateArrow()
+    if main:IsShown() then
+        if not IsCollapsed() then BuildPanel(); Populate() end
+        ApplyCollapsed()
+    end
 end
 
 ns.ToggleBiS = Toggle
