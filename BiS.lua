@@ -230,11 +230,14 @@ end
 -- Окно
 -- ---------------------------------------------------------------------------
 local WHITE = "Interface\\Buttons\\WHITE8X8"
-local GOLD = { 1.0, 0.82, 0.0 } -- как цвет подземелий в основном окне (C.gold)
-local PANEL_W = 340
-local HEADER_H = 24
-local CLASS_COL_W = 38
+local S = ns.Style or {} -- палитра и скруглённые текстуры из Core.lua
+local C = S.C or {}
+local GOLD = C.gold or { 1.0, 0.82, 0.0 } -- как цвет подземелий в основном окне
+local PANEL_W = 344
+local HEADER_H = 30
+local CLASS_COL_W = 44
 local ROW_H = 24
+local CLASS_ICON = 32
 
 local panel, arrow
 local state = { classID = nil, classFile = nil, specID = nil }
@@ -249,14 +252,26 @@ local function MakeSlotRow(parent, index, y)
     row:SetHeight(ROW_H)
     row:SetPoint("TOPLEFT", parent, "TOPLEFT", 0, y)
     row:SetPoint("TOPRIGHT", parent, "TOPRIGHT", 0, y)
-    row:SetBackdrop({ bgFile = WHITE })
-    row:SetBackdropColor(1, 1, 1, index % 2 == 0 and 0.03 or 0)
+    -- Чередование строк блоком палитры, как в основном окне.
+    local zebra = row:CreateTexture(nil, "BACKGROUND")
+    zebra:SetAllPoints()
+    if index % 2 == 0 and C.block2 then
+        zebra:SetColorTexture(C.block2[1], C.block2[2], C.block2[3], 0.5)
+    else
+        zebra:SetColorTexture(0, 0, 0, 0)
+    end
+    row.hl = row:CreateTexture(nil, "BACKGROUND", nil, 1)
+    row.hl:SetAllPoints()
+    local w = C.warm or { 0.85, 0.72, 0.42 }
+    row.hl:SetColorTexture(w[1], w[2], w[3], 0.10)
+    row.hl:Hide()
 
     row.slotFS = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     row.slotFS:SetPoint("LEFT", row, "LEFT", 6, 0)
     row.slotFS:SetWidth(72)
     row.slotFS:SetJustifyH("LEFT")
-    row.slotFS:SetTextColor(0.55, 0.55, 0.58)
+    local t3 = C.text3 or { 0.49, 0.52, 0.56 }
+    row.slotFS:SetTextColor(t3[1], t3[2], t3[3])
 
     row.icon = row:CreateTexture(nil, "ARTWORK")
     row.icon:SetSize(16, 16)
@@ -292,7 +307,11 @@ local function MakeSlotRow(parent, index, y)
         end
         GameTooltip:Show()
     end)
-    row:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    row:HookScript("OnEnter", function(self) if self.itemID then self.hl:Show() end end)
+    row:SetScript("OnLeave", function(self)
+        self.hl:Hide()
+        GameTooltip:Hide()
+    end)
     row:SetScript("OnClick", function(self)
         if self.itemLink and IsShiftKeyDown() and ChatEdit_InsertLink then
             ChatEdit_InsertLink(self.itemLink)
@@ -401,15 +420,22 @@ local function SelectSpec(specID)
     state.specID = specID
     -- Выбранная вкладка — золотой обводкой и текстом, как подземелья
     -- в основном окне. Тонкая заливка 0.14 была почти не видна.
+    local border = C.border or { 0.25, 0.25, 0.28 }
+    local t2 = C.text2 or { 0.85, 0.85, 0.88 }
     for _, t in ipairs(panel.specTabs or {}) do
         local on = t.specID == specID
         t.sel:SetShown(on)
+        if t.edge then
+            if on then
+                t.edge:SetVertexColor(GOLD[1], GOLD[2], GOLD[3], 1)
+            else
+                t.edge:SetVertexColor(border[1], border[2], border[3], 1)
+            end
+        end
         if on then
-            t:SetBackdropBorderColor(GOLD[1], GOLD[2], GOLD[3], 1)
             t.label:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
         else
-            t:SetBackdropBorderColor(0.25, 0.25, 0.28, 1)
-            t.label:SetTextColor(0.85, 0.85, 0.88)
+            t.label:SetTextColor(t2[1], t2[2], t2[3])
         end
     end
     -- Приоритет статов — из гайда гильдии (BiS_Data.lua), дословно.
@@ -426,16 +452,20 @@ local function BuildSpecTabs(classID)
     for i, spec in ipairs(specs) do
         local tab = panel.specTabs[i]
         if not tab then
-            tab = CreateFrame("Button", nil, panel, "BackdropTemplate")
-            tab:SetSize(90, 22)
-            tab:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
-            tab.sel = tab:CreateTexture(nil, "BACKGROUND")
-            tab.sel:SetAllPoints()
+            tab = CreateFrame("Button", nil, panel)
+            tab:SetSize(94, 22)
+            tab.body, tab.edge = nil, nil
+            if S.RoundedPanel then
+                tab.body, tab.edge = S.RoundedPanel(tab, C.block2, C.border)
+            end
+            tab.sel = tab:CreateTexture(nil, "BACKGROUND", nil, 2)
+            tab.sel:SetPoint("TOPLEFT", 1, -1)
+            tab.sel:SetPoint("BOTTOMRIGHT", -1, 1)
             tab.sel:SetColorTexture(GOLD[1], GOLD[2], GOLD[3], 0.16)
             tab.sel:Hide()
             tab.icon = tab:CreateTexture(nil, "ARTWORK")
             tab.icon:SetSize(14, 14)
-            tab.icon:SetPoint("LEFT", tab, "LEFT", 4, 0)
+            tab.icon:SetPoint("LEFT", tab, "LEFT", 5, 0)
             tab.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
             tab.label = tab:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             tab.label:SetPoint("LEFT", tab.icon, "RIGHT", 4, 0)
@@ -446,13 +476,11 @@ local function BuildSpecTabs(classID)
         tab.specID = spec.specID
         tab.icon:SetTexture(spec.icon or 134400)
         tab.label:SetText(spec.name)
-        tab:SetBackdropColor(0.1, 0.1, 0.12, 0.8)
-        tab:SetBackdropBorderColor(0.25, 0.25, 0.28, 1)
         tab:ClearAllPoints()
         tab:SetPoint("TOPLEFT", panel.tabAnchor, "TOPLEFT", x, 0)
         tab:SetScript("OnClick", function() SelectSpec(spec.specID) end)
         tab:Show()
-        x = x + 94
+        x = x + 98
     end
     return specs
 end
@@ -486,57 +514,80 @@ local function Populate()
     end
 end
 
+-- Скруглённая заливка с рамкой — из хелпера Core.lua, а если его нет (старый
+-- Core), просто сплошной цвет с бордюром.
+local function Bevel(frame, fill, border)
+    if S.RoundedPanel then
+        return S.RoundedPanel(frame, fill, border)
+    end
+    frame:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
+    frame:SetBackdropColor(fill[1], fill[2], fill[3], 1)
+    frame:SetBackdropBorderColor(border[1], border[2], border[3], 1)
+end
+
 local function BuildPanel()
     if panel then return panel end
     local main = _G[MAIN]
     if not main then return end
 
-    panel = CreateFrame("Frame", "TrialGearFinderBiSFrame", main, "BackdropTemplate")
+    -- Дочерний UIParent, а не main: правый край панели заезжает на 16 px под
+    -- основное окно и уровнем ниже — скруглённые правые углы прячутся за его
+    -- фоном, видна только скруглённая слева «боковина». Показ/скрытие —
+    -- хуками OnShow/OnHide основного окна.
+    panel = CreateFrame("Frame", "TrialGearFinderBiSFrame", UIParent, "BackdropTemplate")
     panel:SetWidth(PANEL_W)
-    -- Приклеено к левому краю основного окна, той же высоты: тянется от его
-    -- верха до низа, так что при смене ширины Мин-Макс (окно центрировано,
-    -- левый край едет) панель едет вместе с ним.
-    panel:SetPoint("TOPRIGHT", main, "TOPLEFT", 0, 0)
-    panel:SetPoint("BOTTOMRIGHT", main, "BOTTOMLEFT", 0, 0)
-    panel:SetFrameLevel(main:GetFrameLevel() + 5)
-    panel:SetBackdrop({
-        edgeFile = WHITE, edgeSize = 1,
-        insets = { left = 1, right = 1, top = 1, bottom = 1 },
-    })
-    panel:SetBackdropBorderColor(0.3, 0.3, 0.32, 1)
-    -- Отдельной сплошной заливкой, а не bgFile бэкдропа: сквозь полупрозрачный
-    -- бэкдроп просвечивал лист персонажа за окном.
-    local bg = panel:CreateTexture(nil, "BACKGROUND")
-    bg:SetPoint("TOPLEFT", 1, -1)
-    bg:SetPoint("BOTTOMRIGHT", -1, 1)
-    bg:SetColorTexture(0.03, 0.03, 0.04, 1)
+    panel:SetPoint("TOPRIGHT", main, "TOPLEFT", 16, 0)
+    panel:SetPoint("BOTTOMRIGHT", main, "BOTTOMLEFT", 16, 0)
+    panel:SetFrameStrata(main:GetFrameStrata())
+    panel:SetFrameLevel(math.max(1, main:GetFrameLevel() - 4))
+    panel:EnableMouse(true) -- иначе клики проваливаются на мир за окном
+    Bevel(panel, C.bg or { 0.02, 0.03, 0.03 }, C.border or { 0.18, 0.20, 0.22 })
 
-    local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    title:SetPoint("TOPLEFT", panel, "TOPLEFT", 10, -8)
+    -- Шапка — скруглённый блок, как заголовок основного окна.
+    local header = CreateFrame("Frame", nil, panel)
+    header:SetPoint("TOPLEFT", panel, "TOPLEFT", 6, -6)
+    header:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -6, -6)
+    header:SetHeight(HEADER_H)
+    Bevel(header, C.block or { 0.06, 0.07, 0.08 }, C.border or { 0.18, 0.20, 0.22 })
+    local title = header:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    title:SetPoint("LEFT", header, "LEFT", 10, 0)
     title:SetText("BiS-сборки")
+    if C.text then title:SetTextColor(C.text[1], C.text[2], C.text[3]) end
 
-    -- Колонка классов слева
+    -- Колонка классов — во всю высоту панели, иконки круглые.
     local classCol = CreateFrame("Frame", nil, panel)
-    classCol:SetPoint("TOPLEFT", panel, "TOPLEFT", 6, -(HEADER_H + 8))
+    classCol:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -6)
+    classCol:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", 6, 8)
     classCol:SetWidth(CLASS_COL_W)
-    classCol:SetPoint("BOTTOM", panel, "BOTTOM", 0, 8)
 
     panel.classButtons = {}
+    local classes = AllClasses()
+    local colH = main:GetHeight() - HEADER_H - 30
+    local step = (colH - CLASS_ICON) / math.max(1, #classes - 1)
     local cy = 0
-    for _, cls in ipairs(AllClasses()) do
+    for _, cls in ipairs(classes) do
         local btn = CreateFrame("Button", nil, classCol)
-        btn:SetSize(28, 28)
+        btn:SetSize(CLASS_ICON, CLASS_ICON)
         btn:SetPoint("TOP", classCol, "TOP", 0, cy)
         btn.classID, btn.classFile = cls.classID, cls.classFile
 
         local ic = btn:CreateTexture(nil, "ARTWORK")
-        ic:SetAllPoints()
+        ic:SetPoint("CENTER")
+        ic:SetSize(CLASS_ICON - 4, CLASS_ICON - 4)
         if GetClassAtlas then ic:SetAtlas(GetClassAtlas(cls.classFile)) end
+        if S.CIRCLE and btn.CreateMaskTexture then
+            local mask = btn:CreateMaskTexture()
+            mask:SetTexture(S.CIRCLE, "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+            mask:SetAllPoints(ic)
+            ic:AddMaskTexture(mask)
+        end
 
-        local ring = btn:CreateTexture(nil, "OVERLAY")
+        -- Кольцо выбранного класса: круг чуть больше иконки, золотом.
+        local ring = btn:CreateTexture(nil, "BACKGROUND")
         ring:SetPoint("CENTER")
-        ring:SetSize(32, 32)
-        ring:SetAtlas("communities-create-avatar-border-hover")
+        ring:SetSize(CLASS_ICON + 4, CLASS_ICON + 4)
+        if S.CIRCLE then ring:SetTexture(S.CIRCLE) else ring:SetColorTexture(1, 1, 1, 1) end
+        ring:SetVertexColor(GOLD[1], GOLD[2], GOLD[3], 1)
         ring:Hide()
         btn.ring = ring
 
@@ -550,16 +601,18 @@ local function BuildPanel()
         btn:SetScript("OnClick", function(self) SelectClass(self.classID, self.classFile) end)
 
         panel.classButtons[#panel.classButtons + 1] = btn
-        cy = cy - 30
+        cy = cy - step
     end
+
+    local contentX = CLASS_COL_W + 16
 
     -- Заголовок класса + якорь для вкладок спеков
     panel.classTitle = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    panel.classTitle:SetPoint("TOPLEFT", panel, "TOPLEFT", CLASS_COL_W + 14, -(HEADER_H + 6))
+    panel.classTitle:SetPoint("TOPLEFT", header, "BOTTOMLEFT", CLASS_COL_W + 10, -6)
 
     panel.tabAnchor = CreateFrame("Frame", nil, panel)
-    panel.tabAnchor:SetPoint("TOPLEFT", panel, "TOPLEFT", CLASS_COL_W + 14, -(HEADER_H + 30))
-    panel.tabAnchor:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -8, -(HEADER_H + 30))
+    panel.tabAnchor:SetPoint("TOPLEFT", panel, "TOPLEFT", contentX, -(HEADER_H + 34))
+    panel.tabAnchor:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -8, -(HEADER_H + 34))
     panel.tabAnchor:SetHeight(22)
 
     -- Строка приоритета статов
@@ -568,7 +621,8 @@ local function BuildPanel()
     panel.priorityFS:SetPoint("TOPRIGHT", panel.tabAnchor, "BOTTOMRIGHT", 0, -8)
     panel.priorityFS:SetJustifyH("LEFT")
     panel.priorityFS:SetWordWrap(true)
-    panel.priorityFS:SetTextColor(0.75, 0.78, 0.55)
+    local warm = C.warm or { 0.85, 0.72, 0.42 }
+    panel.priorityFS:SetTextColor(warm[1], warm[2], warm[3])
 
     -- Список слотов
     local list = CreateFrame("Frame", nil, panel)
@@ -583,17 +637,15 @@ local function BuildPanel()
 
     -- Ряд кнопок-заглушек внизу
     local btnRow = CreateFrame("Frame", nil, panel)
-    btnRow:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", CLASS_COL_W + 14, 20)
+    btnRow:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", contentX, 20)
     btnRow:SetPoint("RIGHT", panel, "RIGHT", -8, 0)
     btnRow:SetHeight(18)
     local bx = 0
     for _, label in ipairs({ "Гнёзда", "Камни", "Планировщик" }) do
-        local b = CreateFrame("Button", nil, btnRow, "BackdropTemplate")
+        local b = CreateFrame("Button", nil, btnRow)
         b:SetSize(84, 18)
         b:SetPoint("LEFT", btnRow, "LEFT", bx, 0)
-        b:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
-        b:SetBackdropColor(0.12, 0.12, 0.14, 1)
-        b:SetBackdropBorderColor(0.28, 0.28, 0.3, 1)
+        Bevel(b, C.block2 or { 0.09, 0.10, 0.11 }, C.border or { 0.18, 0.20, 0.22 })
         local fs = b:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
         fs:SetPoint("CENTER")
         fs:SetText(label)
@@ -606,7 +658,8 @@ local function BuildPanel()
     local footer = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     footer:SetPoint("BOTTOM", panel, "BOTTOM", 0, 6)
     footer:SetText("раскладка адаптирована из Cap20 (MIT), автор Kkthnx")
-    footer:SetTextColor(0.35, 0.35, 0.38)
+    local t3 = C.text3 or { 0.4, 0.4, 0.42 }
+    footer:SetTextColor(t3[1] * 0.8, t3[2] * 0.8, t3[3] * 0.8)
 
     return panel
 end
@@ -667,8 +720,8 @@ local function MakeArrow()
     arrow:SetScript("OnLeave", function() GameTooltip:Hide() end)
 end
 
--- Основное окно уже создано (Core.lua грузится раньше). Вешаем стрелку и, если
--- панель не свёрнута, поднимаем её вместе с окном.
+-- Основное окно уже создано (Core.lua грузится раньше). Панель — дочерний
+-- UIParent, поэтому за окном не следует сама: показ/скрытие вешаем хуками.
 local main = _G[MAIN]
 if main then
     MakeArrow()
@@ -679,10 +732,9 @@ if main then
             ApplyCollapsed()
         end
     end)
-    if not IsCollapsed() then
-        BuildPanel()
-        ApplyCollapsed()
-    end
+    main:HookScript("OnHide", function()
+        if panel then panel:Hide() end
+    end)
     UpdateArrow()
 end
 

@@ -354,6 +354,20 @@ local function StyleCheckBox(check, dotSize)
     end)
 end
 
+-- Кисть оформления для окна BiS (BiS.lua): та же палитра, те же скруглённые
+-- текстуры и хелперы, что и у основного окна — чтобы окна выглядели как одно.
+ns.Style = {
+    C = C,
+    RoundedPanel = RoundedPanel,
+    RoundedTexture = RoundedTexture,
+    AddBorder = AddBorder,
+    Fill = Fill,
+    ROUND = ROUND_TEXTURE,
+    RING = RING_TEXTURE,
+    CIRCLE = CIRCLE_TEXTURE,
+    PILL = PILL_TEXTURE,
+}
+
 local frame = CreateFrame("Frame", "TrialGearFinderFrame", UIParent, "BasicFrameTemplateWithInset")
 frame:SetSize(880, 632)
 frame:SetPoint("CENTER")
