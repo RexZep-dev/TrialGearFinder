@@ -14,5 +14,6 @@ ns.CommunityItems = {
     -- Ткань/кожа/кольчуга/латы — тем же порядком полей, что Data.lua.
 
     { itemID = 27417, bonusIDs = { 6710, 6652 }, classes = { "DEMONHUNTER", "ROGUE", "MONK", "DRUID" }, sourceType = "Dungeon", source = "Старые предгорья Хилсбрада", note = "кожаные плечи с универсальностью для монаха-ткача (от сообщества)", ilvl = 23, armor = 7, sockets = 2, socketTypes = { "prismatic", "prismatic" }, socketBonus = { key = "int", value = 1 }, stats = { agi = 5, int = 5, stam = 7, haste = 4, vers = 5 } },
-    { itemID = 133441, bonusIDs = { 6710, 6652 }, classes = { "DEMONHUNTER", "ROGUE", "MONK", "DRUID" }, sourceType = "Dungeon", source = "уточнить", note = "Сапоги оживления: кожаные ступни на универсальность + скорость бега (от сообщества)", ilvl = 23, armor = 9, sockets = 2, socketTypes = { "prismatic", "prismatic" }, socketBonus = { key = "vers", value = 2 }, stats = { agi = 5, int = 5, stam = 7, vers = 5 } },
+    -- +4 к скорости передвижения на этих сапогах — третичка, в статах не учитываем.
+    { itemID = 133441, bonusIDs = { 6710, 6652 }, classes = { "DEMONHUNTER", "ROGUE", "MONK", "DRUID" }, sourceType = "Dungeon", source = "уточнить", note = "Сапоги оживления: кожаные ступни на универсальность, со скоростью бега (от сообщества)", ilvl = 23, armor = 9, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { agi = 5, int = 5, stam = 7, vers = 5 } },
 }
