@@ -230,6 +230,7 @@ end
 -- Окно
 -- ---------------------------------------------------------------------------
 local WHITE = "Interface\\Buttons\\WHITE8X8"
+local GOLD = { 1.0, 0.82, 0.0 } -- как цвет подземелий в основном окне (C.gold)
 local PANEL_W = 340
 local HEADER_H = 24
 local CLASS_COL_W = 38
@@ -398,8 +399,18 @@ end
 
 local function SelectSpec(specID)
     state.specID = specID
+    -- Выбранная вкладка — золотой обводкой и текстом, как подземелья
+    -- в основном окне. Тонкая заливка 0.14 была почти не видна.
     for _, t in ipairs(panel.specTabs or {}) do
-        t.sel:SetShown(t.specID == specID)
+        local on = t.specID == specID
+        t.sel:SetShown(on)
+        if on then
+            t:SetBackdropBorderColor(GOLD[1], GOLD[2], GOLD[3], 1)
+            t.label:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
+        else
+            t:SetBackdropBorderColor(0.25, 0.25, 0.28, 1)
+            t.label:SetTextColor(0.85, 0.85, 0.88)
+        end
     end
     -- Приоритет статов — из гайда гильдии (BiS_Data.lua), дословно.
     local prio = ns.BiSPriority and ns.BiSPriority[specID]
@@ -420,7 +431,7 @@ local function BuildSpecTabs(classID)
             tab:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
             tab.sel = tab:CreateTexture(nil, "BACKGROUND")
             tab.sel:SetAllPoints()
-            tab.sel:SetColorTexture(0.9, 0.9, 1, 0.14)
+            tab.sel:SetColorTexture(GOLD[1], GOLD[2], GOLD[3], 0.16)
             tab.sel:Hide()
             tab.icon = tab:CreateTexture(nil, "ARTWORK")
             tab.icon:SetSize(14, 14)
