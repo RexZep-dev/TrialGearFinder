@@ -250,7 +250,6 @@ local HEADER_H = 30
 local CLASS_COL_W = 40
 local ROW_H = 24
 local CLASS_ICON = 30
-local TUCK = 16 -- на сколько правый край панели заезжает под основное окно
 
 local panel, arrow
 local state = { classID = nil, classFile = nil, specID = nil }
@@ -564,14 +563,19 @@ local function BuildPanel()
     -- хуками OnShow/OnHide основного окна.
     panel = CreateFrame("Frame", "TrialGearFinderBiSFrame", UIParent, "BackdropTemplate")
     panel:SetWidth(PANEL_W)
-    panel:SetPoint("TOPRIGHT", main, "TOPLEFT", TUCK, 0)
-    panel:SetPoint("BOTTOMRIGHT", main, "BOTTOMLEFT", TUCK, 0)
-    -- Поверх всего: чат и всплывашки не должны просвечивать сквозь панель.
-    panel:SetFrameStrata("FULLSCREEN_DIALOG")
-    panel:SetFrameLevel(10)
-    panel:SetToplevel(true)
+    -- Впритык к левому краю основного окна, той же высоты. Уровнем выше окна,
+    -- чтобы чат за ним не просвечивал; прямоугольник, а не скруглённый блок —
+    -- у стыка скругление давало щель.
+    panel:SetPoint("TOPRIGHT", main, "TOPLEFT", 0, 0)
+    panel:SetPoint("BOTTOMRIGHT", main, "BOTTOMLEFT", 0, 0)
+    panel:SetFrameStrata(main:GetFrameStrata())
+    panel:SetFrameLevel(main:GetFrameLevel() + 2)
     panel:EnableMouse(true) -- иначе клики проваливаются на мир за окном
-    Bevel(panel, C.bg or { 0.02, 0.03, 0.03 }, C.border or { 0.18, 0.20, 0.22 })
+    local bgcol = C.bg or { 0.02, 0.03, 0.03 }
+    local pbg = panel:CreateTexture(nil, "BACKGROUND")
+    pbg:SetAllPoints()
+    pbg:SetColorTexture(bgcol[1], bgcol[2], bgcol[3], 1)
+    if S.AddBorder then S.AddBorder(panel, C.border or { 0.18, 0.20, 0.22 }) end
 
     -- Шапка — скруглённый блок, как заголовок основного окна.
     local header = CreateFrame("Frame", nil, panel)
@@ -731,9 +735,9 @@ local function MakeArrow()
     -- его перекрывала. Показ/скрытие — вместе с основным окном.
     arrow = CreateFrame("Button", nil, UIParent)
     arrow:SetSize(14, 36)
-    arrow:SetPoint("RIGHT", main, "LEFT", 10, 0)
-    arrow:SetFrameStrata("FULLSCREEN_DIALOG")
-    arrow:SetFrameLevel(30)
+    arrow:SetPoint("RIGHT", main, "LEFT", 8, 0)
+    arrow:SetFrameStrata(main:GetFrameStrata())
+    arrow:SetFrameLevel(main:GetFrameLevel() + 6) -- выше и окна, и панели
     Bevel(arrow, C.block or { 0.06, 0.07, 0.08 }, C.border or { 0.18, 0.20, 0.22 })
 
     arrow.glyph = arrow:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
