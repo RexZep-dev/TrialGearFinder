@@ -665,26 +665,6 @@ local function BuildPanel()
         ry = ry - ROW_H
     end
 
-    -- Ряд кнопок-заглушек внизу
-    local btnRow = CreateFrame("Frame", nil, panel)
-    btnRow:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", contentX, 20)
-    btnRow:SetPoint("RIGHT", panel, "RIGHT", -8, 0)
-    btnRow:SetHeight(18)
-    local bx = 0
-    for _, label in ipairs({ "Гнёзда", "Камни", "Планировщик" }) do
-        local b = CreateFrame("Button", nil, btnRow)
-        b:SetSize(84, 18)
-        b:SetPoint("LEFT", btnRow, "LEFT", bx, 0)
-        Bevel(b, C.block2 or { 0.09, 0.10, 0.11 }, C.border or { 0.18, 0.20, 0.22 })
-        local fs = b:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-        fs:SetPoint("CENTER")
-        fs:SetText(label)
-        b:SetScript("OnClick", function()
-            print("|cFF86C7BD[TGF]|r " .. label .. ": скоро.")
-        end)
-        bx = bx + 88
-    end
-
     local footer = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
     footer:SetPoint("BOTTOM", panel, "BOTTOM", 0, 6)
     footer:SetText("раскладка адаптирована из Cap20 (MIT), автор Kkthnx")
