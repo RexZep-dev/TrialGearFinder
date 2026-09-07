@@ -189,6 +189,8 @@ local function BuildItemLink(itemID, bonusIDs)
     return string.format("item:%d:0:0:0:0:0:0:0:%d:%d:0:0:%d:%s:0",
         itemID, TWINK_LEVEL, specID, #bonusIDs, bonusString)
 end
+ns.BuildItemLink = BuildItemLink -- окну BiS нужен тот же приём: сырой itemID
+                                 -- показывает вещь низкого уровня без bonusIDs.
 
 ------------------------------------------------------------
 -- Main window
@@ -3088,6 +3090,10 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
 
     if msg == "scan" then
         ScanOwnedItems()
+        return
+    end
+    if msg == "bis" then
+        if ns.ToggleBiS then ns.ToggleBiS() end
         return
     end
     if frame:IsShown() then
