@@ -16,4 +16,8 @@ ns.CommunityItems = {
     { itemID = 27417, bonusIDs = { 6710, 6652 }, classes = { "DEMONHUNTER", "ROGUE", "MONK", "DRUID" }, sourceType = "Dungeon", source = "Старые предгорья Хилсбрада", note = "кожаные плечи с универсальностью для монаха-ткача (от сообщества)", ilvl = 23, armor = 7, sockets = 2, socketTypes = { "prismatic", "prismatic" }, socketBonus = { key = "int", value = 1 }, stats = { agi = 5, int = 5, stam = 7, haste = 4, vers = 5 } },
     -- +4 к скорости передвижения на этих сапогах — третичка, в статах не учитываем.
     { itemID = 133441, bonusIDs = { 6710, 6652 }, classes = { "DEMONHUNTER", "ROGUE", "MONK", "DRUID" }, sourceType = "Dungeon", source = "уточнить", note = "Сапоги оживления: кожаные ступни на универсальность, со скоростью бега (от сообщества)", ilvl = 23, armor = 9, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { agi = 5, int = 5, stam = 7, vers = 5 } },
+    -- Двойной клинок мастерства: кинжал разбойника, БиС Ликвидации в обе руки.
+    -- id найден через Wowhead (127234, добыча с Пандемониус в Гробницах Маны),
+    -- статы сняты со скриншота с триала — в игре аддоном не сверялись.
+    { itemID = 127234, bonusIDs = { 6710, 6652 }, classes = { "ROGUE" }, sourceType = "Dungeon", source = "Гробницы маны", note = "Двойной клинок мастерства: кинжал разбойника, обе руки (от сообщества)", ilvl = 23, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { agi = 3, stam = 3, crit = 7, haste = 4 } },
 }
