@@ -2981,7 +2981,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     end
 
     if msg == "gems" then
-        if ns.CaptureStart then ns.CaptureStart() end
+        if ns.CaptureStart then ns.CaptureStart("gems") end
         local ok, err = pcall(function()
         for _, item in ipairs(ns.Items) do
             local link = FindOwnedLink(item.itemID)
@@ -2995,7 +2995,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
                 -- socketBonus из базы - тоже: сверено с игровыми данными
                 -- (заметка «Бонус За Гнездо»), тестеру видно расхождение с тултипом.
                 local sb = item.socketBonus
-                print(string.format("%s | гнёзда база: %d | насчитано: %d | бонус базы: %s | камни (поля 5-8): [%s][%s][%s][%s]",
+                print(string.format("[TGF] %s | гнёзда база: %d | насчитано: %d | бонус базы: %s | камни (поля 5-8): [%s][%s][%s][%s]",
                     C_Item.GetItemNameByID(item.itemID) or ("id " .. item.itemID),
                     item.sockets or 0, live.sockets or 0,
                     sb and (sb.key .. " " .. sb.value) or "нет",
@@ -3113,7 +3113,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     end
 
     if msg == "scan" then
-        if ns.CaptureStart then ns.CaptureStart() end
+        if ns.CaptureStart then ns.CaptureStart("scan") end
         local ok, err = pcall(ScanOwnedItems)
         if ns.CaptureStop then ns.CaptureStop() end -- вернуть print даже при ошибке
         if not ok then error(err) end

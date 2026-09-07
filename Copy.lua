@@ -54,9 +54,9 @@ do
     end
 end
 
-function ns.CaptureStart()
+function ns.CaptureStart(what)
     captureAll = true
-    Push("───────── /tgf прогон ─────────")
+    Push("───────── [TGF] /tgf " .. (what or "прогон") .. " ─────────")
 end
 
 function ns.CaptureStop()
