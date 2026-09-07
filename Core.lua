@@ -2981,6 +2981,8 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     end
 
     if msg == "gems" then
+        if ns.CaptureStart then ns.CaptureStart() end
+        local ok, err = pcall(function()
         for _, item in ipairs(ns.Items) do
             local link = FindOwnedLink(item.itemID)
             if link then
@@ -2990,12 +2992,20 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
                 -- Поля 5-8 - именно те, откуда CountGemsInLink берёт камни
                 -- (в поле 4 лежат чары). Раньше печатались 4-7, и восьмое поле,
                 -- то есть четвёртый камень, в диагностику вообще не попадало.
-                print(string.format("%s | база: %d | насчитано: %d | камни (поля 5-8): [%s][%s][%s][%s]",
+                -- socketBonus из базы - тоже: сверено с игровыми данными
+                -- (заметка «Бонус За Гнездо»), тестеру видно расхождение с тултипом.
+                local sb = item.socketBonus
+                print(string.format("%s | гнёзда база: %d | насчитано: %d | бонус базы: %s | камни (поля 5-8): [%s][%s][%s][%s]",
                     C_Item.GetItemNameByID(item.itemID) or ("id " .. item.itemID),
                     item.sockets or 0, live.sockets or 0,
+                    sb and (sb.key .. " " .. sb.value) or "нет",
                     tostring(parts[5]), tostring(parts[6]), tostring(parts[7]), tostring(parts[8])))
             end
         end
+        end)
+        if ns.CaptureStop then ns.CaptureStop() end
+        if not ok then error(err) end
+        print("|cFF86C7BD[TGF]|r Скопировать отчёт: /tgf copy")
         return
     end
 
@@ -3103,7 +3113,15 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     end
 
     if msg == "scan" then
-        ScanOwnedItems()
+        if ns.CaptureStart then ns.CaptureStart() end
+        local ok, err = pcall(ScanOwnedItems)
+        if ns.CaptureStop then ns.CaptureStop() end -- вернуть print даже при ошибке
+        if not ok then error(err) end
+        print("|cFF86C7BD[TGF]|r Скопировать отчёт: /tgf copy")
+        return
+    end
+    if msg == "copy" then
+        if ns.ShowCopyWindow then ns.ShowCopyWindow() end
         return
     end
     if msg == "bis" then
