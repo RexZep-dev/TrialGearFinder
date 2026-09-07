@@ -114,8 +114,31 @@ local function Build()
     close:SetPoint("TOPRIGHT", 2, 2)
     close:SetFrameLevel(frame:GetFrameLevel() + 5)
 
+    -- Панелька сверху: прогнать команду прямо отсюда + переключатель.
+    local function bar(text, x, w, onClick)
+        local btn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+        btn:SetSize(w, 20)
+        btn:SetPoint("TOPLEFT", x, -26)
+        btn:SetFrameLevel(frame:GetFrameLevel() + 5)
+        btn:SetText(text)
+        btn:SetScript("OnClick", onClick)
+        return btn
+    end
+    frame.scanBtn = bar("Прогнать /tgf scan", 12, 150, function()
+        if SlashCmdList.TRIALGEARFINDER then SlashCmdList.TRIALGEARFINDER("scan") end
+        ns.ShowCopyWindow(true)
+    end)
+    frame.gemsBtn = bar("Прогнать /tgf gems", 166, 150, function()
+        if SlashCmdList.TRIALGEARFINDER then SlashCmdList.TRIALGEARFINDER("gems") end
+        ns.ShowCopyWindow(true)
+    end)
+    frame.modeBtn = bar("", 320, 170, function()
+        frame.showAll = not frame.showAll
+        ns.ShowCopyWindow(true)
+    end)
+
     scroll = CreateFrame("ScrollFrame", "TrialGearFinderCopyScroll", frame, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", 12, -28)
+    scroll:SetPoint("TOPLEFT", 12, -52)
     scroll:SetPoint("BOTTOMRIGHT", -30, 40)
 
     editBox = CreateFrame("EditBox", nil, scroll)
@@ -144,16 +167,6 @@ local function Build()
     selectAll:SetScript("OnClick", function()
         editBox:SetFocus()
         editBox:HighlightText()
-    end)
-
-    -- Переключатель: только строки [TGF] и отчёты / весь видимый чат.
-    frame.modeBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    frame.modeBtn:SetSize(170, 20)
-    frame.modeBtn:SetPoint("BOTTOMRIGHT", -12, 12)
-    frame.modeBtn:SetFrameLevel(frame:GetFrameLevel() + 5)
-    frame.modeBtn:SetScript("OnClick", function()
-        frame.showAll = not frame.showAll
-        ns.ShowCopyWindow(true)
     end)
 
     local grip = CreateFrame("Button", nil, frame)
@@ -188,7 +201,7 @@ function ns.ShowCopyWindow(keepMode)
     if text == "" then
         text = frame.showAll
             and "Чат пуст."
-            or "Строк [TGF] пока нет. Прогони /tgf scan или /tgf gems, либо нажми «весь чат»."
+            or "Строк [TGF] пока нет.\n\nНажми кнопку сверху — «Прогнать /tgf scan» или «Прогнать /tgf gems» — и вывод появится здесь.\nЛибо переключи на «весь чат»."
     end
 
     frame:Show()
