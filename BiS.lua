@@ -153,12 +153,24 @@ end
 
 -- classFile -> { [slotKey] = { item, item, ... } }. Считается один раз: база
 -- статична, а equipLoc через GetItemInfoInstant синхронный.
--- itemID -> запись Data.lua, для ручных поправок ns.BiSPick.
+-- Кандидаты берутся из двух баз: гайд главы гильдии (ns.Items) и предметы
+-- от сообщества (ns.CommunityItems). Формат записи одинаковый.
+local allItemsCache
+local function AllItems()
+    if not allItemsCache then
+        allItemsCache = {}
+        for _, it in ipairs(ns.Items or {}) do allItemsCache[#allItemsCache + 1] = it end
+        for _, it in ipairs(ns.CommunityItems or {}) do allItemsCache[#allItemsCache + 1] = it end
+    end
+    return allItemsCache
+end
+
+-- itemID -> запись, для ручных поправок ns.BiSPick.
 local itemByID
 local function ItemByID(id)
     if not itemByID then
         itemByID = {}
-        for _, it in ipairs(ns.Items or {}) do itemByID[it.itemID] = it end
+        for _, it in ipairs(AllItems()) do itemByID[it.itemID] = it end
     end
     return itemByID[id]
 end
@@ -188,7 +200,7 @@ local bucketCache = {}
 local function BuildBuckets(classFile)
     if bucketCache[classFile] then return bucketCache[classFile] end
     local buckets = {}
-    for _, item in ipairs(ns.Items or {}) do
+    for _, item in ipairs(AllItems()) do
         if ClassAllowed(item, classFile) then
             local _, _, _, equipLoc = C_Item.GetItemInfoInstant(item.itemID)
             local slotKey = equipLoc and EQUIPLOC_SLOT[equipLoc]
