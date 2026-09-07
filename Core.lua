@@ -2459,7 +2459,12 @@ end
 -- всю базу из 122 записей там ни к чему - рарников всего два с половиной десятка.
 local rareItems
 local function MarkKilledByName(name)
-    if not name or name == "" then return end
+    if not name then return end
+    -- В Midnight UnitName у части юнитов возвращает «секретное» значение, пока
+    -- код аддона в стеке (защита от автоматизации). Сравнивать его нельзя —
+    -- по такому имени отметку просто не ставим.
+    if issecretvalue and issecretvalue(name) then return end
+    if name == "" then return end
 
     if not rareItems then
         rareItems = {}

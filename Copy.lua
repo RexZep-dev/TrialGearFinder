@@ -12,6 +12,7 @@ local S = ns.Style or {}
 local C = S.C or {}
 local WHITE = "Interface\\Buttons\\WHITE8X8"
 local TAG = "[TGF]" -- по этой метке ловим свои строки в чате
+local issecret = _G.issecretvalue -- Midnight: часть строк чата «секретные»
 
 local frame, editBox, scroll, chatBtn
 
@@ -43,6 +44,7 @@ end
 
 do
     local function hook(_, msg)
+        if issecret and issecret(msg) then return end
         if type(msg) ~= "string" or msg == "" then return end
         if captureAll or msg:find(TAG, 1, true) then
             Push(Clean(msg))
@@ -74,7 +76,9 @@ local function GatherChat()
             local n = cf:GetNumMessages() or 0
             for j = math.max(1, n - 500), n do
                 local ok, m = pcall(cf.GetMessageInfo, cf, j)
-                if ok and m and m ~= "" then out[#out + 1] = Clean(m) end
+                if ok and m and not (issecret and issecret(m)) and m ~= "" then
+                    out[#out + 1] = Clean(m)
+                end
             end
         end
     end
