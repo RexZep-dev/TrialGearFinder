@@ -124,15 +124,15 @@ local function Build()
         btn:SetScript("OnClick", onClick)
         return btn
     end
-    frame.scanBtn = bar("Прогнать /tgf scan", 12, 150, function()
-        if SlashCmdList.TRIALGEARFINDER then SlashCmdList.TRIALGEARFINDER("scan") end
-        ns.ShowCopyWindow(true)
-    end)
-    frame.gemsBtn = bar("Прогнать /tgf gems", 166, 150, function()
-        if SlashCmdList.TRIALGEARFINDER then SlashCmdList.TRIALGEARFINDER("gems") end
-        ns.ShowCopyWindow(true)
-    end)
-    frame.modeBtn = bar("", 320, 170, function()
+    local function run(cmd)
+        return function()
+            if SlashCmdList.TRIALGEARFINDER then SlashCmdList.TRIALGEARFINDER(cmd) end
+            ns.ShowCopyWindow(true)
+        end
+    end
+    frame.scanBtn = bar("Сверить (/tgf scan)", 12, 155, run("scan"))
+    frame.refBtn = bar("Слепок надетого (/tgf ref)", 171, 175, run("ref"))
+    frame.modeBtn = bar("", 350, 150, function()
         frame.showAll = not frame.showAll
         ns.ShowCopyWindow(true)
     end)
@@ -201,7 +201,7 @@ function ns.ShowCopyWindow(keepMode)
     if text == "" then
         text = frame.showAll
             and "Чат пуст."
-            or "Строк [TGF] пока нет.\n\nНажми кнопку сверху — «Прогнать /tgf scan» или «Прогнать /tgf gems» — и вывод появится здесь.\nЛибо переключи на «весь чат»."
+            or "Строк [TGF] пока нет.\n\nНажми кнопку сверху — «Сверить» или «Слепок надетого» — вывод появится здесь.\nЛибо переключи на «весь чат»."
     end
 
     frame:Show()

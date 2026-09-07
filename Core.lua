@@ -2988,24 +2988,57 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
             if link then
                 local parts = { strsplit(":", link) }
                 local live = ScanItemLink(link)
-                -- Печатаем название, а не голый id: по числам вывод нечитаем.
-                -- Поля 5-8 - именно те, откуда CountGemsInLink берёт камни
-                -- (в поле 4 лежат чары). Раньше печатались 4-7, и восьмое поле,
-                -- то есть четвёртый камень, в диагностику вообще не попадало.
-                -- socketBonus из базы - тоже: сверено с игровыми данными
-                -- (заметка «Бонус За Гнездо»), тестеру видно расхождение с тултипом.
                 local sb = item.socketBonus
-                print(string.format("[TGF] %s | гнёзда база: %d | насчитано: %d | бонус базы: %s | камни (поля 5-8): [%s][%s][%s][%s]",
+                -- Компактно: гн база/насчитано, бонус, камни из полей 5-8 ссылки
+                -- (в поле 4 чары). По этим полям CountGemsInLink и считает.
+                local g = {}
+                for f = 5, 8 do if parts[f] and parts[f] ~= "" and parts[f] ~= "0" then g[#g + 1] = parts[f] end end
+                print(string.format("[TGF] %s | гн %d/%d | sb %s | камни %s",
                     C_Item.GetItemNameByID(item.itemID) or ("id " .. item.itemID),
                     item.sockets or 0, live.sockets or 0,
-                    sb and (sb.key .. " " .. sb.value) or "нет",
-                    tostring(parts[5]), tostring(parts[6]), tostring(parts[7]), tostring(parts[8])))
+                    sb and (sb.key .. sb.value) or "-",
+                    (#g > 0) and table.concat(g, ",") or "-"))
             end
         end
         end)
         if ns.CaptureStop then ns.CaptureStop() end
         if not ok then error(err) end
-        print("|cFF86C7BD[TGF]|r Скопировать отчёт: /tgf copy")
+        print("|cFF86C7BD[TGF]|r Скопировать: /tgf copy")
+        return
+    end
+
+    -- Полный слепок надетого/сумочного из базы: живые статы каждого предмета,
+    -- компактно. Для сбора у людей с BiS — они прогоняют и присылают отчёт,
+    -- по нему правится база. Не только расхождения, как /tgf scan, а всё.
+    if msg == "ref" then
+        if ns.CaptureStart then ns.CaptureStart("ref") end
+        local ok, err = pcall(function()
+            local ORD = { "int", "agi", "str", "stam", "crit", "haste", "iskus", "vers" }
+            local n = 0
+            for _, item in ipairs(ns.Items) do
+                local link = FindOwnedLink(item.itemID)
+                if link then
+                    local live = ScanItemLink(link)
+                    local sp = {}
+                    for _, k in ipairs(ORD) do
+                        if live.stats[k] then sp[#sp + 1] = k .. live.stats[k] end
+                    end
+                    local sb = live.socketBonus
+                    print(string.format("[TGF] %d %s | ур%s | %s | гн%d%s",
+                        item.itemID,
+                        C_Item.GetItemNameByID(item.itemID) or "?",
+                        tostring(live.ilvl or "?"),
+                        (#sp > 0) and table.concat(sp, " ") or "-",
+                        live.sockets or 0,
+                        sb and (" sb" .. sb.key .. sb.value) or ""))
+                    n = n + 1
+                end
+            end
+            print(string.format("[TGF] ref: %d предметов из базы у персонажа", n))
+        end)
+        if ns.CaptureStop then ns.CaptureStop() end
+        if not ok then error(err) end
+        print("|cFF86C7BD[TGF]|r Скопировать: /tgf copy")
         return
     end
 
