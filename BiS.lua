@@ -245,11 +245,12 @@ local WHITE = "Interface\\Buttons\\WHITE8X8"
 local S = ns.Style or {} -- палитра и скруглённые текстуры из Core.lua
 local C = S.C or {}
 local GOLD = C.gold or { 1.0, 0.82, 0.0 } -- как цвет подземелий в основном окне
-local PANEL_W = 344
+local PANEL_W = 366
 local HEADER_H = 30
-local CLASS_COL_W = 44
+local CLASS_COL_W = 40
 local ROW_H = 24
-local CLASS_ICON = 32
+local CLASS_ICON = 30
+local TUCK = 16 -- на сколько правый край панели заезжает под основное окно
 
 local panel, arrow
 local state = { classID = nil, classFile = nil, specID = nil }
@@ -460,12 +461,18 @@ local function BuildSpecTabs(classID)
     ClearSpecTabs()
     panel.specTabs = panel.specTabs or {}
     local specs = SpecsForClass(classID)
+    local n = #specs
+    -- Ширина вкладки — чтобы все спеки поместились в один ряд. Друид с 4
+    -- спеками ужимается сильнее прочих; длинное имя обрезается.
+    local usable = panel.tabAnchor:GetWidth()
+    if not usable or usable < 10 then usable = PANEL_W - (CLASS_COL_W + 16) - 8 end
+    local gap = 3
+    local tabW = math.max(52, math.floor((usable - (n - 1) * gap) / math.max(1, n)))
     local x = 0
     for i, spec in ipairs(specs) do
         local tab = panel.specTabs[i]
         if not tab then
             tab = CreateFrame("Button", nil, panel)
-            tab:SetSize(94, 22)
             tab.body, tab.edge = nil, nil
             if S.RoundedPanel then
                 tab.body, tab.edge = S.RoundedPanel(tab, C.block2, C.border)
@@ -476,23 +483,32 @@ local function BuildSpecTabs(classID)
             tab.sel:SetColorTexture(GOLD[1], GOLD[2], GOLD[3], 0.16)
             tab.sel:Hide()
             tab.icon = tab:CreateTexture(nil, "ARTWORK")
-            tab.icon:SetSize(14, 14)
-            tab.icon:SetPoint("LEFT", tab, "LEFT", 5, 0)
+            tab.icon:SetSize(13, 13)
+            tab.icon:SetPoint("LEFT", tab, "LEFT", 4, 0)
             tab.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
             tab.label = tab:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            tab.label:SetPoint("LEFT", tab.icon, "RIGHT", 4, 0)
-            tab.label:SetPoint("RIGHT", tab, "RIGHT", -3, 0)
+            tab.label:SetPoint("LEFT", tab.icon, "RIGHT", 3, 0)
+            tab.label:SetPoint("RIGHT", tab, "RIGHT", -2, 0)
             tab.label:SetJustifyH("LEFT")
+            tab.label:SetWordWrap(false)
             panel.specTabs[i] = tab
         end
         tab.specID = spec.specID
+        tab:SetSize(tabW, 22)
         tab.icon:SetTexture(spec.icon or 134400)
         tab.label:SetText(spec.name)
+        tab.label:SetShown(tabW >= 64) -- совсем узкие вкладки — только иконка
         tab:ClearAllPoints()
         tab:SetPoint("TOPLEFT", panel.tabAnchor, "TOPLEFT", x, 0)
         tab:SetScript("OnClick", function() SelectSpec(spec.specID) end)
+        tab:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+            GameTooltip:AddLine(spec.name)
+            GameTooltip:Show()
+        end)
+        tab:SetScript("OnLeave", function() GameTooltip:Hide() end)
         tab:Show()
-        x = x + 98
+        x = x + tabW + gap
     end
     return specs
 end
@@ -548,10 +564,12 @@ local function BuildPanel()
     -- хуками OnShow/OnHide основного окна.
     panel = CreateFrame("Frame", "TrialGearFinderBiSFrame", UIParent, "BackdropTemplate")
     panel:SetWidth(PANEL_W)
-    panel:SetPoint("TOPRIGHT", main, "TOPLEFT", 16, 0)
-    panel:SetPoint("BOTTOMRIGHT", main, "BOTTOMLEFT", 16, 0)
-    panel:SetFrameStrata(main:GetFrameStrata())
-    panel:SetFrameLevel(math.max(1, main:GetFrameLevel() - 4))
+    panel:SetPoint("TOPRIGHT", main, "TOPLEFT", TUCK, 0)
+    panel:SetPoint("BOTTOMRIGHT", main, "BOTTOMLEFT", TUCK, 0)
+    -- Поверх всего: чат и всплывашки не должны просвечивать сквозь панель.
+    panel:SetFrameStrata("FULLSCREEN_DIALOG")
+    panel:SetFrameLevel(10)
+    panel:SetToplevel(true)
     panel:EnableMouse(true) -- иначе клики проваливаются на мир за окном
     Bevel(panel, C.bg or { 0.02, 0.03, 0.03 }, C.border or { 0.18, 0.20, 0.22 })
 
@@ -676,11 +694,11 @@ local function BuildPanel()
     return panel
 end
 
--- Стрелка на стыке окон: сворачивает и разворачивает панель.
+-- Язычок на стыке окон: сворачивает и разворачивает панель.
 local function UpdateArrow()
     if not arrow then return end
-    local collapsed = IsCollapsed()
-    arrow.tex:SetAtlas(collapsed and "common-icon-backarrow" or "common-icon-forwardarrow", true)
+    -- свёрнуто → «<» (открыть, панель слева); развёрнуто → «>» (свернуть)
+    arrow.glyph:SetText(IsCollapsed() and "<" or ">")
 end
 
 local function ApplyCollapsed()
@@ -707,29 +725,32 @@ end
 local function MakeArrow()
     local main = _G[MAIN]
     if not main or arrow then return end
-    arrow = CreateFrame("Button", nil, main, "BackdropTemplate")
-    arrow:SetSize(16, 44)
-    -- Целиком на кромке основного окна, не свисает в мир.
-    arrow:SetPoint("LEFT", main, "LEFT", 4, 0)
-    arrow:SetFrameLevel(main:GetFrameLevel() + 10)
-    arrow:SetBackdrop({
-        bgFile = WHITE, edgeFile = WHITE, edgeSize = 1,
-        insets = { left = 1, right = 1, top = 1, bottom = 1 },
-    })
-    arrow:SetBackdropColor(0, 0, 0, 0.92)
-    arrow:SetBackdropBorderColor(0.3, 0.3, 0.32, 1)
+    -- Узкий тёмный язычок на левой кромке основного окна. Поверх панели,
+    -- чтобы был виден и когда она развёрнута.
+    arrow = CreateFrame("Button", nil, main)
+    arrow:SetSize(13, 34)
+    arrow:SetPoint("RIGHT", main, "LEFT", 10, 0) -- почти целиком на кромке окна
+    arrow:SetFrameStrata("FULLSCREEN_DIALOG")
+    arrow:SetFrameLevel(20)
+    Bevel(arrow, C.block or { 0.06, 0.07, 0.08 }, C.border or { 0.18, 0.20, 0.22 })
 
-    arrow.tex = arrow:CreateTexture(nil, "OVERLAY")
-    arrow.tex:SetSize(12, 12)
-    arrow.tex:SetPoint("CENTER")
+    arrow.glyph = arrow:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    arrow.glyph:SetPoint("CENTER", 0, 0)
+    local t2 = C.text2 or { 0.7, 0.7, 0.72 }
+    arrow.glyph:SetTextColor(t2[1], t2[2], t2[3])
 
     arrow:SetScript("OnClick", Toggle)
     arrow:SetScript("OnEnter", function(self)
+        self.glyph:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
         GameTooltip:AddLine(IsCollapsed() and "Открыть BiS-сборки" or "Свернуть BiS-сборки")
         GameTooltip:Show()
     end)
-    arrow:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    arrow:SetScript("OnLeave", function(self)
+        local c = C.text2 or { 0.7, 0.7, 0.72 }
+        self.glyph:SetTextColor(c[1], c[2], c[3])
+        GameTooltip:Hide()
+    end)
 end
 
 -- Основное окно уже создано (Core.lua грузится раньше). Панель — дочерний
