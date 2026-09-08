@@ -1614,6 +1614,33 @@ local function CreateRow(index)
         if not self.hyperlink then return end
         GameTooltip:SetOwner(self.iconFrame, "ANCHOR_RIGHT")
         GameTooltip:SetHyperlink(self.hyperlink)
+
+        -- Старые вещи клиент масштабирует по кривой уровня непредсказуемо, и
+        -- статы в этом тултипе бывают завышены (у 50214 показывает 7/7/10
+        -- вместо верных 6/6/8). Числа из базы сверены с армори и надёжны -
+        -- если тултип с ними разошёлся, дописываем правильную строку.
+        local base = self.twink and self.twink.stats
+        if base then
+            local live = ScanItemLink(self.hyperlink).stats
+            local wrong = false
+            for _, s in ipairs(STAT_LABELS) do
+                if (base[s.key] or 0) ~= (live[s.key] or 0) then wrong = true break end
+            end
+            if wrong then
+                local parts = {}
+                for _, s in ipairs(STAT_LABELS) do
+                    local v = base[s.key]
+                    if v and v > 0 then
+                        local short = s.label:gsub("^к ", ""):gsub("^(%l)", string.upper)
+                        parts[#parts + 1] = short .. " " .. v
+                    end
+                end
+                GameTooltip:AddLine(" ")
+                GameTooltip:AddLine("Тултип завышен сквошем. По базе (сверено с армори):", 1, 0.82, 0)
+                GameTooltip:AddLine("  " .. table.concat(parts, " · "), 0.9, 0.9, 0.9, true)
+            end
+        end
+
         local sc = self.srcColor or C.gold
         if self.fullSource and self.fullSource ~= "" then
             GameTooltip:AddLine(" ")
