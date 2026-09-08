@@ -12,8 +12,8 @@
 ## SavedVariablesPerCharacter: TrialGearFinderCharDB
 
 Data.lua
+BiS_Community.lua
 Core.lua
 Copy.lua
-BiS_Community.lua
 BiS_Data.lua
 BiS.lua

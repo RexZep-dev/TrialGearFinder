@@ -156,11 +156,15 @@ end
 -- Кандидаты берутся из двух баз: гайд главы гильдии (ns.Items) и предметы
 -- от сообщества (ns.CommunityItems). Формат записи одинаковый.
 local allItemsCache
+local communityId = {} -- itemID -> true: пришёл из ns.CommunityItems, не из гайда
 local function AllItems()
     if not allItemsCache then
         allItemsCache = {}
         for _, it in ipairs(ns.Items or {}) do allItemsCache[#allItemsCache + 1] = it end
-        for _, it in ipairs(ns.CommunityItems or {}) do allItemsCache[#allItemsCache + 1] = it end
+        for _, it in ipairs(ns.CommunityItems or {}) do
+            allItemsCache[#allItemsCache + 1] = it
+            communityId[it.itemID] = true
+        end
     end
     return allItemsCache
 end
@@ -310,6 +314,9 @@ local function MakeSlotRow(parent, index, y)
         GameTooltip:SetHyperlink(self.hyperlink or ("item:" .. self.itemID))
         if self.entry then
             GameTooltip:AddLine(" ")
+            if communityId[self.itemID] then
+                GameTooltip:AddLine("Пред-BiS от сообщества — не из гайда гильдии, но выбить может любой.", 0.85, 0.72, 0.42, true)
+            end
             if self.entry.source then
                 GameTooltip:AddLine("Источник: " .. self.entry.source, 0.55, 0.78, 1, true)
             end
@@ -365,7 +372,10 @@ local function RenderRow(row, slot, item)
     local mixin = Item:CreateFromItemLink(link)
     mixin:ContinueOnItemLoad(function()
         if row.itemID ~= id then return end
-        row.valueFS:SetText(mixin:GetItemName() or ("item:" .. id))
+        local label = mixin:GetItemName() or ("item:" .. id)
+        -- Предмет от сообщества, не из гайда главы гильдии: помечаем «пред-BiS».
+        if communityId[id] then label = label .. "  |cff9a9a9aпред-BiS|r" end
+        row.valueFS:SetText(label)
         local q = mixin:GetItemQualityColor()
         if q then row.valueFS:SetTextColor(q.r, q.g, q.b) end
         local ic = mixin:GetItemIcon()

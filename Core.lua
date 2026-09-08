@@ -997,6 +997,14 @@ local STAT_LABELS = {
 
 local ns_ItemsByID = {}
 for _, it in ipairs(ns.Items) do ns_ItemsByID[it.itemID] = it end
+-- Пред-BiS от сообщества (BiS_Community.lua): в общий поиск попадают только по
+-- тумблеру «Комьюнити», в списке помечаются. В ns_ItemsByID кладём наравне
+-- с гайдом, чтобы сверка, тултип и дневной сброс видели и их.
+local ns_CommunityID = {}
+for _, it in ipairs(ns.CommunityItems or {}) do
+    ns_ItemsByID[it.itemID] = it
+    ns_CommunityID[it.itemID] = true
+end
 
 -- Иконки гнёзд для строки расхождения. Лежат в папке аддона; для остальных
 -- типов картинки нет, там останется только текст.
@@ -1958,8 +1966,26 @@ statsToggle.label:SetText("Мин-Макс")
 -- на свою палитру. Белым, как подписи колонок.
 statsToggle.label:SetTextColor(C.text[1], C.text[2], C.text[3])
 
+-- Тумблер «Комьюнити»: слева от «Мин-Макс». Включён - в списке появляются
+-- пред-BiS от сообщества (BiS_Community.lua), помеченные «пред-BiS».
+local commToggle = CreateFrame("CheckButton", "TrialGearFinderCommToggle", frame, "UICheckButtonTemplate")
+commToggle:SetSize(24, 24)
+StyleCheckBox(commToggle, 11)
+commToggle.label = frame.titleBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+commToggle.label:SetPoint("TOPRIGHT", statsToggle.label, "TOPLEFT", -16, 0)
+commToggle:SetPoint("TOP", commToggle.label, "BOTTOM", 0, -2)
+commToggle.label:SetText("Комьюнити")
+commToggle.label:SetTextColor(C.text[1], C.text[2], C.text[3])
+commToggle:SetScript("OnClick", function()
+    TrialGearFinderDB = TrialGearFinderDB or {}
+    TrialGearFinderDB.showCommunity = not TrialGearFinderDB.showCommunity
+    commToggle:SetChecked(TrialGearFinderDB.showCommunity and true or false)
+    RefreshResults()
+end)
+
 local function UpdateToggleVisual(on)
     statsToggle:SetChecked(on)
+    commToggle:SetChecked(TrialGearFinderDB and TrialGearFinderDB.showCommunity or false)
 end
 
 -- Source column slides left into the freed space and takes the extra width;
@@ -2273,8 +2299,10 @@ local function BuildRowData(item)
 
     return {
         icon = icon,
-        name = string.format("|c%s%s|r", qualityHex, name),
+        name = string.format("|c%s%s|r", qualityHex, name)
+            .. (ns_CommunityID[item.itemID] and "  |cff9a9a9aпред-BiS|r" or ""),
         rawName = name,
+        community = ns_CommunityID[item.itemID] or nil,
         qualityColor = { qR or 1, qG or 1, qB or 1 },
         -- Ручной порядок внутри слота. Меньше - выше. Ставится в Data.lua
         -- только там, где догадка по заметке промахивается.
@@ -2321,15 +2349,23 @@ RefreshResults = function()
     local matches = {}
     local pending = false
 
-    for _, item in ipairs(ns.Items) do
-        if PassesStaticFilters(item) then
-            local rowData = BuildRowData(item)
-            if rowData == nil then
-                pending = true
-            elseif rowData ~= false then
-                table.insert(matches, rowData)
+    local function collect(list)
+        for _, item in ipairs(list) do
+            if PassesStaticFilters(item) then
+                local rowData = BuildRowData(item)
+                if rowData == nil then
+                    pending = true
+                elseif rowData ~= false then
+                    table.insert(matches, rowData)
+                end
             end
         end
+    end
+
+    collect(ns.Items)
+    -- Пред-BiS от сообщества — только по тумблеру «Комьюнити».
+    if TrialGearFinderDB and TrialGearFinderDB.showCommunity and ns.CommunityItems then
+        collect(ns.CommunityItems)
     end
 
     if #matches == 0 then
@@ -2569,6 +2605,7 @@ frame:SetScript("OnEvent", function(self, event, addonName)
         end
         TrialGearFinderDB = TrialGearFinderDB or {}
         if TrialGearFinderDB.showStats == nil then TrialGearFinderDB.showStats = false end
+        if TrialGearFinderDB.showCommunity == nil then TrialGearFinderDB.showCommunity = false end
 
         -- Отметки «убит» лежат ОТДЕЛЬНО, на персонажа. Лут у рарников «раз
         -- на персонажа» игра так и считает, а у нас отметки были общими:
