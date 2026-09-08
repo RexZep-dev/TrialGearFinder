@@ -1618,26 +1618,34 @@ local function CreateRow(index)
         -- Старые вещи клиент масштабирует по кривой уровня непредсказуемо, и
         -- статы в этом тултипе бывают завышены (у 50214 показывает 7/7/10
         -- вместо верных 6/6/8). Числа из базы сверены с армори и надёжны -
-        -- если тултип с ними разошёлся, дописываем правильную строку.
+        -- переписываем строки статов на месте, только те, что разошлись.
+        -- Цвет строки при :SetText сохраняется, поэтому зелёные вторички
+        -- остаются зелёными, серая неактивная - серой.
         local base = self.twink and self.twink.stats
         if base then
-            local live = ScanItemLink(self.hyperlink).stats
-            local wrong = false
-            for _, s in ipairs(STAT_LABELS) do
-                if (base[s.key] or 0) ~= (live[s.key] or 0) then wrong = true break end
-            end
-            if wrong then
-                local parts = {}
-                for _, s in ipairs(STAT_LABELS) do
-                    local v = base[s.key]
-                    if v and v > 0 then
-                        local short = s.label:gsub("^к ", ""):gsub("^(%l)", string.upper)
-                        parts[#parts + 1] = short .. " " .. v
+            local inSB, touched = false, false
+            for i = 2, GameTooltip:NumLines() do
+                local fs = _G["GameTooltipTextLeft" .. i]
+                local text = fs and fs:GetText()
+                if issecretvalue and text and issecretvalue(text) then text = nil end -- Midnight
+                if text then
+                    if text:find("соответствии цвета") then inSB = true end
+                    if not inSB then
+                        local val, rest = text:match("^%s*%+(%d+)%s+к%s+(.+)$")
+                        local key = val and StemToStatKey(rest)
+                        local bv = key and base[key]
+                        if bv and bv ~= tonumber(val) then
+                            fs:SetText("+" .. bv .. " к " .. rest)
+                            touched = true
+                        end
                     end
                 end
+            end
+            if touched then
                 GameTooltip:AddLine(" ")
-                GameTooltip:AddLine("Тултип завышен сквошем. По базе (сверено с армори):", 1, 0.82, 0)
-                GameTooltip:AddLine("  " .. table.concat(parts, " · "), 0.9, 0.9, 0.9, true)
+                GameTooltip:AddLine("Статы поправлены по базе — тултип клиента завышает сквошем.",
+                    0.85, 0.72, 0.42, true)
+                GameTooltip:Show() -- пересчитать размер после правки строк
             end
         end
 
