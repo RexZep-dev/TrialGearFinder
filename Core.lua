@@ -1692,73 +1692,67 @@ local function CreateRow(index)
     StyleCheckBox(row.done, 10)
     row.done:SetScript("OnClick", function(self)
         if not row.itemID then return end
-        -- Вещь на руках И СВЕРЕНА: отметка не наша, снять нельзя.
-        --
-        -- Условие `ownedDiffs ~= false` тут не придирка. Раньше стояло просто
-        -- `row.owned`, и щелчок глох у вещей, которые лишь ЧИСЛЯТСЯ: счётчик
-        -- насчитал копию, прочитать нечего, а игрок не мог ни поставить,
-        -- ни снять свою отметку. Недоказанное владение чужих отметок не трогает.
-        if row.owned and row.ownedDiffs ~= false then
+        if row.markState == "bis" then
             self:SetChecked(true)
             return
         end
-        -- Рарник отдаёт лут раз на персонажа и уже отмечен: снимать нечего,
-        -- факт случился. Проверяем ПРЕЖНЕЕ состояние - к этому моменту щелчок
-        -- уже перевернул галочку, и GetChecked показывает не то, что было.
-        -- Ctrl - лазейка на случай промаха: без неё одна ошибка выбивала бы
-        -- строку из списка навсегда.
-        if row.markLocked and not IsControlKeyDown() then
+        -- Снятие отметки у рарника «раз на персонажа» - только Ctrl: на дневном
+        -- сбросе она не уйдёт, а факт убийства случился. Ctrl - лазейка от промаха.
+        if row.markState and not row.daily and not IsControlKeyDown() then
             self:SetChecked(true)
             return
         end
         TrialGearFinderCharDB = TrialGearFinderCharDB or {}
         TrialGearFinderCharDB.done = TrialGearFinderCharDB.done or {}
-        TrialGearFinderCharDB.done[row.itemID] = self:GetChecked() and true or nil
-        row.markLocked = (row.lockable and self:GetChecked()) and true or false
-        row:SetAlpha(self:GetChecked() and 0.45 or 1)
+        if self:GetChecked() then
+            -- Ручная отметка «убил, не выпало»: как автоматическая, запоминаем
+            -- число копий сейчас - дальше цвет считается от его роста.
+            TrialGearFinderCharDB.done[row.itemID] =
+                C_Item.GetItemCount(row.itemID, true, false, true) or 0
+        else
+            TrialGearFinderCharDB.done[row.itemID] = nil
+        end
+        RefreshResults()
     end)
     row.done:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        -- Порядок ровно как у цвета кружка, иначе подсказка объясняет не тот
-        -- цвет, который человек видит. Сперва проверенное владение, потом
-        -- убийство, и только потом «числится, но прочитать нечего».
-        local daily = row.fullSource
-            and row.fullSource:find(DAILY_SOURCE_MARK, 1, true) ~= nil
-
-        if row.owned and row.ownedDiffs == true then
-            GameTooltip:AddLine("Вещь есть, совпадает с BiS", 0.2, 1, 0.2)
-        elseif type(row.ownedDiffs) == "table" then
-            GameTooltip:AddLine("Вещь есть, но отличается от BiS-версии:", 1, 0.2, 0.2)
-            for _, d in ipairs(row.ownedDiffs) do
-                GameTooltip:AddLine("  " .. FormatDiffLine(d), 1, 1, 1)
-            end
-        elseif row.killed and not daily then
-            GameTooltip:AddLine("Ты уже убивал этого рарника", 1, 0.2, 0.2)
-            GameTooltip:AddLine("Вещь даётся раз на персонажа, и она не выпала. Больше не выпадет - слот придётся закрывать другой вещью.",
+        -- Текст ровно про тот цвет, что человек видит. Состояние - в row.markState,
+        -- считается в BuildRowData от того, что случилось в этот заход к рарнику.
+        local st = row.markState
+        if st == "bis" then
+            GameTooltip:AddLine("BiS-версия на руках", 0.2, 1, 0.2)
+            GameTooltip:AddLine("Отметка залипла навсегда: к этому рарнику можно больше не ходить.",
                 1, 1, 1, true)
-            if (row.ownedCount or 0) > 0 then
-                -- Копия где-то числится, но прочитать её нельзя. Молчать об этом
-                -- нельзя тоже: иначе непонятно, почему кружок красный, если вещь
-                -- вроде бы есть.
-                GameTooltip:AddLine(string.format(
-                    "Счётчик игры при этом насчитал копий: %d, но прочитать не дал ни одну - похоже, лежит в закрытом банке или у другого персонажа.",
-                    row.ownedCount), 0.7, 0.72, 0.75, true)
+        elseif st == "worse" then
+            GameTooltip:AddLine("Выпала не BiS-версия", 1, 0.2, 0.2)
+            if type(row.ownedDiffs) == "table" then
+                for _, d in ipairs(row.ownedDiffs) do
+                    GameTooltip:AddLine("  " .. FormatDiffLine(d), 1, 1, 1)
+                end
+            elseif (row.ownedCount or 0) > 0 then
+                GameTooltip:AddLine("Копия где-то есть, но прочитать её не удалось - похоже, в закрытом банке или у другого персонажа.",
+                    0.7, 0.72, 0.75, true)
             end
-            GameTooltip:AddLine("Щелчком отметка не снимается: это уже случившийся факт. Отметил по ошибке - Ctrl+щелчок.",
-                0.7, 0.72, 0.75, true)
-        elseif row.killed then
+            if row.daily then
+                GameTooltip:AddLine("Рарник ежедневный: на дневном сбросе кружок опустеет, можно прийти снова за BiS-версией.",
+                    0.7, 0.72, 0.75, true)
+            else
+                GameTooltip:AddLine("Рарник даётся раз на персонажа - BiS-версии уже не будет. Отметил по ошибке: Ctrl+щелчок.",
+                    0.7, 0.72, 0.75, true)
+            end
+        elseif st == "nodrop" then
             GameTooltip:AddLine("Рарник убит, нужная вещь не выпала", 1, 0.82, 0)
-            GameTooltip:AddLine("Отметка снимется на дневном сбросе - можно прийти снова.",
-                1, 1, 1, true)
+            if row.daily then
+                GameTooltip:AddLine("На дневном сбросе кружок опустеет - можно прийти снова.",
+                    1, 1, 1, true)
+            else
+                GameTooltip:AddLine("Рарник даётся раз на персонажа, вещь не выпала - слот придётся закрывать другой. Отметил по ошибке: Ctrl+щелчок.",
+                    0.7, 0.72, 0.75, true)
+            end
         else
             GameTooltip:AddLine("Отметить: рарник убит, нужная вещь не выпала", 1, 0.82, 0)
-            -- Кружок пустой, но счётчик что-то насчитал - сказать об этом надо,
-            -- иначе игрок пойдёт фармить вещь, которая лежит у него в банке.
-            if row.ownedDiffs == false then
-                GameTooltip:AddLine(string.format(
-                    "Счётчик игры насчитал копий: %d, но прочитать не дал ни одну. Возможно, вещь уже лежит в банке - открой его и наведись снова.",
-                    row.ownedCount or 0), 0.7, 0.72, 0.75, true)
-            end
+            GameTooltip:AddLine("Ставится сама при убийстве. Старые вещи в сумке на цвет не влияют - пока не сходишь к рарнику, кружок пуст.",
+                0.7, 0.72, 0.75, true)
         end
         GameTooltip:Show()
     end)
@@ -1835,70 +1829,37 @@ local function CreateRow(index)
         self.done:SetShown(trackable)
         if not trackable then
             self.owned = nil
-            self.lockable, self.markLocked, self.killed = nil, nil, nil
+            self.markState, self.daily = nil, nil
             self:SetAlpha(1)
         else
-            -- Два состояния: зелёная - вещь на руках (ставится сама), жёлтая - рарник
-            -- убит, но лут не выпал (ставится щелчком). Пустая - ещё не был.
-            local manual = TrialGearFinderCharDB and TrialGearFinderCharDB.done
-                and TrialGearFinderCharDB.done[data.itemID]
-            -- Кружок закрашивается, только когда что-то известно ТОЧНО: вещь
-            -- сверена или рарник отмечен убитым.
-            --
-            -- Недоказанное владение («счётчик насчитал копию, а прочитать
-            -- нечего») кружок больше не закрашивает. Раньше закрашивало серым,
-            -- и выходила путаница: игрок снимал отметку убийства, а кружок
-            -- возвращался серым - будто ничего не снялось. Два разных смысла
-            -- делили один значок и различались лишь оттенком.
-            -- Само число никуда не делось, оно в подсказке.
-            local verified = data.owned and data.ownedDiffs ~= false
-            local done = verified or manual
-            local daily = data.source and data.source:find(DAILY_SOURCE_MARK, 1, true) ~= nil
-            -- Отметку у рарника, который отдаёт лут раз на персонажа, снять
-            -- нельзя: факт случился, и снятая галочка была бы враньём. У
-            -- ежедневного - можно: она и сама уйдёт на дневном сбросе.
-            -- Кто поставил отметку, аддон или игрок, роли не играет.
-            self.lockable = not daily
-            self.markLocked = (manual ~= nil) and not daily
-            -- Отдельным полем, а не выводом из галочки: галочка стоит и когда
-            -- вещь просто числится у персонажа, а подсказке с цветом нужно знать
-            -- именно про убийство.
-            self.killed = manual ~= nil
+            -- Цвет кружка = что случилось в этот заход к рарнику, а не что лежит
+            -- в сумке. Состояние считает BuildRowData:
+            --   bis    - BiS-версия на руках, залипло навсегда (зелёный)
+            --   worse  - в этот заход выпала не-BiS копия (красный, с разбором)
+            --   nodrop - убил, нужное не выпало (жёлтый); уйдёт на дневном сбросе
+            --   nil    - не фармил в этот цикл (пусто); старьё в сумке не в счёт
+            local st = data.markState
+            self.markState = st
+            self.daily = data.source and data.source:find(DAILY_SOURCE_MARK, 1, true) ~= nil
             self.owned = data.owned
-            self.done:SetChecked(done and true or false)
             self.ownedDiffs = data.ownedDiffs
             self.ownedCount = data.ownedCount
-            if done then
+            self.done:SetChecked(st ~= nil)
+            if st then
                 local tex = self.done:GetCheckedTexture()
                 if tex then
-                    -- Порядок важен, и он такой не сразу.
-                    --
-                    -- ПРОВЕРЕННОЕ владение бьёт всё: вещь в руках - это факт,
-                    -- и неважно, убивал ты рарника или нет.
-                    --
-                    -- А вот НЕПРОВЕРЕННОЕ («счётчик что-то насчитал, а прочитать
-                    -- нечего») отметку убийства бить не должно. Раньше било,
-                    -- и выходило хуже некуда: рарника убили, лут не выпал,
-                    -- а кружок серый - «не могу сказать». Убийство мы знаем
-                    -- точно, копию - нет; показываем то, что знаем.
-                    if data.owned and data.ownedDiffs == true then
-                        tex:SetVertexColor(0.2, 1, 0.2)   -- сверено: совпадает
-                    elseif type(data.ownedDiffs) == "table" then
-                        tex:SetVertexColor(1, 0.2, 0.2)   -- сверено: версия другая
-                    elseif manual and not daily then
-                        -- Убил, не выпало, лут раз на персонажа: второй попытки
-                        -- не будет. Жёлтый обнадёживал бы зря.
+                    if st == "bis" then
+                        tex:SetVertexColor(0.2, 1, 0.2)
+                    elseif st == "worse" then
                         tex:SetVertexColor(1, 0.2, 0.2)
                     else
-                        tex:SetVertexColor(1, 0.82, 0)    -- убил; завтра ещё попытка
+                        tex:SetVertexColor(1, 0.82, 0)
                     end
                 end
             end
-            -- Забранное гасим сильнее, чем «был, но не выпало»: туда ещё
-            -- вернёшься. Гасим по тому же правилу, что красим: недоказанное
-            -- владение строку не приглушает - иначе она выглядела бы закрытой,
-            -- а кружок при этом пустой.
-            self:SetAlpha(verified and 0.45 or (manual and 0.7 or 1))
+            -- BiS гасим сильнее: туда возвращаться незачем. Жёлтый/красный - ещё
+            -- вернёшься (ежедневный) либо строка просто закрыта.
+            self:SetAlpha(st == "bis" and 0.45 or (st and 0.7 or 1))
         end
 
         self.fullSource = data.source
@@ -2280,6 +2241,36 @@ local function BuildRowData(item)
         end
     end
 
+    -- Состояние кружка у рарника/сокровища. Считается от того, ЧТО СЛУЧИЛОСЬ
+    -- в этот заход, а не от содержимого сумок: старая копия сама по себе кружок
+    -- не красит. "bis" - BiS-версия на руках (залипает навсегда), "worse" - в
+    -- этот заход выпала не-BiS копия, "nodrop" - убил, нужное не выпало, nil -
+    -- не фармил в этот цикл.
+    local markState
+    if item.sourceType == "World" then
+        TrialGearFinderCharDB = TrialGearFinderCharDB or {}
+        local bisSeen = TrialGearFinderCharDB.bis
+        if bisSeen and bisSeen[item.itemID] then
+            markState = "bis"
+        elseif owned and ownedDiffs == true then
+            -- BiS-версия на руках (в т.ч. с давних пор) - подтверждаем и залипаем.
+            -- ponytail: если база потом опишет версию лучше, кружок останется
+            -- зелёным - «залипло навсегда», как и просили; настоящую разницу
+            -- всё равно покажет /tgf scan.
+            TrialGearFinderCharDB.bis = TrialGearFinderCharDB.bis or {}
+            TrialGearFinderCharDB.bis[item.itemID] = true
+            markState = "bis"
+        else
+            local mark = TrialGearFinderCharDB.done and TrialGearFinderCharDB.done[item.itemID]
+            if mark ~= nil then
+                -- true - отметка старого формата или ручная без базы сравнения:
+                -- берём текущий счётчик, чтобы не показать ложный «worse».
+                local baseline = (type(mark) == "number") and mark or ownedCount
+                markState = (ownedCount > baseline) and "worse" or "nodrop"
+            end
+        end
+    end
+
     return {
         icon = icon,
         name = string.format("|c%s%s|r", qualityHex, name),
@@ -2299,6 +2290,7 @@ local function BuildRowData(item)
         -- true - всё сходится, иначе список расхождений для подсказки.
         ownedDiffs = ownedDiffs,
         ownedCount = ownedCount,
+        markState = markState, -- "bis" | "worse" | "nodrop" | nil, см. выше
         -- Номер карты из метки: по нему рарники группируются по зонам.
         mapID = (function()
             local key = PinKey(item.sourceType, item.itemID, item.source)
@@ -2481,8 +2473,15 @@ local function MarkKilledByName(name)
     local needle = NormalizeName(name)
     local marked
     for _, entry in ipairs(rareItems) do
-        if entry.note:find(needle, 1, true) and not TrialGearFinderCharDB.done[entry.item.itemID] then
-            TrialGearFinderCharDB.done[entry.item.itemID] = true
+        local id = entry.item.itemID
+        if entry.note:find(needle, 1, true) and TrialGearFinderCharDB.done[id] == nil then
+            -- Запоминаем ЧИСЛО копий предмета в момент убийства. Дальше по росту
+            -- этого числа BuildRowData понимает, выпало что-то с рарника или нет:
+            -- старая вещь в сумке счётчик не двигает.
+            -- ponytail: при мгновенном автолуте LOOT_OPENED может прийти уже
+            -- после подбора - тогда база включит дроп и «не-BiS» покажется как
+            -- «не выпало» (жёлтый вместо красного). Оба сбрасываются одинаково.
+            TrialGearFinderCharDB.done[id] = C_Item.GetItemCount(id, true, false, true) or 0
             marked = name
         end
     end
