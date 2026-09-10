@@ -1004,6 +1004,16 @@ for _, it in ipairs(ns.CommunityItems or {}) do
     ns_CommunityID[it.itemID] = true
 end
 
+-- Вещь из тира «Искажение временем» (Путешествие во времени, ilvl 32).
+-- Узнаём по scale-config 13828 в связке - тот же приём, что «эпик по 6712».
+-- Нужно и основному окну, и окну BiS, поэтому в ns.
+function ns.IsTimewalk(item)
+    for _, b in ipairs(item and item.bonusIDs or {}) do
+        if b == 13828 or b == 13827 then return true end
+    end
+    return false
+end
+
 -- Иконки гнёзд для строки расхождения. Лежат в папке аддона; для остальных
 -- типов картинки нет, там останется только текст.
 --
@@ -2351,7 +2361,8 @@ local function BuildRowData(item)
     return {
         icon = icon,
         name = string.format("|c%s%s|r", qualityHex, name)
-            .. (ns_CommunityID[item.itemID] and "  |cff9a9a9aпред-BiS|r" or ""),
+            .. (ns_CommunityID[item.itemID] and "  |cff9a9a9aпред-BiS|r" or "")
+            .. (ns.IsTimewalk(item) and "  |cff3fc7ebТайм Волк|r" or ""),
         rawName = name,
         community = ns_CommunityID[item.itemID] or nil,
         qualityColor = { qR or 1, qG or 1, qB or 1 },

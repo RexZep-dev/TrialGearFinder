@@ -472,6 +472,11 @@ local function RenderRow(row, slot, item, mark)
                 label = label .. "  |cff9a9a9aпред-BiS|r"
             end
         end
+        -- Тайм Волк: вещь только из недели Путешествий во времени. Отдельной
+        -- меткой, потому что это про доступность, а не про источник данных.
+        if ns.IsTimewalk(item) then
+            label = label .. "  |cff3fc7ebТайм Волк|r"
+        end
         row.valueFS:SetText(label)
         local q = mixin:GetItemQualityColor()
         if q then row.valueFS:SetTextColor(q.r, q.g, q.b) end
