@@ -297,7 +297,7 @@ local GOLD = C.gold or { 1.0, 0.82, 0.0 } -- как цвет подземели�
 -- 366 не хватало: длинные названия с пометкой («Рукавицы Железного лезвия
 -- выше гайда») обрезались многоточием, и вкладки спеков тоже жались.
 -- 470 - примерно половина основного окна (880), масштаб текста один и тот же.
-local PANEL_W = 470
+local PANEL_W = 500
 -- Насколько панель заезжает ПОД основное окно. Больше радиуса скругления
 -- картинки (10), поэтому правые углы панели и левая рамка окна оказываются
 -- накрыты - на стыке ни щели, ни вмятин, два окна читаются как одно.
@@ -305,7 +305,9 @@ local PANEL_W = 470
 local SEAM = 12
 local HEADER_H = 30
 local CLASS_COL_W = 40
-local ROW_H = 24
+-- 16 AB@>: 4>;6=K C<5AB8BLAO <564C AB@>:>9 ?@8>@8B5B0 8 ?>4?8ALN 2=87C:
+-- ?@8 2KA>B5 >:=0 632 =0 A?8A>: >AB0QBAO >:>;> 462 B>G5:, 462/16 = 28.
+local ROW_H = 28
 local CLASS_ICON = 30
 
 local panel, arrow
@@ -335,27 +337,31 @@ local function MakeSlotRow(parent, index, y)
     row.hl:SetColorTexture(w[1], w[2], w[3], 0.10)
     row.hl:Hide()
 
-    row.slotFS = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    -- Шрифт и иконка как в основном окне (там GameFontNormal и значок 32):
+    -- при мелком шрифте панель выглядела вдвое «легче» соседа. Иконка меньше
+    -- тридцати двух, потому что строк шестнадцать и они должны уместиться
+    -- в высоту окна.
+    row.slotFS = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     row.slotFS:SetPoint("LEFT", row, "LEFT", 6, 0)
-    row.slotFS:SetWidth(72)
+    row.slotFS:SetWidth(84) -- «Аксессуар 1» крупным шрифтом в 72 не влезало
     row.slotFS:SetJustifyH("LEFT")
     local t3 = C.text3 or { 0.49, 0.52, 0.56 }
     row.slotFS:SetTextColor(t3[1], t3[2], t3[3])
 
     row.icon = row:CreateTexture(nil, "ARTWORK")
-    row.icon:SetSize(16, 16)
+    row.icon:SetSize(22, 22)
     row.icon:SetPoint("LEFT", row.slotFS, "RIGHT", 4, 0)
     row.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
     row.icon:Hide()
 
     -- Зелёная галочка: этот предмет сейчас надет.
     row.check = row:CreateTexture(nil, "OVERLAY")
-    row.check:SetSize(12, 12)
+    row.check:SetSize(14, 14)
     row.check:SetPoint("RIGHT", row, "RIGHT", -6, 0)
     row.check:SetAtlas("common-icon-checkmark")
     row.check:Hide()
 
-    row.valueFS = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    row.valueFS = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     row.valueFS:SetPoint("LEFT", row.icon, "RIGHT", 4, 0)
     row.valueFS:SetPoint("RIGHT", row, "RIGHT", -22, 0)
     row.valueFS:SetJustifyH("LEFT")
