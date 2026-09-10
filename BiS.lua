@@ -304,11 +304,11 @@ local PANEL_W = 500
 -- Содержимое панели отступает на столько же, чтобы не залезть за стык.
 local SEAM = 12
 local HEADER_H = 30
-local CLASS_COL_W = 40
+local CLASS_COL_W = 44 -- 8:>=:0 36 ?;NA 7>;>B>5 :>;LF> +4 ?> :@0O<
 -- 16 AB@>: 4>;6=K C<5AB8BLAO <564C AB@>:>9 ?@8>@8B5B0 8 ?>4?8ALN 2=87C:
 -- ?@8 2KA>B5 >:=0 632 =0 A?8A>: >AB0QBAO >:>;> 462 B>G5:, 462/16 = 28.
 local ROW_H = 28
-local CLASS_ICON = 30
+local CLASS_ICON = 36
 
 local panel, arrow
 local state = { classID = nil, classFile = nil, specID = nil }
@@ -586,10 +586,10 @@ local function BuildSpecTabs(classID)
             tab.sel:SetColorTexture(GOLD[1], GOLD[2], GOLD[3], 0.16)
             tab.sel:Hide()
             tab.icon = tab:CreateTexture(nil, "ARTWORK")
-            tab.icon:SetSize(13, 13)
+            tab.icon:SetSize(16, 16)
             tab.icon:SetPoint("LEFT", tab, "LEFT", 4, 0)
             tab.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
-            tab.label = tab:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            tab.label = tab:CreateFontString(nil, "OVERLAY", "GameFontNormal")
             tab.label:SetPoint("LEFT", tab.icon, "RIGHT", 3, 0)
             tab.label:SetPoint("RIGHT", tab, "RIGHT", -2, 0)
             tab.label:SetJustifyH("LEFT")
@@ -597,7 +597,7 @@ local function BuildSpecTabs(classID)
             panel.specTabs[i] = tab
         end
         tab.specID = spec.specID
-        tab:SetSize(tabW, 22)
+        tab:SetSize(tabW, 26)
         tab.icon:SetTexture(spec.icon or 134400)
         tab.label:SetText(spec.name)
         tab.label:SetShown(tabW >= 64) -- совсем узкие вкладки — только иконка
@@ -793,7 +793,7 @@ local function BuildPanel()
     panel.tabAnchor:SetHeight(22)
 
     -- Строка приоритета статов
-    panel.priorityFS = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    panel.priorityFS = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     panel.priorityFS:SetPoint("TOPLEFT", panel.tabAnchor, "BOTTOMLEFT", 0, -8)
     panel.priorityFS:SetPoint("TOPRIGHT", panel.tabAnchor, "BOTTOMRIGHT", 0, -8)
     panel.priorityFS:SetJustifyH("LEFT")
@@ -828,8 +828,27 @@ local function UpdateArrow()
     arrow.glyph:SetText(IsCollapsed() and "<" or ">")
 end
 
+-- Два окна вместе шире одного, и на узком экране панель уезжала бы за край.
+-- Ужимаем ОБА одним масштабом: панель - дитя основного окна, поэтому хватает
+-- масштабировать его. Свёрнута - масштаб возвращаем, окно снова во всю величину.
+--
+-- Ниже 0.6 не опускаемся: мельче текст уже не прочитать, пусть лучше вылезет
+-- за край - окно можно подвинуть мышью.
+local MIN_SCALE = 0.6
+local function FitToScreen()
+    local main = _G[MAIN]
+    if not main then return end
+    if IsCollapsed() then main:SetScale(1) return end
+    local have = UIParent:GetWidth()
+    local need = main:GetWidth() + PANEL_W
+    if not (have and need and need > 0) then return end
+    local s = have / need
+    main:SetScale(s < 1 and math.max(MIN_SCALE, s) or 1)
+end
+
 local function ApplyCollapsed()
     if panel then panel:SetShown(not IsCollapsed()) end
+    FitToScreen()
     UpdateArrow()
 end
 
