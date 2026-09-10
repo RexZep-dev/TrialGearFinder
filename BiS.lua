@@ -581,23 +581,38 @@ local function BuildPanel()
     panel:SetFrameLevel(main:GetFrameLevel() + 2)
     panel:EnableMouse(true) -- иначе клики проваливаются на мир за окном
 
-    -- Скругление только слева: та же roundrect, но правый маргин среза - 0,
-    -- поэтому правый край остаётся прямым и встык к основному окну. Заливка
-    -- доходит до правого края вплотную (инсет 0, а не 1) и закрывает там
-    -- полоску цвета рамки - справа рамки быть не должно, это середина стыка.
+    -- Скругление слева, прямой край справа.
+    --
+    -- Правым маргином среза это НЕ делается: середина 9-среза тогда тянется
+    -- из области, куда попадают правые скруглённые углы картинки, и на стыке
+    -- сверху и снизу вылезали вмятины (проверено в игре 10 сентября).
+    -- Маргины остаются честные 10/10/10/10, а правые углы просто закрываются
+    -- сверху прямой заплаткой; линии рамки над и под ней дорисовываются.
     local bgcol = C.bg or { 0.02, 0.03, 0.03 }
     local brd = C.border or { 0.18, 0.20, 0.22 }
     if S.RoundedTexture then
-        local function LeftRounded(color, sublevel)
-            local t = S.RoundedTexture(panel, "BACKGROUND", color, sublevel)
-            if t.SetTextureSliceMargins then t:SetTextureSliceMargins(10, 10, 0, 10) end
-            return t
-        end
-        local edge = LeftRounded(brd, 0)
+        local edge = S.RoundedTexture(panel, "BACKGROUND", brd, 0)
         edge:SetAllPoints()
-        local body = LeftRounded(bgcol, 1)
+        local body = S.RoundedTexture(panel, "BACKGROUND", bgcol, 1)
         body:SetPoint("TOPLEFT", panel, "TOPLEFT", 1, -1)
-        body:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, 1)
+        body:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -1, 1)
+
+        -- Ширина заплатки - радиус скругления картинки плюс запас.
+        local FLAT = 12
+        local patch = panel:CreateTexture(nil, "BACKGROUND", nil, 2)
+        patch:SetPoint("TOPRIGHT", panel, "TOPRIGHT", 0, 0)
+        patch:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, 0)
+        patch:SetWidth(FLAT)
+        patch:SetColorTexture(bgcol[1], bgcol[2], bgcol[3], 1)
+        -- Рамку возвращаем только сверху и снизу: справа её быть не должно,
+        -- там середина стыка с основным окном.
+        for _, side in ipairs({ "TOP", "BOTTOM" }) do
+            local line = panel:CreateTexture(nil, "BACKGROUND", nil, 3)
+            line:SetHeight(1)
+            line:SetWidth(FLAT)
+            line:SetPoint(side .. "RIGHT", panel, side .. "RIGHT", 0, 0)
+            line:SetColorTexture(brd[1], brd[2], brd[3], 1)
+        end
     else
         local pbg = panel:CreateTexture(nil, "BACKGROUND")
         pbg:SetAllPoints()
