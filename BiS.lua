@@ -568,20 +568,45 @@ local function BuildPanel()
     if not main then return end
 
     -- Дочерний основного окна: скрывается вместе с ним, ничего не остаётся
-    -- на экране. Впритык к левому краю, той же высоты. Уровнем выше окна,
-    -- чтобы чат за ним не просвечивал; прямоугольник, а не скруглённый блок —
-    -- у стыка скругление давало щель.
+    -- на экране. Той же высоты, уровнем выше окна, чтобы чат за ним
+    -- не просвечивал.
+    --
+    -- Заезжает на пиксель ВПРАВО, под левую рамку основного окна: иначе на
+    -- стыке видно две линии подряд (своя правая рамка и чужая левая) - тот
+    -- самый «разрыв по центру».
     panel = CreateFrame("Frame", "TrialGearFinderBiSFrame", main, "BackdropTemplate")
     panel:SetWidth(PANEL_W)
-    panel:SetPoint("TOPRIGHT", main, "TOPLEFT", 0, 0)
-    panel:SetPoint("BOTTOMRIGHT", main, "BOTTOMLEFT", 0, 0)
+    panel:SetPoint("TOPRIGHT", main, "TOPLEFT", 1, 0)
+    panel:SetPoint("BOTTOMRIGHT", main, "BOTTOMLEFT", 1, 0)
     panel:SetFrameLevel(main:GetFrameLevel() + 2)
     panel:EnableMouse(true) -- иначе клики проваливаются на мир за окном
+
+    -- Скругление только слева: та же roundrect, но правый маргин среза - 0,
+    -- поэтому правый край остаётся прямым и встык к основному окну. Заливка
+    -- доходит до правого края вплотную (инсет 0, а не 1) и закрывает там
+    -- полоску цвета рамки - справа рамки быть не должно, это середина стыка.
     local bgcol = C.bg or { 0.02, 0.03, 0.03 }
-    local pbg = panel:CreateTexture(nil, "BACKGROUND")
-    pbg:SetAllPoints()
-    pbg:SetColorTexture(bgcol[1], bgcol[2], bgcol[3], 1)
-    if S.AddBorder then S.AddBorder(panel, C.border or { 0.18, 0.20, 0.22 }) end
+    local brd = C.border or { 0.18, 0.20, 0.22 }
+    if S.RoundedTexture then
+        local function LeftRounded(color, sublevel)
+            local t = S.RoundedTexture(panel, "BACKGROUND", color, sublevel)
+            if t.SetTextureSliceMargins then t:SetTextureSliceMargins(10, 10, 0, 10) end
+            return t
+        end
+        local edge = LeftRounded(brd, 0)
+        edge:SetAllPoints()
+        local body = LeftRounded(bgcol, 1)
+        body:SetPoint("TOPLEFT", panel, "TOPLEFT", 1, -1)
+        body:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, 1)
+    else
+        local pbg = panel:CreateTexture(nil, "BACKGROUND")
+        pbg:SetAllPoints()
+        pbg:SetColorTexture(bgcol[1], bgcol[2], bgcol[3], 1)
+        if S.AddBorder then
+            local sides = S.AddBorder(panel, brd)
+            if sides and sides.RIGHT then sides.RIGHT:Hide() end
+        end
+    end
 
     -- Шапка — скруглённый блок, как заголовок основного окна.
     local header = CreateFrame("Frame", nil, panel)
@@ -721,9 +746,12 @@ local function MakeArrow()
     -- Дочерний основного окна: сам скрывается/показывается вместе с ним,
     -- ничего не остаётся на экране после закрытия. Страта выше панели
     -- (та на DIALOG) — тогда язычок поверх неё и без хуков show/hide.
+    -- Прижат к левой кромке изнутри: смещение равно своей ширине, поэтому
+    -- левый край язычка совпадает с левым краем окна и наружу ничего
+    -- не торчит. Было 8 - вылезал на шесть пикселей и висел в пустоте.
     arrow = CreateFrame("Button", nil, main)
     arrow:SetSize(14, 36)
-    arrow:SetPoint("RIGHT", main, "LEFT", 8, 0)
+    arrow:SetPoint("RIGHT", main, "LEFT", 14, 0)
     arrow:SetFrameStrata("FULLSCREEN_DIALOG")
     Bevel(arrow, C.block or { 0.06, 0.07, 0.08 }, C.border or { 0.18, 0.20, 0.22 })
 
