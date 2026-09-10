@@ -704,6 +704,14 @@ local function BuildPanel()
     panel:SetFrameLevel(main:GetFrameLevel() + 2)
     panel:EnableMouse(true) -- иначе клики проваливаются на мир за окном
 
+    -- Панель — визуально часть окна, поэтому таскать её должно двигать всю
+    -- связку. Своего SetMovable у панели нет: двигаем основное окно, панель
+    -- за ним следует как дочерняя. Строки списка ловят мышь сами и сюда
+    -- перетаскивание не доходит - это и нужно, тянут за пустое поле и рамку.
+    panel:RegisterForDrag("LeftButton")
+    panel:SetScript("OnDragStart", function() main:StartMoving() end)
+    panel:SetScript("OnDragStop", function() main:StopMovingOrSizing() end)
+
     -- Скругление слева, прямой край справа.
     --
     -- Правым маргином среза это НЕ делается: середина 9-среза тогда тянется
