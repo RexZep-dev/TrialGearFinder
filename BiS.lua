@@ -250,6 +250,11 @@ local S = ns.Style or {} -- палитра и скруглённые текст�
 local C = S.C or {}
 local GOLD = C.gold or { 1.0, 0.82, 0.0 } -- как цвет подземелий в основном окне
 local PANEL_W = 366
+-- Насколько панель заезжает ПОД основное окно. Больше радиуса скругления
+-- картинки (10), поэтому правые углы панели и левая рамка окна оказываются
+-- накрыты - на стыке ни щели, ни вмятин, два окна читаются как одно.
+-- Содержимое панели отступает на столько же, чтобы не залезть за стык.
+local SEAM = 12
 local HEADER_H = 30
 local CLASS_COL_W = 40
 local ROW_H = 24
@@ -571,13 +576,13 @@ local function BuildPanel()
     -- на экране. Той же высоты, уровнем выше окна, чтобы чат за ним
     -- не просвечивал.
     --
-    -- Заезжает на пиксель ВПРАВО, под левую рамку основного окна: иначе на
-    -- стыке видно две линии подряд (своя правая рамка и чужая левая) - тот
-    -- самый «разрыв по центру».
+    -- Заезжает на SEAM вправо, ПОД основное окно: так накрываются и свои
+    -- правые скруглённые углы, и чужая левая рамка. Иначе на стыке видно
+    -- то две линии подряд, то вмятины от скругления.
     panel = CreateFrame("Frame", "TrialGearFinderBiSFrame", main, "BackdropTemplate")
-    panel:SetWidth(PANEL_W)
-    panel:SetPoint("TOPRIGHT", main, "TOPLEFT", 1, 0)
-    panel:SetPoint("BOTTOMRIGHT", main, "BOTTOMLEFT", 1, 0)
+    panel:SetWidth(PANEL_W + SEAM)
+    panel:SetPoint("TOPRIGHT", main, "TOPLEFT", SEAM, 0)
+    panel:SetPoint("BOTTOMRIGHT", main, "BOTTOMLEFT", SEAM, 0)
     panel:SetFrameLevel(main:GetFrameLevel() + 2)
     panel:EnableMouse(true) -- иначе клики проваливаются на мир за окном
 
@@ -597,19 +602,19 @@ local function BuildPanel()
         body:SetPoint("TOPLEFT", panel, "TOPLEFT", 1, -1)
         body:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -1, 1)
 
-        -- Ширина заплатки - радиус скругления картинки плюс запас.
-        local FLAT = 12
+        -- Заплатка ровно в ширину захода под окно: она и выпрямляет правый
+        -- край, и лежит поверх левой рамки основного окна.
         local patch = panel:CreateTexture(nil, "BACKGROUND", nil, 2)
         patch:SetPoint("TOPRIGHT", panel, "TOPRIGHT", 0, 0)
         patch:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", 0, 0)
-        patch:SetWidth(FLAT)
+        patch:SetWidth(SEAM)
         patch:SetColorTexture(bgcol[1], bgcol[2], bgcol[3], 1)
-        -- Рамку возвращаем только сверху и снизу: справа её быть не должно,
-        -- там середина стыка с основным окном.
+        -- Рамку продолжаем сверху и снизу до самого края - тогда верх и низ
+        -- идут одной прямой через оба окна. Справа рамки нет: там середина.
         for _, side in ipairs({ "TOP", "BOTTOM" }) do
             local line = panel:CreateTexture(nil, "BACKGROUND", nil, 3)
             line:SetHeight(1)
-            line:SetWidth(FLAT)
+            line:SetWidth(SEAM)
             line:SetPoint(side .. "RIGHT", panel, side .. "RIGHT", 0, 0)
             line:SetColorTexture(brd[1], brd[2], brd[3], 1)
         end
@@ -626,7 +631,7 @@ local function BuildPanel()
     -- Шапка — скруглённый блок, как заголовок основного окна.
     local header = CreateFrame("Frame", nil, panel)
     header:SetPoint("TOPLEFT", panel, "TOPLEFT", 6, -6)
-    header:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -6, -6)
+    header:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -(6 + SEAM), -6)
     header:SetHeight(HEADER_H)
     Bevel(header, C.block or { 0.06, 0.07, 0.08 }, C.border or { 0.18, 0.20, 0.22 })
     local title = header:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -692,7 +697,7 @@ local function BuildPanel()
 
     panel.tabAnchor = CreateFrame("Frame", nil, panel)
     panel.tabAnchor:SetPoint("TOPLEFT", panel, "TOPLEFT", contentX, -(HEADER_H + 34))
-    panel.tabAnchor:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -8, -(HEADER_H + 34))
+    panel.tabAnchor:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -(8 + SEAM), -(HEADER_H + 34))
     panel.tabAnchor:SetHeight(22)
 
     -- Строка приоритета статов
@@ -707,7 +712,7 @@ local function BuildPanel()
     -- Список слотов
     local list = CreateFrame("Frame", nil, panel)
     list:SetPoint("TOPLEFT", panel.priorityFS, "BOTTOMLEFT", 0, -10)
-    list:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -8, 40)
+    list:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -(8 + SEAM), 40)
     panel.slotRows = {}
     local ry = 0
     for i = 1, #SLOTS do
