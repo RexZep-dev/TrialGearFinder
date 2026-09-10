@@ -2031,6 +2031,9 @@ commToggle:SetScript("OnClick", function()
     TrialGearFinderDB.showCommunity = not TrialGearFinderDB.showCommunity
     commToggle:SetChecked(TrialGearFinderDB.showCommunity and true or false)
     RefreshResults()
+    -- Тумблер один на оба окна: окно BiS собирает сборку из тех же двух баз,
+    -- и при переключении его надо пересобрать (BiS.lua грузится позже).
+    if ns.RefreshBiS then ns.RefreshBiS() end
 end)
 
 local function UpdateToggleVisual(on)

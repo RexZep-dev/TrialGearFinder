@@ -157,6 +157,16 @@ end
 -- от сообщества (ns.CommunityItems). Формат записи одинаковый.
 local allItemsCache
 local communityId = {} -- itemID -> true: пришёл из ns.CommunityItems, не из гайда
+
+-- Тот же тумблер «Комьюнити», что и в основном окне: один флаг на оба окна.
+local function CommunityOn()
+    return (TrialGearFinderDB and TrialGearFinderDB.showCommunity) and true or false
+end
+
+-- Полный список обеих баз. Метка communityId заполняется ВСЕГДА, независимо
+-- от тумблера: по ней и рисуется пометка, и отсекаются предметы сообщества
+-- при выключенном тумблере. Отбор делает BuildBuckets, а не эта функция -
+-- ItemByID должен находить предмет в любом случае.
 local function AllItems()
     if not allItemsCache then
         allItemsCache = {}
@@ -200,12 +210,16 @@ local function SlotOverride(classFile, specID, slotKey)
     return nil
 end
 
+-- Ключ кэша включает состояние тумблера: при выключенном комьюнити котлы
+-- другие, и старые брать нельзя.
 local bucketCache = {}
 local function BuildBuckets(classFile)
-    if bucketCache[classFile] then return bucketCache[classFile] end
+    local withComm = CommunityOn()
+    local ckey = classFile .. (withComm and "+c" or "")
+    if bucketCache[ckey] then return bucketCache[ckey] end
     local buckets = {}
     for _, item in ipairs(AllItems()) do
-        if ClassAllowed(item, classFile) then
+        if (withComm or not communityId[item.itemID]) and ClassAllowed(item, classFile) then
             local _, _, _, equipLoc = C_Item.GetItemInfoInstant(item.itemID)
             local slotKey = equipLoc and EQUIPLOC_SLOT[equipLoc]
             if slotKey then
@@ -215,7 +229,7 @@ local function BuildBuckets(classFile)
             end
         end
     end
-    bucketCache[classFile] = buckets
+    bucketCache[ckey] = buckets
     return buckets
 end
 
@@ -233,13 +247,34 @@ local function ParsePriority(s)
     return w
 end
 
+-- Сколько стата даёт один камень на двадцатке. ПРЕДПОЛОЖЕНИЕ: замерен только
+-- мета-камень в живом шлеме (+1 к интеллекту), обычные бесцветные не мерили.
+-- Живёт одним именем, чтобы поправить в одном месте, когда будет замер.
+local GEM_VALUE = 1
+
+-- Счёт предмета под веса статов спека. Гнёзда идут двумя отдельными частями,
+-- и вторая тяжелее первой:
+--   * сам камень на двадцатке даёт мелочь (GEM_VALUE);
+--   * бонус за совпадение цвета - настоящий приз, он записан в базе числом
+--     (socketBonus), и у шлемов это, например, +8 к скорости.
+-- Раньше стояло плоское sockets * 2 без учёта весов и бонуса: предмет с тремя
+-- гнёздами и бонусом +8 проигрывал тому, у кого просто статы чуть выше.
 local function ScoreItem(item, w)
     if not w then return 0 end
     local s = 0
     for key, val in pairs(item.stats or {}) do
         s = s + val * (w[key] or 0)
     end
-    return s + (item.sockets or 0) * 2 -- гнездо ~ мелкий бонус к статам
+    -- Камни кладут в самый дорогой для спека стат, поэтому гнездо считается
+    -- по максимальному весу, а не по тому, что в предмете уже лежит.
+    local bestW = 0
+    for _, kw in pairs(w) do
+        if kw > bestW then bestW = kw end
+    end
+    s = s + (item.sockets or 0) * GEM_VALUE * bestW
+    local sb = item.socketBonus
+    if sb and sb.value then s = s + sb.value * (w[sb.key] or 0) end
+    return s
 end
 
 -- ---------------------------------------------------------------------------
@@ -344,7 +379,11 @@ local function MakeSlotRow(parent, index, y)
     return row
 end
 
-local function RenderRow(row, slot, item)
+-- mark - откуда взялся предмет сообщества в этом слоте:
+--   "gap"  - гайд этот слот вообще не закрывает (шея, кольца);
+--   "beat" - гайд закрывает, но вещь сообщества обошла его по статам;
+--   nil    - предмет из гайда, помечать нечего.
+local function RenderRow(row, slot, item, mark)
     row.slotFS:SetText(slot.name)
     row.entry = item
     row.itemID = item and item.itemID or nil
@@ -378,8 +417,18 @@ local function RenderRow(row, slot, item)
     mixin:ContinueOnItemLoad(function()
         if row.itemID ~= id then return end
         local label = mixin:GetItemName() or ("item:" .. id)
-        -- Предмет от сообщества, не из гайда главы гильдии: помечаем «пред-BiS».
-        if communityId[id] then label = label .. "  |cff9a9a9aпред-BiS|r" end
+        -- Предмет от сообщества, не из гайда главы гильдии. Разделяем два
+        -- случая: гайд слот не закрывает вовсе - или закрывает, но эта вещь
+        -- посчиталась лучше. Второе и есть ответ «что даёт комьюнити».
+        if communityId[id] then
+            if mark == "beat" then
+                label = label .. "  |cff5fd35fвыше гайда|r"
+            elseif mark == "gap" then
+                label = label .. "  |cff9a9a9aнет в гайде|r"
+            else
+                label = label .. "  |cff9a9a9aпред-BiS|r"
+            end
+        end
         row.valueFS:SetText(label)
         local q = mixin:GetItemQualityColor()
         if q then row.valueFS:SetTextColor(q.r, q.g, q.b) end
@@ -400,6 +449,23 @@ local function RenderSlots()
         ranked[slotKey] = copy
     end
 
+    -- Лучший счёт среди вещей ГАЙДА в этом котле. nil - гайд слот не закрывает.
+    -- Список уже отсортирован, поэтому достаточно первой не-комьюнити записи.
+    local function BestGuideScore(list)
+        for _, it in ipairs(list or {}) do
+            if not communityId[it.itemID] then return ScoreItem(it, w) end
+        end
+        return nil
+    end
+
+    -- Чем помечать выбранную вещь сообщества: дырой в гайде или превосходством.
+    local function MarkFor(list, pick)
+        if not (pick and communityId[pick.itemID]) then return nil end
+        local best = BestGuideScore(list)
+        if best == nil then return "gap" end
+        return ScoreItem(pick, w) > best and "beat" or nil
+    end
+
     local mhIs2H = false
     for i, slot in ipairs(SLOTS) do
         local row = panel.slotRows[i]
@@ -413,7 +479,11 @@ local function RenderSlots()
         if ov == false then
             pick = nil
         elseif ov then
-            pick = ItemByID(ov) or pick
+            local forced = ItemByID(ov)
+            -- Поправка указывает на вещь сообщества, а тумблер выключен:
+            -- поправку игнорируем и оставляем лучшее из гайда по весам спека.
+            if forced and communityId[ov] and not CommunityOn() then forced = nil end
+            pick = forced or pick
         end
 
         if slot.key == "OFFHAND" and ov == nil then
@@ -422,15 +492,15 @@ local function RenderSlots()
                 -- две копии одного оружия, а не первое+второе.
                 local mh = ranked["MAINHAND"]
                 pick = mh and mh[1] or nil
-                RenderRow(row, slot, pick)
+                RenderRow(row, slot, pick, MarkFor(ranked["MAINHAND"], pick))
             elseif mhIs2H then
                 RenderRow(row, slot, nil)
                 row.valueFS:SetText("— двуручное")
             else
-                RenderRow(row, slot, pick)
+                RenderRow(row, slot, pick, MarkFor(list, pick))
             end
         else
-            RenderRow(row, slot, pick)
+            RenderRow(row, slot, pick, MarkFor(list, pick))
         end
         -- MAINHAND идёт раньше OFFHAND в SLOTS, флаг успеет проставиться.
         if slot.key == "MAINHAND" then
@@ -810,3 +880,10 @@ if main then
 end
 
 ns.ToggleBiS = Toggle
+
+-- Зовёт основное окно, когда переключили тумблер «Комьюнити»: он один на оба
+-- окна, а состав котлов от него зависит - готовые кэши надо выбросить.
+ns.RefreshBiS = function()
+    bucketCache = {}
+    if panel and panel:IsShown() then Populate() end
+end
