@@ -269,6 +269,26 @@ local GEM_VALUE = 3
 --     (socketBonus), и у шлемов это, например, +8 к скорости.
 -- Раньше стояло плоское sockets * 2 без учёта весов и бонуса: предмет с тремя
 -- гнёздами и бонусом +8 проигрывал тому, у кого просто статы чуть выше.
+-- Роль вещи глава гильдии размечает прямо в заметке: «[ДД] хороший прок силы»,
+-- «[Танк] сильно увеличивает запас здоровья». Пометка есть только у аксессуаров,
+-- у остальных вещей её нет и не нужно.
+local function NoteRole(item)
+    local n = item.note or ""
+    if n:find("[Танк]", 1, true) then return "TANK" end
+    if n:find("[ДД]", 1, true) then return "DAMAGER" end
+    return nil -- без пометки: годится любой роли
+end
+
+-- Аксессуар чужой роли в сборку не пускаем. Иначе жрецу-хилу в «Аксессуар 2»
+-- попадал Талисман Хаоса с пометкой [ДД]: по статам он проходил (искусность 9),
+-- а по смыслу спеку не нужен. Хилу не годится ни [ДД], ни [Танк] - остаются
+-- вещи без пометки, они и есть общестатовые.
+local function RoleAllowed(item, role)
+    local want = NoteRole(item)
+    if not want or not role then return true end -- нет пометки или роль неизвестна
+    return want == role
+end
+
 local function ScoreItem(item, w)
     if not w then return 0 end
     local s = 0
@@ -460,10 +480,15 @@ local function RenderSlots()
     local buckets = state.classFile and BuildBuckets(state.classFile) or {}
     local w = ParsePriority(ns.BiSPriority and ns.BiSPriority[state.specID])
 
+    local role = state.specID and GetSpecializationRoleByID
+        and GetSpecializationRoleByID(state.specID) or nil
+
     local ranked = {}
     for slotKey, items in pairs(buckets) do
         local copy = {}
-        for _, it in ipairs(items) do copy[#copy + 1] = it end
+        for _, it in ipairs(items) do
+            if RoleAllowed(it, role) then copy[#copy + 1] = it end
+        end
         table.sort(copy, function(a, b) return ScoreItem(a, w) > ScoreItem(b, w) end)
         ranked[slotKey] = copy
     end
