@@ -49,7 +49,7 @@ local INVTYPE_RU = {
 
 local SLOT_DEFS = {
     { key = "HEAD",     label = INVTYPE_RU.INVTYPE_HEAD,     invTypes = { INVTYPE_HEAD = true } },
-    { key = "NECK",     label = INVTYPE_RU.INVTYPE_NECK,     invTypes = { INVTYPE_NECK = true }, hidden = true },
+    { key = "NECK",     label = INVTYPE_RU.INVTYPE_NECK,     invTypes = { INVTYPE_NECK = true } },
     { key = "SHOULDER", label = INVTYPE_RU.INVTYPE_SHOULDER, invTypes = { INVTYPE_SHOULDER = true } },
     { key = "BACK",     label = INVTYPE_RU.INVTYPE_CLOAK,    invTypes = { INVTYPE_CLOAK = true } },
     { key = "CHEST",    label = INVTYPE_RU.INVTYPE_CHEST,    invTypes = { INVTYPE_CHEST = true, INVTYPE_ROBE = true } },
@@ -58,7 +58,7 @@ local SLOT_DEFS = {
     { key = "WAIST",    label = INVTYPE_RU.INVTYPE_WAIST,    invTypes = { INVTYPE_WAIST = true } },
     { key = "LEGS",     label = INVTYPE_RU.INVTYPE_LEGS,     invTypes = { INVTYPE_LEGS = true } },
     { key = "FEET",     label = INVTYPE_RU.INVTYPE_FEET,     invTypes = { INVTYPE_FEET = true } },
-    { key = "FINGER",   label = INVTYPE_RU.INVTYPE_FINGER,   invTypes = { INVTYPE_FINGER = true }, hidden = true },
+    { key = "FINGER",   label = INVTYPE_RU.INVTYPE_FINGER,   invTypes = { INVTYPE_FINGER = true } },
     { key = "TRINKET",  label = INVTYPE_RU.INVTYPE_TRINKET,  invTypes = { INVTYPE_TRINKET = true } },
     { key = "MAINHAND", label = INVTYPE_RU.INVTYPE_WEAPONMAINHAND, invTypes = { INVTYPE_WEAPONMAINHAND = true, INVTYPE_WEAPON = true } },
     { key = "OFFHAND",  label = INVTYPE_RU.INVTYPE_WEAPONOFFHAND,  invTypes = { INVTYPE_WEAPONOFFHAND = true, INVTYPE_HOLDABLE = true, INVTYPE_SHIELD = true } },
@@ -67,16 +67,14 @@ local SLOT_DEFS = {
 }
 
 -- Slots marked hidden are still ranked and sorted below (SlotRank walks the full
--- list), they just do not appear in the window or in the Слот dropdown - drop the
--- hidden flag to bring a category back once its data is finished.
+-- list), they just do not appear in the window or in the Слот dropdown - add
+-- hidden = true to take a category back out.
 --
--- К релизу 1.0 скрыты обе: шеи и кольца.
--- Шеи вдобавок удалены из Data.lua целиком - 17 записей. Причина не в аддоне:
--- по гайду часть из них больше не выбить, а гнездо в них вставлялось оправой,
--- которая теперь не работает. Держать в БиС-списке вещи, которых не собрать,
--- хуже, чем не показывать слот вовсе. Записи никуда не делись, они в истории
--- git - вернуть можно, если правила снова поменяются.
--- Кольца просто ждут данных, они не собирались.
+-- Шея и кольца были скрыты к релизу 1.0: в Data.lua их не было, а гнездо
+-- вставлялось оправой, которую занерфили. 10 сентября вернули: данные собраны
+-- по слепку двух гильдий и лежат в BiS_Community.lua. В самой Data.lua их
+-- по-прежнему нет, поэтому без кнопки «Комьюнити» слот пустой - это норма,
+-- территория главы гильдии.
 local VISIBLE_SLOT_DEFS, HIDDEN_INVTYPES = {}, {}
 for _, d in ipairs(SLOT_DEFS) do
     if d.hidden then
