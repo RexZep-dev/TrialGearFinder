@@ -34,9 +34,17 @@ ns.CommunityItems = {
     -- classes = nil: это «Разное», носят все классы; окно ранжирует по статам
     -- спека. Число за именем в комментарии — сколько человек носят.
 
+    -- Шеи: считаем ТОЛЬКО родное гнездо.
+    -- Оправы, дававшие шеям +1/+2 гнезда, занерфлены — новый игрок их уже
+    -- не вставит, а у старых копий они остались. По слепку это видно по
+    -- разбросу: у Амнезии 3г×72 и 0г×2, у Запятнанной 2г×16 и 0г×3 —
+    -- гнёзда не родные. У тайм-волковских шей строго 1г у всех: там гнездо
+    -- даёт сам бонус 13668, его получит каждый.
+    -- Кольца — другое дело: оправа из The War Within работает, второе
+    -- гнездо в кольцо вставить можно, поэтому у колец оставляем 2.
     -- Шеи
     { itemID = 200210, bonusIDs = { 6710, 6652 }, classes = nil, sourceType = "World", source = "Лазурный Простор", note = "падает с рарника Forgotten Creation; Амнезия: шея на скорость/универсальность (слепок, ×45 — самая ходовая)", ilvl = 23, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 6, haste = 10, vers = 8 } },
-    { itemID = 178827, bonusIDs = { 6712, 6652 }, classes = nil, sourceType = "Dungeon", source = "Чертоги Покаяния", note = "падает с Халкиаса; Запятнанная грехом подвеска: шея на скорость/искусность (слепок, ×16)", ilvl = 26, armor = nil, sockets = 2, socketTypes = { "prismatic", "prismatic" }, socketBonus = nil, stats = { stam = 6, haste = 14, iskus = 6 } },
+    { itemID = 178827, bonusIDs = { 6712, 6652 }, classes = nil, sourceType = "Dungeon", source = "Чертоги Покаяния", note = "падает с Халкиаса; Запятнанная грехом подвеска: шея на скорость/искусность (слепок, ×16)", ilvl = 26, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 6, haste = 14, iskus = 6 } },
     { itemID = 200446, bonusIDs = { 6710, 6652 }, classes = nil, sourceType = "World", source = "Равнины Он'ары", note = "падает с рарника Liskheszaera; Кристаллизованная печать: шея на универсальность/искусность (слепок, ×12)", ilvl = 23, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 6, vers = 8, iskus = 10 } },
     { itemID = 200207, bonusIDs = { 6710, 6652 }, classes = nil, sourceType = "World", source = "Берега Пробуждения", note = "падает с рарника Morchok; Окаменевшие споры грибов: шея на скорость/универсальность (слепок, ×8)", ilvl = 23, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 6, haste = 9, vers = 9 } },
     { itemID = 193809, bonusIDs = { 6710, 6652 }, classes = nil, sourceType = "Dungeon", source = "Ульдаман: наследие Тира", note = "падает с Бромача; Выкопанный медальон Бромача: шея на скорость/искусность (слепок, ×6)", ilvl = 22, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 5, haste = 13, iskus = 5 } },
