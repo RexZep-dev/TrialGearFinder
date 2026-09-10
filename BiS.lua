@@ -629,9 +629,12 @@ local function BuildPanel()
     end
 
     -- Шапка — скруглённый блок, как заголовок основного окна.
+    -- Отступ сверху ровно 8, как у titleBg в Core.lua: верх у обоих окон
+    -- на одной высоте, и при шестёрке этот блок торчал на два пикселя выше
+    -- соседнего — на стыке это читалось бугорком.
     local header = CreateFrame("Frame", nil, panel)
-    header:SetPoint("TOPLEFT", panel, "TOPLEFT", 6, -6)
-    header:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -(6 + SEAM), -6)
+    header:SetPoint("TOPLEFT", panel, "TOPLEFT", 6, -8)
+    header:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -(6 + SEAM), -8)
     header:SetHeight(HEADER_H)
     Bevel(header, C.block or { 0.06, 0.07, 0.08 }, C.border or { 0.18, 0.20, 0.22 })
     local title = header:CreateFontString(nil, "OVERLAY", "GameFontNormal")
