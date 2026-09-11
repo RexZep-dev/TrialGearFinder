@@ -267,6 +267,37 @@ end
 local SOCKET_VALUE = { prismatic = 5, cogwheel = 10, meta = 12 }
 local GEM_VALUE = SOCKET_VALUE.prismatic -- запасное, если тип гнезда не записан
 
+-- Какая шестерёнка даёт какую вторичку - имя для подсказки под Дракончика.
+-- Тот же список, что в guild-survey/gem_table.txt: все пять типов дают +10.
+local COGWHEEL_NAME = {
+    crit  = "Гладкое зубчатое колесо",
+    haste = "Быстрое зубчатое колесо",
+    vers  = "Искрящееся зубчатое колесо",
+    iskus = "Растрескавшееся зубчатое колесо",
+}
+local DATIVE = { crit = "криту", haste = "скорости", vers = "универсальности", iskus = "искусности" }
+
+-- Какие шестерёнки поставить под спек: по одной на гнездо, в порядке
+-- приоритета статов - не три в одну вторичку. Так их реально ставят: слепок
+-- гильдии показал разбег по 2-3 разным статам почти у всех, а не стек одной
+-- (guild-survey/dracling_combos.js). Хардкапом (30%) можно не думать - со
+-- шмота и камней его всё равно не собрать, см. «Софткапы Вторичек».
+local function CogwheelPicks(item, w)
+    local n = 0
+    for _, t in ipairs(item.socketTypes or {}) do
+        if t == "cogwheel" then n = n + 1 end
+    end
+    if n == 0 or not w then return nil end
+    local order = {}
+    for _, k in ipairs({ "crit", "haste", "vers", "iskus" }) do
+        if (w[k] or 0) > 0 then order[#order + 1] = k end
+    end
+    table.sort(order, function(a, b) return w[a] > w[b] end)
+    local picks = {}
+    for i = 1, math.min(n, #order) do picks[i] = order[i] end
+    return picks
+end
+
 -- Счёт предмета под веса статов спека. Гнёзда идут двумя отдельными частями,
 -- и вторая тяжелее первой:
 --   * сам камень на двадцатке даёт мелочь (GEM_VALUE);
@@ -431,6 +462,15 @@ local function MakeSlotRow(parent, index, y)
             end
             if self.entry.note then
                 GameTooltip:AddLine(self.entry.note, 0.7, 0.7, 0.7, true)
+            end
+            local w = ParsePriority(ns.BiSPriority and ns.BiSPriority[state.specID])
+            local picks = CogwheelPicks(self.entry, w)
+            if picks then
+                GameTooltip:AddLine(" ")
+                GameTooltip:AddLine("Шестерёнки под этот спек:", 0.85, 0.72, 0.42)
+                for _, k in ipairs(picks) do
+                    GameTooltip:AddLine("  " .. COGWHEEL_NAME[k] .. " (" .. DATIVE[k] .. ")", 1, 1, 1)
+                end
             end
         end
         GameTooltip:Show()
