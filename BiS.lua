@@ -268,18 +268,20 @@ local SOCKET_VALUE = { prismatic = 5, cogwheel = 10, meta = 12 }
 local GEM_VALUE = SOCKET_VALUE.prismatic -- запасное, если тип гнезда не записан
 
 -- Какая шестерёнка даёт какую вторичку - itemID для вставки в ссылку
--- Дракончика. Вставляем взаправду - строку статов и цвет гнезда тогда рисует
--- сам клиент, не переписываем текстом.
+-- Дракончика, верхний тир (+10 реально, см. «Камни» § Шестерёнки — два тира).
 --
--- У шестерёнок два тира по качеству: тултип САМОГО ПРЕДМЕТА показывает
--- номинал (+13 у верхнего тира, +9 у нижнего), а реально отмасштабированное
--- значение ниже (+10 и +8 - подтверждено скриншотами тултипов 11 сентября,
--- см. «Камни» § Шестерёнки — два тира). Ниже - itemID верхнего тира (+10):
--- Гладкое (крит), Быстрое (скорость), Искрящееся (универсальность),
--- Растрескавшееся (искусность). У каждого есть тёзка с тем же числом
--- (Прочное/Гладкое, Аккуратное/Быстрое - гномья и гоблинская инженерия),
--- id можно брать любой из пары.
-local COGWHEEL_ID = { crit = 59478, haste = 59479, vers = 59496, iskus = 59480 }
+-- ВСЕ шестерёнки «Уникальный использующийся» (проверено скриншотами
+-- пользователя) - два экземпляра ОДНОГО предмета в гнёзда не встанут разом.
+-- У крита и скорости есть по ДВЕ РАЗНЫХ шестерёнки верхнего тира на одно
+-- и то же число (гномья/гоблинская инженерия: Гладкое/Прочное,
+-- Быстрое/Аккуратное) - их можно вставить парой. У версы и искусности такой
+-- пары нет, вставится только одна.
+local COGWHEEL_IDS = {
+    crit  = { 59478, 59493 }, -- Гладкое, Прочное
+    haste = { 59479, 59489 }, -- Быстрое, Аккуратное
+    vers  = { 59496 },        -- Искрящееся - второй такой не откован
+    iskus = { 59480 },        -- Растрескавшееся - второй такой не откован
+}
 
 -- Какие шестерёнки поставить под спек. Первая проверенная версия давала по
 -- одной на три разных стата - оказалось, не лучший выбор по умолчанию.
@@ -300,6 +302,15 @@ local COGWHEEL_ID = { crit = 59478, haste = 59479, vers = 59496, iskus = 59480 }
 -- стат, остаток - по одному под следующие по приоритету. При трёх гнёздах
 -- (Дракончик - единственный такой предмет) выходит 2 + 1, как у реальных
 -- игроков гильдии.
+--
+-- НО «2» под один стат получится, только если под него есть вторая РАЗНАЯ
+-- шестерёнка (см. COGWHEEL_IDS выше) - иначе второй экземпляр не встанет
+-- (Уникальный использующийся). Если у топ-стата такой пары нет (верса,
+-- искусность), недостающее гнездо уходит следующему по приоритету стату -
+-- он и заберёт освободившееся место, если у него сама пара есть.
+--
+-- Возвращает список { key = "haste", id = 59479 }, а не просто ключи стата:
+-- вызывающему нужен именно itemID для вставки в ссылку.
 local function CogwheelPicks(item, w)
     local n = 0
     for _, t in ipairs(item.socketTypes or {}) do
@@ -312,13 +323,25 @@ local function CogwheelPicks(item, w)
     end
     table.sort(order, function(a, b) return w[a] > w[b] end)
     if #order == 0 then return nil end
-    local picks = {}
+
     local topShare = math.ceil(n / 2)
-    for i = 1, math.min(topShare, n) do picks[i] = order[1] end
-    local nextStat = 2
-    for i = topShare + 1, n do
-        picks[i] = order[nextStat] or order[1] -- меньше приоритетов, чем гнёзд - добиваем топом
-        nextStat = nextStat + 1
+    local picks = {}
+    for i = 1, #order do
+        if #picks >= n then break end
+        local stat = order[i]
+        local ids = COGWHEEL_IDS[stat] or {}
+        local want = (i == 1) and topShare or (n - #picks)
+        want = math.min(want, #ids, n - #picks)
+        for j = 1, want do picks[#picks + 1] = { key = stat, id = ids[j] } end
+    end
+    -- Край: приоритетов меньше, чем гнёзд, и все уже без дублей - добить
+    -- нечем кроме повтора топа. Уникальность тут не спасти: лучше показать
+    -- хоть что-то, чем ничего.
+    local i = 1
+    while #picks < n do
+        local ids = COGWHEEL_IDS[order[1]] or {}
+        picks[#picks + 1] = { key = order[1], id = ids[((i - 1) % math.max(1, #ids)) + 1] }
+        i = i + 1
     end
     return picks
 end
@@ -537,7 +560,7 @@ local function RenderRow(row, slot, item, mark)
     local picks = CogwheelPicks(item, ParsePriority(ns.BiSPriority and ns.BiSPriority[state.specID]))
     if picks then
         gems = {}
-        for i, k in ipairs(picks) do gems[i] = COGWHEEL_ID[k] end
+        for i, p in ipairs(picks) do gems[i] = p.id end
     end
     local link = ns.BuildItemLink and ns.BuildItemLink(id, item.bonusIDs or {}, gems) or ("item:" .. id)
     row.hyperlink, row.itemLink = link, link
