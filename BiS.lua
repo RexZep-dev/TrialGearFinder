@@ -500,6 +500,12 @@ local function MakeSlotRow(parent, index, y)
         if not self.itemID then return end
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
         GameTooltip:SetHyperlink(self.hyperlink or ("item:" .. self.itemID))
+        -- Те же завышенные статы, что и в основном окне: клиент масштабирует
+        -- старые вещи неточно, эталон - армори, он же в базе. Общая правка
+        -- живёт в Core.lua (ns.FixTooltipStats) - до 12 сентября её звало
+        -- только основное окно, и Шлем удара духа показывал 6/8/5 там
+        -- и 7/10/6 здесь.
+        if ns.FixTooltipStats then ns.FixTooltipStats(self.entry and self.entry.stats) end
         if self.entry then
             GameTooltip:AddLine(" ")
             if communityId[self.itemID] then

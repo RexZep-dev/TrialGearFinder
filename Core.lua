@@ -1049,6 +1049,49 @@ local function StemToStatKey(text)
     return nil
 end
 
+-- Правка завышенных статов прямо в уже открытом GameTooltip.
+--
+-- Клиент масштабирует старые вещи по кривой уровня неточно: у Шлема удара
+-- духа ссылка показывает 7/10/6/7/7, а верные значения 6/8/5/7/6. Эталон -
+-- армори, и он же лежит в базе (правило 17 в HANDOFF). Переписываем только
+-- разошедшиеся строки, цвет при :SetText сохраняется - зелёные вторички
+-- остаются зелёными.
+--
+-- Общая для обоих окон: основное зовёт из ShowItemTooltip, окно BiS - из
+-- OnEnter строки. Раньше правка жила только в основном, и одна и та же вещь
+-- показывала разные числа в двух окнах (замечено пользователем 12 сентября).
+-- Возвращает true, если что-то поправлено.
+function ns.FixTooltipStats(base)
+    if type(base) ~= "table" then return false end
+    local inSB, touched = false, false
+    for i = 2, GameTooltip:NumLines() do
+        local fs = _G["GameTooltipTextLeft" .. i]
+        local text = fs and fs:GetText()
+        if issecretvalue and text and issecretvalue(text) then text = nil end -- Midnight
+        if text then
+            -- Ниже строки «При соответствии цвета» идёт бонус за гнёзда,
+            -- это не статы предмета - там не трогаем ничего.
+            if text:find("соответствии цвета") then inSB = true end
+            if not inSB then
+                local val, rest = text:match("^%s*%+(%d+)%s+к%s+(.+)$")
+                local key = val and StemToStatKey(rest)
+                local bv = key and base[key]
+                if bv and bv ~= tonumber(val) then
+                    fs:SetText("+" .. bv .. " к " .. rest)
+                    touched = true
+                end
+            end
+        end
+    end
+    if touched then
+        GameTooltip:AddLine(" ")
+        GameTooltip:AddLine("Статы поправлены по базе — клиент масштабирует эту ссылку неточно.",
+            0.85, 0.72, 0.42, true)
+        GameTooltip:Show() -- пересчитать размер после правки строк
+    end
+    return touched
+end
+
 -- Вставленные камни считаем по самой ссылке, а не по тексту тултипа: строка
 -- камня приходит без распознаваемой иконки, а C_Item.GetItemGem эти камни
 -- не знает.
@@ -1629,40 +1672,10 @@ local function CreateRow(index)
         GameTooltip:SetOwner(self.iconFrame, "ANCHOR_RIGHT")
         GameTooltip:SetHyperlink(self.hyperlink)
 
-        -- Старые вещи клиент масштабирует по кривой уровня непредсказуемо,
-        -- и статы в этом тултипе бывают завышены (у 50214 показывает 7/7/10
-        -- вместо верных 6/6/8). Числа в базе взяты с армори - её сообщество
-        -- считает эталоном, игровой сквош у части вещей врёт вверх. Поэтому
-        -- переписываем строки статов на месте, только разошедшиеся.
-        -- Цвет строки при :SetText сохраняется, поэтому зелёные вторички
-        -- остаются зелёными, серая неактивная - серой.
-        local base = self.twink and self.twink.stats
-        if base then
-            local inSB, touched = false, false
-            for i = 2, GameTooltip:NumLines() do
-                local fs = _G["GameTooltipTextLeft" .. i]
-                local text = fs and fs:GetText()
-                if issecretvalue and text and issecretvalue(text) then text = nil end -- Midnight
-                if text then
-                    if text:find("соответствии цвета") then inSB = true end
-                    if not inSB then
-                        local val, rest = text:match("^%s*%+(%d+)%s+к%s+(.+)$")
-                        local key = val and StemToStatKey(rest)
-                        local bv = key and base[key]
-                        if bv and bv ~= tonumber(val) then
-                            fs:SetText("+" .. bv .. " к " .. rest)
-                            touched = true
-                        end
-                    end
-                end
-            end
-            if touched then
-                GameTooltip:AddLine(" ")
-                GameTooltip:AddLine("Статы поправлены по базе — клиент масштабирует эту ссылку неточно.",
-                    0.85, 0.72, 0.42, true)
-                GameTooltip:Show() -- пересчитать размер после правки строк
-            end
-        end
+        -- Завышенные клиентом статы правим по базе. Сама правка - в
+        -- ns.FixTooltipStats, рядом со StemToStatKey: окно BiS зовёт её же,
+        -- иначе одна вещь показывает в двух окнах разные числа.
+        ns.FixTooltipStats(self.twink and self.twink.stats)
 
         -- Копия на руках разошлась с базой - показываем чем именно. База =
         -- статы с армори (эталон сообщества); игровой сквош у части вещей
