@@ -3273,6 +3273,73 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         return
     end
 
+    -- /tgf new [шея|кольцо|аксессуар] - выгрузка вещей, которых в базе ещё нет.
+    --
+    -- Появилась 12 сентября под шеи недели Путешествий во времени. Найти их
+    -- id по русскому названию негде: Wowhead русские названия этих вещей не
+    -- находит вовсе, а переписывать статы с чужого скриншота - то же гадание.
+    -- Живой источник здесь - сумки того, кто вещь держит в руках.
+    --
+    -- Печатаем две строки на предмет: читаемую (имя, уровень, статы, гнёзда)
+    -- и сырую ссылку с погашенными вертикальными чертами. Сырая нужна
+    -- целиком: в ней лежат bonusIDs, без которых запись в базе соберёт вещь
+    -- не того уровня. Разбирать её по номерам полей на месте не стали -
+    -- нумерация уже один раз разошлась с ожидаемой (см. CountGemsInLink).
+    local newArg = msg:match("^new%s*(.*)$")
+    if newArg then
+        local SLOT_WORD = {
+            [""]           = false, -- без слова: всё, чего нет в базе
+            ["шея"]        = "INVTYPE_NECK",
+            ["кольцо"]     = "INVTYPE_FINGER",
+            ["аксессуар"]  = "INVTYPE_TRINKET",
+        }
+        if SLOT_WORD[newArg] == nil then
+            print("|cFF86C7BD[TGF]|r /tgf new [шея|кольцо|аксессуар] — без слова покажет все вещи, которых нет в базе")
+            return
+        end
+        local want = SLOT_WORD[newArg]
+        if ns.CaptureStart then ns.CaptureStart("new") end
+        local ORD = { "int", "agi", "str", "stam", "crit", "haste", "iskus", "vers" }
+        local seen, found = {}, 0
+        local function ReportNew(itemID, link)
+            if not itemID or not link or seen[itemID] then return end
+            if issecretvalue and (issecretvalue(link) or issecretvalue(itemID)) then return end -- Midnight
+            if ns_ItemsByID[itemID] or ns_CommunityID[itemID] then return end
+            local _, _, _, equipLoc = C_Item.GetItemInfoInstant(itemID)
+            if not equipLoc or equipLoc == "" then return end
+            if want and equipLoc ~= want then return end
+            seen[itemID] = true
+            found = found + 1
+            local live = ScanItemLink(link)
+            local sp = {}
+            for _, k in ipairs(ORD) do
+                if live.stats[k] then sp[#sp + 1] = k .. " = " .. live.stats[k] end
+            end
+            print(string.format("[TGF] %s | ур%s | %s | гнёзд %d%s",
+                C_Item.GetItemNameByID(itemID) or ("id " .. itemID),
+                tostring(live.ilvl or "?"),
+                (#sp > 0) and table.concat(sp, ", ") or "статов нет",
+                #live.socketTypes,
+                live.socketBonus and (" | бонус за цвет: " .. live.socketBonus.key .. " " .. live.socketBonus.value) or ""))
+            print("[TGF] ссылка: " .. (link:gsub("|", "!")))
+        end
+
+        for slot = INVSLOT_FIRST_EQUIPPED, INVSLOT_LAST_EQUIPPED do
+            ReportNew(GetInventoryItemID("player", slot), GetInventoryItemLink("player", slot))
+        end
+        for _, bag in ipairs(OWNED_CONTAINERS) do
+            for slot = 1, (C_Container.GetContainerNumSlots(bag) or 0) do
+                local info = C_Container.GetContainerItemInfo(bag, slot)
+                if info then ReportNew(info.itemID, info.hyperlink) end
+            end
+        end
+
+        if ns.CaptureStop then ns.CaptureStop() end
+        print(string.format("|cFFFFD100[TGF]|r Не из базы: %d %s (надето, сумки, банк если открыт). Скопировать: /tgf copy",
+            found, (newArg ~= "") and newArg or "вещей"))
+        return
+    end
+
     if msg == "scan" then
         if ns.CaptureStart then ns.CaptureStart("scan") end
         if UnitLevel("player") ~= 20 then
