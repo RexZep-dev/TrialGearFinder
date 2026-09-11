@@ -54,6 +54,17 @@ ns.CommunityItems = {
     -- (гнездо от 13668, scale-config 444 = ilvl 32).
     { itemID = 188476, bonusIDs = { 13668, 13828, 7756 }, classes = nil, sourceType = "Dungeon", source = "Кузня Душ", note = "падает с Броньяма; Узник любви: шея на скорость/универсальность. Путешествие во времени, ilvl 32 (слепок, x3)", ilvl = 32, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 6, haste = 8, vers = 13 } },
     { itemID = 188485, bonusIDs = { 13668, 13828, 7756 }, classes = nil, sourceType = "Dungeon", source = "Кузня Душ", note = "падает с Пожирателя Душ; Чародейский кулон злости: шея на крит/универсальность. Путешествие во времени, ilvl 32 (слепок, x3)", ilvl = 32, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 6, crit = 10, vers = 10 } },
+    -- Катаклизм, Путешествие во времени (ближайшая неделя — 16 сентября).
+    -- Другой пул, чем три записи выше: те из данжей Нортренда, эти из
+    -- катаклизменных, включая переделанные Крепость Темного Клыка и Мертвые
+    -- копи. Связка bonusIDs та же, тир тот же (ilvl 32, гнездо от 13668).
+    -- Статы сняты с тултипов пользователя 12 сентября, id — из слепка
+    -- гильдии по точному имени, английские имена сверены на Wowhead.
+    -- В ИГРЕ НЕ ПРОВЕРЕНО: ждут /reload и взгляда на окно.
+    { itemID = 133199, bonusIDs = { 13668, 13828, 7756 }, classes = nil, sourceType = "Dungeon", source = "Путешествие во времени: Катаклизм", note = "Подвеска из рыбы-иглы (Pipefish Cord): шея на скорость/искусность. Тир 32", ilvl = 32, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 6, haste = 14, iskus = 7 } },
+    { itemID = 224735, bonusIDs = { 13668, 13828, 7756 }, classes = nil, sourceType = "Dungeon", source = "Путешествие во времени: Катаклизм", note = "Почерневшее костяное ожерелье (Blackened Bone Necklace): шея на крит. Тир 32", ilvl = 32, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 6, crit = 15, vers = 6 } },
+    { itemID = 188495, bonusIDs = { 13668, 13828, 7756 }, classes = nil, sourceType = "Dungeon", source = "Путешествие во времени: Катаклизм", note = "Ртутный амулет (Quicksilver Amulet): шея на скорость/универсальность. Тир 32; по Wowhead ловится удочкой в Пещерах Черной Горы — не проверено", ilvl = 32, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 6, haste = 10, vers = 11 } },
+
     -- Возвращены: удалялись к 1.0, но слепок показал — их всё ещё носят.
     { itemID = 193647, bonusIDs = { 6710, 6652, 8810 }, classes = nil, sourceType = "Dungeon", source = "Лазурные Врата", note = "Комендантский медальон наваждения: шея на универсальность/искусность (слепок, ×7; была удалена)", ilvl = 23, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 6, vers = 11, iskus = 8 } },
     { itemID = 193676, bonusIDs = { 6710, 6652 }, classes = nil, sourceType = "Dungeon", source = "Наступление Нохуда", note = "Бусы предков Укхел: шея на скорость/искусность (слепок, ×4; была удалена)", ilvl = 22, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 5, haste = 6, iskus = 13 } },
@@ -69,6 +80,16 @@ ns.CommunityItems = {
     { itemID = 188451, bonusIDs = { 13668, 13828, 7756 }, classes = nil, sourceType = "Dungeon", source = "Крепость Утгард", note = "падает с Ингвара Расхителя; Кольцо Аннгильды: на крит/скорость. Путешествие во времени, ilvl 32 (слепок, x6)", ilvl = 32, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 6, crit = 9, haste = 12 } },
     { itemID = 188472, bonusIDs = { 13668, 13828, 7756 }, classes = nil, sourceType = "Dungeon", source = "Кузня Душ", note = "падает с Пожирателя Душ; Перстень злорадства: на крит/универсальность. Путешествие во времени, ilvl 32 (слепок, x3)", ilvl = 32, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 6, crit = 10, vers = 11 } },
     { itemID = 188419, bonusIDs = { 13668, 13828, 7756 }, classes = nil, sourceType = "Dungeon", source = "Азжол-Неруб", note = "падает с Ануб-арака; Кольцо короля-предателя: на крит/скорость. Путешествие во времени, ilvl 32 (слепок, x2)", ilvl = 32, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 6, crit = 13, haste = 8 } },
+
+    -- Кольца того же катаклизменного тира 32. У всех ровно одно бесцветное
+    -- гнездо (сказано пользователем по тултипам) — в отличие от обычных
+    -- колец, где оправа даёт второе.
+    -- В ИГРЕ НЕ ПРОВЕРЕНО.
+    { itemID = 133189, bonusIDs = { 13668, 13828, 7756 }, classes = nil, sourceType = "Dungeon", source = "Путешествие во времени: Катаклизм", note = "Кольцо антии (Anthia's Ring): на крит/искусность. Тир 32", ilvl = 32, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 6, crit = 12, iskus = 9 } },
+    { itemID = 133194, bonusIDs = { 13668, 13828, 7756 }, classes = nil, sourceType = "Dungeon", source = "Путешествие во времени: Катаклизм", note = "Кольцо наутилуса (Nautilus Ring): на крит/скорость. Тир 32", ilvl = 32, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 6, crit = 13, haste = 7 } },
+    { itemID = 133204, bonusIDs = { 13668, 13828, 7756 }, classes = nil, sourceType = "Dungeon", source = "Путешествие во времени: Катаклизм", note = "Кольцо великого кита: на универсальность. Тир 32", ilvl = 32, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 6, haste = 6, vers = 15 } },
+    { itemID = 188494, bonusIDs = { 13668, 13828, 7756 }, classes = nil, sourceType = "Dungeon", source = "Путешествие во времени: Катаклизм", note = "Перстень перевоплощения: на скорость/искусность. Тир 32", ilvl = 32, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 6, haste = 10, iskus = 11 } },
+    { itemID = 1156, bonusIDs = { 13668, 13828, 7756 }, classes = nil, sourceType = "Dungeon", source = "Путешествие во времени: Катаклизм", note = "Щедро изукрашенное кольцо (Lavishly Jeweled Ring): на крит/скорость. Тир 32; в гильдии носят и обычную копию 23-26 уровня", ilvl = 32, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 6, crit = 14, haste = 7 } },
 
     -- ── Прочие слоты (пред-BiS) ──────────────────────────────────────────
     -- Не из гайда, но у одетых согильдийцев (котёл из 67 с BiS-шмотом) на них
