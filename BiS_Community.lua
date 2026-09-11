@@ -78,4 +78,13 @@ ns.CommunityItems = {
     { itemID = 30538, bonusIDs = { 6710, 6652 }, classes = { "DEMONHUNTER", "ROGUE", "MONK", "DRUID" }, sourceType = "Dungeon", source = "Узилище", note = "падает со Зыбуна; Полуночные набедренники: кожаные ноги на крит/скорость, 3 гнезда (слепок, ×5)", ilvl = 23, armor = 9, sockets = 3, socketTypes = { "prismatic", "prismatic", "prismatic" }, socketBonus = nil, stats = { agi = 7, int = 7, stam = 10, crit = 7, haste = 4 } },
     { itemID = 188465, bonusIDs = { 6710, 6652 }, classes = { "DRUID", "MONK", "HUNTER" }, sourceType = "Dungeon", source = "Кузня Душ", note = "падает с Пожирателя Душ; Хребет разлагающегося трупа: агиловый посох, у друида-кота (слепок, ×4)", ilvl = 32, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { agi = 7, stam = 11, crit = 7, haste = 8 } },
     { itemID = 178826, bonusIDs = { 6710, 6652 }, classes = nil, sourceType = "Dungeon", source = "Чертоги Покаяния", note = "падает с верховного адъюдикатора Ализы; тринька на чистую скорость, годится любой роли (слепок, ×5)", ilvl = 23, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { haste = 9 } },
+
+    -- Оба падают с одного босса, Эрудакса в Грим Батоле - разобрано по
+    -- предложению пользователя 11 сентября: скорлупа для хилеров (щит на
+    -- союзника + возврат маны), буря теней для урона периодикой (Тьма).
+    -- Жёстко закреплены за спеками в BiS_Data.lua (ns.BiSPick), сюда попадают
+    -- только как источник данных - в общем ранжировании их формула недооценит:
+    -- эффект по использованию, не голые статы.
+    { itemID = 56463, bonusIDs = { 6710, 6652 }, classes = nil, sourceType = "Dungeon", source = "Грим Батол", note = "[Хил] падает с Эрудакса, Повелителя Глубин; Оскверненная яичная скорлупа: по использованию щит на союзника 2809 + возврат маны", ilvl = 23, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = {  } },
+    { itemID = 56462, bonusIDs = { 6710, 6652 }, classes = nil, sourceType = "Dungeon", source = "Грим Батол", note = "[ДД] падает с Эрудакса, Повелителя Глубин; Буря теней: интеллект копится от урона периодикой, до 20 стаков", ilvl = 23, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { haste = 9 } },
 }
