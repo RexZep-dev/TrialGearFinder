@@ -267,15 +267,11 @@ end
 local SOCKET_VALUE = { prismatic = 5, cogwheel = 10, meta = 12 }
 local GEM_VALUE = SOCKET_VALUE.prismatic -- запасное, если тип гнезда не записан
 
--- Какая шестерёнка даёт какую вторичку - имя для подсказки под Дракончика.
--- Тот же список, что в guild-survey/gem_table.txt: все пять типов дают +10.
-local COGWHEEL_NAME = {
-    crit  = "Гладкое зубчатое колесо",
-    haste = "Быстрое зубчатое колесо",
-    vers  = "Искрящееся зубчатое колесо",
-    iskus = "Растрескавшееся зубчатое колесо",
-}
-local DATIVE = { crit = "криту", haste = "скорости", vers = "универсальности", iskus = "искусности" }
+-- Какая шестерёнка даёт какую вторичку - itemID для вставки в ссылку
+-- Дракончика. Тот же список, что в guild-survey/gem_table.txt: все пять
+-- типов дают +10, вставляем взаправду - строку статов и цвет гнезда тогда
+-- рисует сам клиент, не переписываем текстом.
+local COGWHEEL_ID = { crit = 59478, haste = 59479, vers = 59496, iskus = 59480 }
 
 -- Какие шестерёнки поставить под спек: по одной на гнездо, в порядке
 -- приоритета статов - не три в одну вторичку. Так их реально ставят: слепок
@@ -463,15 +459,10 @@ local function MakeSlotRow(parent, index, y)
             if self.entry.note then
                 GameTooltip:AddLine(self.entry.note, 0.7, 0.7, 0.7, true)
             end
-            local w = ParsePriority(ns.BiSPriority and ns.BiSPriority[state.specID])
-            local picks = CogwheelPicks(self.entry, w)
-            if picks then
-                GameTooltip:AddLine(" ")
-                GameTooltip:AddLine("Шестерёнки под этот спек:", 0.85, 0.72, 0.42)
-                for _, k in ipairs(picks) do
-                    GameTooltip:AddLine("  " .. COGWHEEL_NAME[k] .. " (" .. DATIVE[k] .. ")", 1, 1, 1)
-                end
-            end
+            -- Рекомендованные шестерёнки для Дракончика показывать отдельной
+            -- строкой больше не нужно: они теперь вставлены в саму ссылку
+            -- (see RenderRow), и клиент уже нарисовал их гнёздами выше -
+            -- дублировать текстом означало бы повторяться.
         end
         GameTooltip:Show()
     end)
@@ -509,7 +500,17 @@ local function RenderRow(row, slot, item, mark)
     -- Ссылка с bonusIDs и триальным уровнем — иначе тултип покажет вещь
     -- базового уровня (13-17) с требованием «22-й уровень». Тот же приём,
     -- что в основном окне (Core.lua BuildItemLink).
-    local link = ns.BuildItemLink and ns.BuildItemLink(id, item.bonusIDs or {}) or ("item:" .. id)
+    --
+    -- У шестерёночных гнёзд (Дракончик) вставляем рекомендованные камни
+    -- по-настоящему, не текстом поверх: тогда клиент сам рисует строку
+    -- статов и цвет гнезда, вместо пустых «гнездо для зубчатого колеса».
+    local gems
+    local picks = CogwheelPicks(item, ParsePriority(ns.BiSPriority and ns.BiSPriority[state.specID]))
+    if picks then
+        gems = {}
+        for i, k in ipairs(picks) do gems[i] = COGWHEEL_ID[k] end
+    end
+    local link = ns.BuildItemLink and ns.BuildItemLink(id, item.bonusIDs or {}, gems) or ("item:" .. id)
     row.hyperlink, row.itemLink = link, link
 
     local _, _, _, _, icon = C_Item.GetItemInfoInstant(id)

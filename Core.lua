@@ -181,11 +181,17 @@ end
 -- items scale via a level curve the live client applies unpredictably, so this
 -- link's OWN reported stats/ilvl are not trusted for the stat columns - those come
 -- from Data.lua (scraped from Wowhead for the guide's exact bonus/ilvl combo).
-local function BuildItemLink(itemID, bonusIDs)
+-- gems (необязательно): itemID камней 1-3, для предметов, где мы сами
+-- советуем, что вставить (сейчас - шестерёнки Дракончика). Вставленные так
+-- камни клиент считает и рисует как настоящие: строка "+10 к скорости"
+-- и цвет гнезда приходят из игры, не переписываются нами.
+local function BuildItemLink(itemID, bonusIDs, gems)
     local bonusString = table.concat(bonusIDs, ":")
     local specID = GetSpecializationInfo(GetSpecialization() or 0) or 0
-    return string.format("item:%d:0:0:0:0:0:0:0:%d:%d:0:0:%d:%s:0",
-        itemID, TWINK_LEVEL, specID, #bonusIDs, bonusString)
+    local g1, g2, g3 = 0, 0, 0
+    if gems then g1, g2, g3 = gems[1] or 0, gems[2] or 0, gems[3] or 0 end
+    return string.format("item:%d:0:%d:%d:%d:0:0:0:%d:%d:0:0:%d:%s:0",
+        itemID, g1, g2, g3, TWINK_LEVEL, specID, #bonusIDs, bonusString)
 end
 ns.BuildItemLink = BuildItemLink -- окну BiS нужен тот же приём: сырой itemID
                                  -- показывает вещь низкого уровня без bonusIDs.
