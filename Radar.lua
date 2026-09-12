@@ -126,10 +126,15 @@ function ns.MakeRadar(parent, radius)
                 over = pct >= 30
             end
             fs:SetText(text)
-            if over then
-                fs:SetTextColor(0.88, 0.42, 0.37) -- перебор: дальше рейтинг слабеет
+            -- Подпись красится тем же правилом, что и грань рядом с ней:
+            -- красный — за краем, зелёный — дошли, белый — недобор.
+            local d = v / max
+            if d > 1.0 then
+                fs:SetTextColor(0.88, 0.42, 0.37)
+            elseif d >= 0.95 then
+                fs:SetTextColor(0.42, 0.78, 0.45)
             else
-                fs:SetTextColor(0.68, 0.71, 0.74)
+                fs:SetTextColor(0.80, 0.82, 0.85)
             end
             fs:ClearAllPoints()
             local lx, ly = Point(i, n, 1.22, r)
@@ -139,26 +144,31 @@ function ns.MakeRadar(parent, radius)
             fs:Show()
         end
 
-        -- Фигура значений: контур плюс веер «заливки».
-        local px, py = {}, {}
+        -- Фигура значений. Заливки нет: веер линий из центра читался полосами
+        -- (замечено пользователем 12 сентября), убран.
+        --
+        -- Край сетки — это «сколько нужно»: у вторичек софткап 30%, у основной
+        -- характеристики и выносливости потолок гильдии. Поэтому фигуре
+        -- РАЗРЕШЕНО вылезать за сетку, и вылезшая часть красится отдельно:
+        --   белый  — недобор, ещё есть куда расти;
+        --   зелёный — дошли до края, ровно сколько нужно;
+        --   красный — то, что за краем, работает хуже.
+        local WHITE = { 0.92, 0.93, 0.95 }
+        local GREEN = { 0.42, 0.78, 0.45 }
+        local RED   = { 0.88, 0.42, 0.37 }
+        local px, py, ratio = {}, {}, {}
         for i, key in ipairs(keys) do
             local max = AXIS_MAX[key] or 100
-            local d = math.min((values[key] or 0) / max, 1)
-            if d < 0.02 then d = 0.02 end -- иначе вершина схлопывается в точку
-            px[i], py[i] = Point(i, n, d, r)
+            local d = (values[key] or 0) / max
+            ratio[i] = d
+            px[i], py[i] = Point(i, n, math.max(math.min(d, 1.35), 0.02), r)
         end
         for i = 1, n do
-            fi = fi + 1
-            local l = self.fill[fi]
-            if not l then
-                l = Line(self, "ARTWORK", gold[1], gold[2], gold[3], 0.16, 1)
-                self.fill[fi] = l
-            end
-            l:SetStartPoint("CENTER", 0, 0)
-            l:SetEndPoint("CENTER", px[i], py[i])
-            l:SetColorTexture(warm[1], warm[2], warm[3], 0.22)
-            l:SetThickness(math.max(2, r / 6))
-            l:Show()
+            local j = i % n + 1
+            local worst = math.max(ratio[i], ratio[j])
+            local col = WHITE
+            if worst > 1.0 then col = RED
+            elseif worst >= 0.95 then col = GREEN end
 
             ei = ei + 1
             local e = self.edges[ei]
@@ -166,10 +176,10 @@ function ns.MakeRadar(parent, radius)
                 e = Line(self, "OVERLAY", gold[1], gold[2], gold[3], 1, 2)
                 self.edges[ei] = e
             end
-            local j = i % n + 1
             e:SetStartPoint("CENTER", px[i], py[i])
             e:SetEndPoint("CENTER", px[j], py[j])
-            e:SetColorTexture(gold[1], gold[2], gold[3], 0.95)
+            e:SetColorTexture(col[1], col[2], col[3], 0.95)
+            e:SetThickness(2)
             e:Show()
         end
     end

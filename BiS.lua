@@ -550,6 +550,8 @@ local PANEL_W = 500
 -- накрыты - на стыке ни щели, ни вмятин, два окна читаются как одно.
 -- Содержимое панели отступает на столько же, чтобы не залезть за стык.
 local SEAM = 12
+-- Высота блока итога сборки внизу панели: диаграмма плюс подписи.
+local TOTALS_H = 190
 local HEADER_H = 30
 local CLASS_COL_W = 44 -- 8:>=:0 36 ?;NA 7>;>B>5 :>;LF> +4 ?> :@0O<
 -- 16 AB@>: 4>;6=K C<5AB8BLAO <564C AB@>:>9 ?@8>@8B5B0 8 ?>4?8ALN 2=87C:
@@ -1007,8 +1009,11 @@ local function BuildPanel()
     -- то две линии подряд, то вмятины от скругления.
     panel = CreateFrame("Frame", "TrialGearFinderBiSFrame", main, "BackdropTemplate")
     panel:SetWidth(PANEL_W + SEAM)
+    -- Панель ниже основного окна на высоту блока итога: иначе диаграмма
+    -- висела отдельной карточкой под окном, «как аппендикс» (слова
+    -- пользователя 12 сентября). Так это одно окно, просто выше.
     panel:SetPoint("TOPRIGHT", main, "TOPLEFT", SEAM, 0)
-    panel:SetPoint("BOTTOMRIGHT", main, "BOTTOMLEFT", SEAM, 0)
+    panel:SetPoint("BOTTOMRIGHT", main, "BOTTOMLEFT", SEAM, -TOTALS_H)
     panel:SetFrameLevel(main:GetFrameLevel() + 2)
     panel:EnableMouse(true) -- иначе клики проваливаются на мир за окном
 
@@ -1149,7 +1154,7 @@ local function BuildPanel()
     -- Список слотов
     local list = CreateFrame("Frame", nil, panel)
     list:SetPoint("TOPLEFT", panel.priorityFS, "BOTTOMLEFT", 0, -10)
-    list:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -(8 + SEAM), 40)
+    list:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -(8 + SEAM), TOTALS_H + 8)
     panel.slotRows = {}
     local ry = 0
     for i = 1, #SLOTS do
@@ -1165,7 +1170,9 @@ local function BuildPanel()
     gemToggle:SetSize(22, 22)
     if S.CheckBox then S.CheckBox(gemToggle, 10) end
     gemToggle.label = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    gemToggle.label:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -(12 + SEAM), -10)
+    -- Правый верхний угол панели закрыт основным окном — тумблер там было
+    -- не видно. Место нашлось в блоке итога: он свой, ничем не накрыт.
+    gemToggle.label:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", 38, TOTALS_H - 26)
     gemToggle.label:SetText("Дорогие камни")
     gemToggle.label:SetTextColor(C.text2[1], C.text2[2], C.text2[3])
     gemToggle:SetPoint("RIGHT", gemToggle.label, "LEFT", -4, 0)
@@ -1190,13 +1197,15 @@ local function BuildPanel()
     -- по ширине, а перекос по форме виден сразу. Блок висит ПОД панелью,
     -- своей карточкой: внутри места нет, список занимает панель целиком.
     if ns.MakeRadar then
-        local card = CreateFrame("Frame", nil, panel, "BackdropTemplate")
-        card:SetPoint("TOPLEFT", panel, "BOTTOMLEFT", 0, -4)
-        card:SetPoint("TOPRIGHT", panel, "BOTTOMRIGHT", 0, -4)
-        card:SetHeight(190)
-        -- Цвета обязательны: RoundedPanel(parent, заливка, рамка).
-        if S.RoundedPanel then S.RoundedPanel(card, C.bg, C.border, "BACKGROUND", -8) end
-        card:SetFrameLevel(panel:GetFrameLevel())
+        -- Блок итога — нижняя часть САМОЙ панели, не отдельная карточка.
+        local card = CreateFrame("Frame", nil, panel)
+        card:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", 8, 8)
+        card:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -(8 + SEAM), 8)
+        card:SetHeight(TOTALS_H - 16)
+        -- Мышь ловим, иначе сквозь блок выделяются объекты мира (замечено
+        -- пользователем 12 сентября) — та же болезнь, что была у панели.
+        card:EnableMouse(true)
+        if S.RoundedPanel then S.RoundedPanel(card, C.block, C.borderSoft, "BACKGROUND", -6) end
 
         local title = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         title:SetPoint("TOP", card, "TOP", 0, -8)
@@ -1214,7 +1223,7 @@ local function BuildPanel()
     end
 
     local footer = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    footer:SetPoint("BOTTOM", panel, "BOTTOM", 0, 6)
+    footer:SetPoint("BOTTOM", panel, "BOTTOM", 0, TOTALS_H + 2)
     footer:SetText("раскладка адаптирована из Cap20 (MIT), автор Kkthnx")
     local t3 = C.text3 or { 0.4, 0.4, 0.42 }
     footer:SetTextColor(t3[1] * 0.8, t3[2] * 0.8, t3[3] * 0.8)
