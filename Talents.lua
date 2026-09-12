@@ -54,4 +54,18 @@ ns.TalentCodes = {
         code = "CEEAzbn3egSOtoSwvPw1U1vTLAAAALAwMAAwyYGmZMzMMGzMzyMMzGTTMLzYmZGjZLDADAbgNYmBABAAAAL8ADYA2MDAAAMgA",
         note = "Свет",
     },
+
+    -- Разбойник. Все три спека сняты с персонажа пользователя 13 сентября.
+    [259] = {
+        code = "CMQA5HmDzx68KWyrW/8Y781L7PzYMLGMAAAAAwsNYbGAAAAAQbbzMzwMjxyMzMLzsMzMjZmxgZMzMjBAAACABADAwAA",
+        note = "Ликвидация",
+    },
+    [260] = {
+        code = "CQQA5HmDzx68KWyrW/8Y781L7DgBDzMzwMLmZGmZGbMzMzy02gtZAAAAAAz22MzMMzYmFzMzyAAAAwYAAAIAABMAADA",
+        note = "Головорез",
+    },
+    [261] = {
+        code = "CUQA5HmDzx68KWyrW/8Y781L7DghHYAAAAAgZZMWmM2wMzwMzgZmZWmZ2mZMjtZmZmZmxAmZZAAAAYwYAAAAIEwMAgZA",
+        note = "Скрытность",
+    },
 }
