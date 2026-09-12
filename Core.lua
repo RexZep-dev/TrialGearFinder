@@ -3353,6 +3353,43 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     --
     -- Чары не выгружаем: базы чар у аддона пока нет. Строки enchant_id
     -- надо дописать из своего экспорта, о чём команда и предупреждает.
+    -- /tgf ench — номера чар с НАДЕТЫХ вещей.
+    --
+    -- Зачем: чтобы окно рисовало чару зелёной строкой, как игра, нужен её
+    -- номер. Дамп simc знает лишь часть старых чар, а по русскому названию
+    -- номер ниоткуда не достать. Зато он лежит прямо в ссылке надетой вещи —
+    -- поле сразу после itemID. Кто носит нужную чару, тот и приносит номер.
+    if msg == "ench" then
+        if ns.CaptureStart then ns.CaptureStart("ench") end
+        local found = 0
+        for slot = INVSLOT_FIRST_EQUIPPED, INVSLOT_LAST_EQUIPPED do
+            local link = GetInventoryItemLink("player", slot)
+            if link and not (issecretvalue and issecretvalue(link)) then
+                local parts = { strsplit(":", link) }
+                -- [1] префикс с |Hitem, [2] itemID, [3] чара.
+                local ench = tonumber(parts[3])
+                if ench and ench > 0 then
+                    found = found + 1
+                    -- Текст чары читаем из тултипа: по нему я и сопоставлю
+                    -- номер со своей записью в Enchants.lua.
+                    ScanTooltip:ClearLines()
+                    ScanTooltip:SetHyperlink(link)
+                    local text = ""
+                    for i = 1, ScanTooltip:NumLines() do
+                        local fs = _G["TrialGearFinderScanTooltipTextLeft" .. i]
+                        local s = fs and fs:GetText()
+                        if s and s:find("Чары", 1, true) then text = s break end
+                    end
+                    print(string.format("[TGF] %s | номер %d | %s",
+                        C_Item.GetItemNameByID(tonumber(parts[2]) or 0) or "?", ench, text))
+                end
+            end
+        end
+        if ns.CaptureStop then ns.CaptureStop() end
+        print(string.format("|cFFFFD100[TGF]|r Зачарованных вещей: %d. Наведи на них в сумке или на себе, чтобы увидеть текст чары. Скопировать: /tgf copy", found))
+        return
+    end
+
     if msg == "simc" then
         if ns.ExportSimC then ns.ExportSimC() else
             print("|cFF86C7BD[TGF]|r Окно BiS ещё не открывалось: /tgf bis")
