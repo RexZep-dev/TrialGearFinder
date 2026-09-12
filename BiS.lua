@@ -384,11 +384,6 @@ local function BestGem(socket, stat)
     return e and e.id or nil, e and e.val or nil
 end
 
--- Тумблер «Дорогие камни»: выключен - советуем то, что люди носят.
-local function ExpensiveGems()
-    return (TrialGearFinderDB and TrialGearFinderDB.bestGems) and true or false
-end
-
 -- Доступный камень: 2 к основной характеристике + 2 к нужной вторичке
 -- (аметрины, огнекамни, лавовые кораллы). Даёт четыре единицы против пяти
 -- у алгарийского самоцвета TWW, но стоит на аукционе 100-200 золота против
@@ -530,12 +525,13 @@ local function GemPicks(item, w, running)
                 end
             end
             if not picks[i] then
-                -- У шестерёнок дешёвой замены нет, а у обычного гнезда есть.
-                if not ExpensiveGems() and primary then
-                    id = AffordableGem(primary, stat)
-                else
-                    id = nil
-                end
+                -- Сначала дешёвый камень «2 к основной + 2 к вторичке»:
+                -- он даёт основную характеристику, а она по статье гильдии
+                -- ценнее, и стоит 100-200 золота против 2-5 тысяч.
+                -- Алгарийский +5 идёт в дело только там, где пары нет —
+                -- это универсальность у силовиков и ловкачей, такой камень
+                -- просто не отковали (проверено по базе камней 12 сентября).
+                id = primary and AffordableGem(primary, stat) or nil
                 id = id or BestGem(t, stat)
                 picks[i] = id and { key = stat, id = id } or nil
                 if id then Count(id) end
@@ -1250,38 +1246,6 @@ local function BuildPanel()
         panel.slotRows[i] = MakeSlotRow(list, i, ry)
         ry = ry - ROW_H
     end
-
-    -- Тумблер «Дорогие камни». Выключен (по умолчанию) - в гнёзда идут
-    -- аметрины и их родня: слабее на единицу, но стоят в 20 раз дешевле,
-    -- и именно их носит гильдия. Включён - алгарийские +5.
-    -- Живёт в правом верхнем углу панели: внизу его не замечали.
-    local gemToggle = CreateFrame("CheckButton", "TrialGearFinderGemToggle", panel, "UICheckButtonTemplate")
-    gemToggle:SetSize(22, 22)
-    if S.CheckBox then S.CheckBox(gemToggle, 10) end
-    gemToggle.label = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    -- Место — свободная полоса под списком слотов, над блоком итога:
-    -- в правом верхнем углу панели тумблер закрывало основное окно,
-    -- а в самом блоке он мешал заголовку.
-    gemToggle.label:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", CLASS_COL_W + 40, TOTALS_H + 8)
-    gemToggle.label:SetText("Дорогие камни")
-    gemToggle.label:SetTextColor(C.text2[1], C.text2[2], C.text2[3])
-    gemToggle:SetPoint("RIGHT", gemToggle.label, "LEFT", -4, 0)
-    gemToggle:SetChecked(ExpensiveGems())
-    gemToggle:SetScript("OnClick", function(self)
-        TrialGearFinderDB = TrialGearFinderDB or {}
-        TrialGearFinderDB.bestGems = not TrialGearFinderDB.bestGems
-        self:SetChecked(ExpensiveGems())
-        RenderSlots()
-    end)
-    gemToggle:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Дорогие камни")
-        GameTooltip:AddLine("Выключено: камни на 2 к основной и 2 к вторичке — аметрины и их родня, 100-200 золота. Их носят 30% гильдии.", 0.8, 0.8, 0.8, true)
-        GameTooltip:AddLine("Включено: алгарийские самоцветы +5 к вторичке, 2-5 тысяч золота. Носят 5%.", 0.8, 0.8, 0.8, true)
-        GameTooltip:Show()
-    end)
-    gemToggle:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    panel.gemToggle = gemToggle
 
     -- Итог сборки — многоугольником, а не строкой цифр: цифры не влезали
     -- по ширине, а перекос по форме виден сразу. Блок висит ПОД панелью,
