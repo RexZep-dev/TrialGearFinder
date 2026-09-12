@@ -3359,6 +3359,52 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     -- номер. Дамп simc знает лишь часть старых чар, а по русскому названию
     -- номер ниоткуда не достать. Зато он лежит прямо в ссылке надетой вещи —
     -- поле сразу после itemID. Кто носит нужную чару, тот и приносит номер.
+    -- /tgf talents — выгрузка СВОИХ талантов: код сборки и список взятых.
+    --
+    -- Зачем и то и другое. Код нужен, чтобы вставить сборку в игре одной
+    -- кнопкой — им живёт Talents.lua. Список с номерами узлов нужен для
+    -- сверки с логами: Warcraft Logs хранит таланты именно номерами узлов,
+    -- без имён, и сопоставить их с чем-то можно только так.
+    if msg == "talents" then
+        local configID = C_ClassTalents and C_ClassTalents.GetActiveConfigID and C_ClassTalents.GetActiveConfigID()
+        if not configID then
+            print("|cFF86C7BD[TGF]|r Таланты не читаются: игра не отдала активную сборку.")
+            return
+        end
+        if ns.CaptureStart then ns.CaptureStart("talents") end
+        local specID = GetSpecializationInfo(GetSpecialization() or 0)
+        local _, specName = GetSpecializationInfoByID(specID or 0)
+        print(string.format("# TrialGearFinder: таланты, %s %s (спек %s)",
+            UnitClass("player") or "?", specName or "?", tostring(specID)))
+
+        local ok, code = pcall(function() return C_Traits.GenerateImportString(configID) end)
+        if ok and code and code ~= "" then
+            print(code)
+        else
+            print("# код сборки игра не отдала — возьми его в окне талантов кнопкой «Экспорт»")
+        end
+
+        local cfg = C_Traits.GetConfigInfo(configID)
+        local taken = 0
+        for _, treeID in ipairs((cfg and cfg.treeIDs) or {}) do
+            for _, nodeID in ipairs(C_Traits.GetTreeNodes(treeID) or {}) do
+                local n = C_Traits.GetNodeInfo(configID, nodeID)
+                if n and n.ranksPurchased and n.ranksPurchased > 0 then
+                    local entryID = n.activeEntry and n.activeEntry.entryID
+                    local e = entryID and C_Traits.GetEntryInfo(configID, entryID)
+                    local d = e and e.definitionID and C_Traits.GetDefinitionInfo(e.definitionID)
+                    local name = d and (d.overrideName or (d.spellID and C_Spell.GetSpellName(d.spellID))) or "?"
+                    taken = taken + 1
+                    print(string.format("# узел %d | запись %s | ранг %d | %s",
+                        nodeID, tostring(entryID), n.ranksPurchased, name))
+                end
+            end
+        end
+        if ns.CaptureStop then ns.CaptureStop() end
+        print(string.format("|cFFFFD100[TGF]|r Взято талантов: %d. Скопировать: /tgf copy", taken))
+        return
+    end
+
     if msg == "ench" then
         if ns.CaptureStart then ns.CaptureStart("ench") end
         local found = 0
