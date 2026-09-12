@@ -346,6 +346,69 @@ local function CogwheelPicks(item, w)
     return picks
 end
 
+-- Лучший камень по типу гнезда и стату - из ns.Gems (файл Gems.lua, данные
+-- Golden Cucumber и Харфа, разрешение получено). Считаем один раз и кешируем:
+-- таблица на 238 записей, перебирать её на каждую отрисовку строки незачем.
+--
+-- Уникальные камни («Уникальный использующийся», по одному на персонажа)
+-- в рекомендацию НЕ берём: в вещи с двумя гнёздами второй такой не встанет,
+-- а окно рисует сборку целиком. Уникальные - Профанит, Кровавый камень,
+-- Слеза кошмаров - показываются отдельным списком, это разные задачи.
+local bestGemCache
+local function BestGem(socket, stat)
+    if not bestGemCache then
+        bestGemCache = {}
+        for _, g in ipairs(ns.Gems or {}) do
+            if not g.unique and g.socket and g.stats then
+                local t = bestGemCache[g.socket]
+                if not t then t = {}; bestGemCache[g.socket] = t end
+                for key, val in pairs(g.stats) do
+                    local cur = t[key]
+                    if not cur or val > cur.val then t[key] = { id = g.itemID, val = val } end
+                end
+            end
+        end
+    end
+    local t = bestGemCache[socket]
+    local e = t and t[stat]
+    return e and e.id or nil, e and e.val or nil
+end
+
+-- Что вставить в КАЖДОЕ гнездо предмета, по порядку socketTypes.
+-- Шестерёнки считает CogwheelPicks (там своя арифметика из-за уникальности),
+-- обычное гнездо и мета - берут лучший камень под топовый стат спека.
+--
+-- В обычное гнездо можно положить и +5 к ОСНОВНОЙ характеристике, но только
+-- уникальный Профанит или Кровавый камень, по одному на персонажа. Что из
+-- двух выгоднее на двадцатке - 5 основной или 5 вторички - НЕ ИЗМЕРЕНО,
+-- поэтому окно советует вторичку, а уникальные идут отдельным списком.
+local function GemPicks(item, w)
+    local types = item.socketTypes or {}
+    if #types == 0 or not w then return nil end
+    local cog = CogwheelPicks(item, w)
+    local cogAt = 1
+
+    local order = {}
+    for _, k in ipairs({ "crit", "haste", "vers", "iskus" }) do
+        if (w[k] or 0) > 0 then order[#order + 1] = k end
+    end
+    table.sort(order, function(a, b) return w[a] > w[b] end)
+    local top = order[1]
+    if not top then return cog end
+
+    local picks = {}
+    for i, t in ipairs(types) do
+        if t == "cogwheel" then
+            picks[i] = cog and cog[cogAt] or nil
+            cogAt = cogAt + 1
+        else
+            local id = BestGem(t, top)
+            picks[i] = id and { key = top, id = id } or nil
+        end
+    end
+    return picks
+end
+
 -- Счёт предмета под веса статов спека. Гнёзда идут двумя отдельными частями,
 -- и вторая тяжелее первой:
 --   * сам камень на двадцатке даёт мелочь (GEM_VALUE);
@@ -563,10 +626,14 @@ local function RenderRow(row, slot, item, mark)
     -- по-настоящему, не текстом поверх: тогда клиент сам рисует строку
     -- статов и цвет гнезда, вместо пустых «гнездо для зубчатого колеса».
     local gems
-    local picks = CogwheelPicks(item, ParsePriority(ns.BiSPriority and ns.BiSPriority[state.specID]))
+    local picks = GemPicks(item, ParsePriority(ns.BiSPriority and ns.BiSPriority[state.specID]))
     if picks then
         gems = {}
-        for i, p in ipairs(picks) do gems[i] = p.id end
+        -- Дырки в середине быть не должно: ссылка читает камни по позициям,
+        -- пропуск сдвинул бы остальные в чужие гнёзда.
+        for i = 1, #(item.socketTypes or {}) do
+            gems[i] = picks[i] and picks[i].id or 0
+        end
     end
     local link = ns.BuildItemLink and ns.BuildItemLink(id, item.bonusIDs or {}, gems) or ("item:" .. id)
     row.hyperlink, row.itemLink = link, link

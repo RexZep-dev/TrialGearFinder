@@ -13,6 +13,7 @@
 
 Data.lua
 BiS_Community.lua
+Gems.lua
 Core.lua
 Copy.lua
 BiS_Data.lua
