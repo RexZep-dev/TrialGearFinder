@@ -3366,8 +3366,16 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
             local link = GetInventoryItemLink("player", slot)
             if link and not (issecretvalue and issecretvalue(link)) then
                 local parts = { strsplit(":", link) }
-                -- [1] префикс с |Hitem, [2] itemID, [3] чара.
-                local ench = tonumber(parts[3])
+                -- Считать поля по номеру нельзя: у нового клиента префикс
+                -- цвета бывает вида |cnIQ3: и САМ содержит двоеточие, из-за
+                -- чего всё съезжает на одно поле. Ищем метку Hitem и берём
+                -- то, что идёт за ней: itemID, затем чара.
+                local at
+                for i, v in ipairs(parts) do
+                    if type(v) == "string" and v:find("Hitem", 1, true) then at = i break end
+                end
+                local itemID = at and tonumber(parts[at + 1])
+                local ench = at and tonumber(parts[at + 2])
                 if ench and ench > 0 then
                     found = found + 1
                     -- Текст чары читаем из тултипа: по нему я и сопоставлю
@@ -3381,7 +3389,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
                         if s and s:find("Чары", 1, true) then text = s break end
                     end
                     print(string.format("[TGF] %s | номер %d | %s",
-                        C_Item.GetItemNameByID(tonumber(parts[2]) or 0) or "?", ench, text))
+                        C_Item.GetItemNameByID(itemID or 0) or "?", ench, text))
                 end
             end
         end
