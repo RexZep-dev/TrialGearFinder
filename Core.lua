@@ -3365,7 +3365,11 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     -- кнопкой — им живёт Talents.lua. Список с номерами узлов нужен для
     -- сверки с логами: Warcraft Logs хранит таланты именно номерами узлов,
     -- без имён, и сопоставить их с чем-то можно только так.
-    if msg == "talents" then
+    -- /tgf talents all — ВСЁ дерево, включая невзятое. Нужен словарь
+    -- «номер узла → название», чтобы расшифровать логи: качать и тратить
+    -- очки для этого не надо, игра отдаёт дерево целиком в любом случае.
+    if msg == "talents" or msg == "talents all" then
+        local dumpAll = (msg == "talents all")
         local configID = C_ClassTalents and C_ClassTalents.GetActiveConfigID and C_ClassTalents.GetActiveConfigID()
         if not configID then
             print("|cFF86C7BD[TGF]|r Таланты не читаются: игра не отдала активную сборку.")
@@ -3389,19 +3393,22 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         for _, treeID in ipairs((cfg and cfg.treeIDs) or {}) do
             for _, nodeID in ipairs(C_Traits.GetTreeNodes(treeID) or {}) do
                 local n = C_Traits.GetNodeInfo(configID, nodeID)
-                if n and n.ranksPurchased and n.ranksPurchased > 0 then
-                    local entryID = n.activeEntry and n.activeEntry.entryID
-                    local e = entryID and C_Traits.GetEntryInfo(configID, entryID)
-                    local d = e and e.definitionID and C_Traits.GetDefinitionInfo(e.definitionID)
-                    local name = d and (d.overrideName or (d.spellID and C_Spell.GetSpellName(d.spellID))) or "?"
-                    taken = taken + 1
-                    print(string.format("# узел %d | запись %s | ранг %d | %s",
-                        nodeID, tostring(entryID), n.ranksPurchased, name))
+                if n and (dumpAll or (n.ranksPurchased and n.ranksPurchased > 0)) then
+                    local list = dumpAll and (n.entryIDs or {}) or { n.activeEntry and n.activeEntry.entryID }
+                    for _, entryID in ipairs(list) do
+                        local e = entryID and C_Traits.GetEntryInfo(configID, entryID)
+                        local d = e and e.definitionID and C_Traits.GetDefinitionInfo(e.definitionID)
+                        local name = d and (d.overrideName or (d.spellID and C_Spell.GetSpellName(d.spellID))) or "?"
+                        taken = taken + 1
+                        print(string.format("# узел %d | запись %s | ранг %d | %s",
+                            nodeID, tostring(entryID), n.ranksPurchased or 0, name))
+                    end
                 end
             end
         end
         if ns.CaptureStop then ns.CaptureStop() end
-        print(string.format("|cFFFFD100[TGF]|r Взято талантов: %d. Скопировать: /tgf copy", taken))
+        print(string.format("|cFFFFD100[TGF]|r %s: %d. Скопировать: /tgf copy",
+            dumpAll and "Узлов в дереве" or "Взято талантов", taken))
         return
     end
 
