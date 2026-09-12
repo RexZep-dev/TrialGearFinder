@@ -936,6 +936,36 @@ local function RenderSlots()
         return ScoreItem(pick, w) > best and "beat" or nil
     end
 
+    -- Двуручное против пары «одноручное + левая рука».
+    --
+    -- Счёт считается по одному слоту за раз, и двуручник выигрывал просто
+    -- потому, что у него статов больше, чем у любой одноручки. Но пара
+    -- занимает ДВА слота: статы складываются, и чар накладывается тоже две.
+    -- У жреца Послушания жезл даёт 30 интеллекта и одну чару, а Клинок
+    -- Вечной Тьмы с Книгой мертвых — 31 интеллект, 7 скорости и две чары
+    -- (замечено пользователем 12 сентября).
+    --
+    -- Сравниваем честно: счёт двуручника против суммы счетов пары. Чары
+    -- в сравнение не входят — они лишь усиливают перевес пары, и считать
+    -- их здесь значило бы считать дважды.
+    local forcePair
+    do
+        local mhList, ohList = ranked["MAINHAND"], ranked["OFFHAND"]
+        local best2h, best1h
+        for _, it in ipairs(mhList or {}) do
+            if twoHandID[it.itemID] then
+                if not best2h then best2h = it end
+            elseif not best1h then best1h = it end
+        end
+        local bestOff = ohList and ohList[1]
+        if best2h and best1h and bestOff and not DUAL_2H_SPEC[state.specID] then
+            local pairScore = ScoreItem(best1h, w) + ScoreItem(bestOff, w)
+            if pairScore > ScoreItem(best2h, w) then
+                forcePair = { mh = best1h, oh = bestOff }
+            end
+        end
+    end
+
     local mhIs2H = false
     for i, slot in ipairs(SLOTS) do
         local row = panel.slotRows[i]
@@ -943,6 +973,8 @@ local function RenderSlots()
         local list = ranked[bkey]
         local idx = (slot.key == "FINGER2" or slot.key == "TRINKET2") and 2 or 1
         local pick = list and (list[idx] or list[1]) or nil
+        if forcePair and slot.key == "MAINHAND" then pick = forcePair.mh
+        elseif forcePair and slot.key == "OFFHAND" then pick = forcePair.oh end
 
         -- Ручная поправка поверх авторанжирования.
         local ov = SlotOverride(state.classFile, state.specID, slot.key)
