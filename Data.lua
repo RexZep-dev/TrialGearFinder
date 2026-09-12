@@ -134,4 +134,11 @@ ns.Items = {
     -- само поле linkLevel в BuildItemLink, отдельный bonus для этого не нужен.
     { itemID = 39487, bonusIDs = { 6712, 6652 }, classes = { "HUNTER" }, sourceType = "Quest", source = "Низина Шолазар", note = "бисовый лук за цепочку Хеминга Эрнестуэя, вторичек вдвое больше, чем у других пушек", ilvl = 26, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { agi = 7, stam = 10, crit = 13, haste = 18 } },
     { itemID = 29317, bonusIDs = { 6710, 6652 }, classes = { "WARLOCK", "PRIEST", "MAGE" }, sourceType = "Quest", source = "Старые предгорья Хилсбрада", note = "тканевые руки за сопровождение Тралла (парная награда к Кушаку поборника)", ilvl = 23, armor = 3, sockets = 2, socketTypes = { "prismatic", "prismatic" }, socketBonus = { key = "crit", value = 1 }, stats = { int = 5, stam = 7, crit = 3, vers = 2 } },
+
+    -- Обычная вещь, не тайм-волковая: на тултипе нет ни «Искажения временем»,
+    -- ни гнезда, уровень 23. Лежит здесь, а не в BiS_Community.lua, по
+    -- просьбе пользователя 12 сентября: неискажённые вещи должны быть видны
+    -- и при ВЫКЛЮЧЕННОМ тумблере «Комьюнити», а он оставляет только эту базу.
+    -- Статы сняты с тултипа пользователя, в игре после правки не проверены.
+    { itemID = 6321, bonusIDs = { 6710, 6652 }, classes = nil, sourceType = "Dungeon", source = "Крепость Темного Клыка", note = "Фамильная печать Сильверлейнов: кольцо на скорость/универсальность, без гнезда", ilvl = 23, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { stam = 6, haste = 12, vers = 7 } },
 }
