@@ -425,7 +425,7 @@ end
 -- уникальный Профанит или Кровавый камень, по одному на персонажа. Что из
 -- двух выгоднее на двадцатке - 5 основной или 5 вторички - НЕ ИЗМЕРЕНО,
 -- поэтому окно советует вторичку, а уникальные идут отдельным списком.
-local function GemPicks(item, w)
+local function GemPicks(item, w, running)
     local types = item.socketTypes or {}
     if #types == 0 or not w then return nil end
     local cog = CogwheelPicks(item, w)
@@ -439,6 +439,18 @@ local function GemPicks(item, w)
     local top = order[1]
     if not top then return cog end
 
+    -- Лучший стат из тех, что ЕЩЁ не упёрлись в софткап. Если упёрлись все —
+    -- возвращаем топовый: сыпать больше некуда, но гнездо пустым не оставим.
+    -- Порог считаем по SOFTCAP из таблицы статьи гильдии.
+    local CAP = { crit = 132.96, haste = 127.18, vers = 156.08, iskus = 132.96 }
+    local function NextStat()
+        if not running then return top end
+        for _, k in ipairs(order) do
+            if (running[k] or 0) < (CAP[k] or math.huge) then return k end
+        end
+        return top
+    end
+
     -- Основная характеристика спека: в приоритете гайда она стоит первой,
     -- поэтому вес у неё самый большой.
     local primary
@@ -446,19 +458,31 @@ local function GemPicks(item, w)
         if (w[k] or 0) > 0 and (not primary or w[k] > w[primary]) then primary = k end
     end
 
+    -- Каждый вставленный камень дописывается в running, поэтому следующее
+    -- гнездо (этой же вещи или следующей) уже видит новую сумму и уходит
+    -- в стат, который ещё не упёрся.
+    local function Count(id)
+        if not running or not id then return end
+        local g = GemByID(id)
+        for k, v in pairs(g and g.stats or {}) do running[k] = (running[k] or 0) + v end
+    end
+
     local picks = {}
     for i, t in ipairs(types) do
         if t == "cogwheel" then
             picks[i] = cog and cog[cogAt] or nil
             cogAt = cogAt + 1
+            if picks[i] then Count(picks[i].id) end
         else
+            local stat = NextStat()
             -- У шестерёнок и меты дешёвой замены нет, там всегда лучшее.
             local id
             if t == "prismatic" and not ExpensiveGems() and primary then
-                id = AffordableGem(primary, top)
+                id = AffordableGem(primary, stat)
             end
-            id = id or BestGem(t, top)
-            picks[i] = id and { key = top, id = id } or nil
+            id = id or BestGem(t, stat)
+            picks[i] = id and { key = stat, id = id } or nil
+            if id then Count(id) end
         end
     end
     return picks
@@ -661,7 +685,7 @@ end
 --   "gap"  - гайд этот слот вообще не закрывает (шея, кольца);
 --   "beat" - гайд закрывает, но вещь сообщества обошла его по статам;
 --   nil    - предмет из гайда, помечать нечего.
-local function RenderRow(row, slot, item, mark)
+local function RenderRow(row, slot, item, mark, gems)
     row.slotFS:SetText(slot.name)
     row.entry = item
     row.itemID = item and item.itemID or nil
@@ -682,8 +706,10 @@ local function RenderRow(row, slot, item, mark)
     -- У шестерёночных гнёзд (Дракончик) вставляем рекомендованные камни
     -- по-настоящему, не текстом поверх: тогда клиент сам рисует строку
     -- статов и цвет гнезда, вместо пустых «гнездо для зубчатого колеса».
-    local gems
-    local picks = GemPicks(item, ParsePriority(ns.BiSPriority and ns.BiSPriority[state.specID]))
+    -- Камни приходят готовыми из RenderSlots: их раскладка зависит от суммы
+    -- по ВСЕЙ сборке (софткап), а одна вещь этой суммы не знает.
+    local picks = gems
+    gems = nil
     if picks then
         gems = {}
         -- Дырки в середине быть не должно: ссылка читает камни по позициям,
@@ -743,27 +769,10 @@ end
 -- вики «Софткапы Вторичек». Проценты у спеков разные, пороги общие.
 local SOFTCAP = { crit = 132.96, haste = 127.18, vers = 156.08, iskus = 132.96 }
 
--- Что вещь даёт в сумму сборки: свои статы, камни в её гнёздах и бонус
--- за совпадение цвета. Бонус берём как данность: гнёзда мы заполняем сами,
--- а обычный камень подходит к любому цвету.
-local function AddContribution(total, item, w)
-    if not item then return end
-    for k, v in pairs(item.stats or {}) do total[k] = (total[k] or 0) + v end
-    local picks = GemPicks(item, w)
-    for _, p in ipairs(picks or {}) do
-        local gem = p and p.id and GemByID(p.id)
-        for k, v in pairs(gem and gem.stats or {}) do total[k] = (total[k] or 0) + v end
-    end
-    local sb = item.socketBonus
-    if sb and sb.key and (item.sockets or 0) > 0 then
-        total[sb.key] = (total[sb.key] or 0) + sb.value
-    end
-end
-
 local function RenderSlots()
     local buckets = state.classFile and BuildBuckets(state.classFile) or {}
     local w = ParsePriority(ns.BiSPriority and ns.BiSPriority[state.specID])
-    local total = {}
+    local total, chosen = {}, {}
 
     local role = state.specID and GetSpecializationRoleByID
         and GetSpecializationRoleByID(state.specID) or nil
@@ -821,24 +830,47 @@ local function RenderSlots()
                 -- две копии одного оружия, а не первое+второе.
                 local mh = ranked["MAINHAND"]
                 pick = mh and mh[1] or nil
-                RenderRow(row, slot, pick, MarkFor(ranked["MAINHAND"], pick))
-                AddContribution(total, pick, w) -- Titan's Grip: вторая копия считается
+                chosen[i] = { pick = pick, mark = MarkFor(ranked["MAINHAND"], pick) }
             elseif mhIs2H then
-                RenderRow(row, slot, nil)
-                row.valueFS:SetText("— двуручное")
-                -- Двуручник уже посчитан в правой руке, второй раз не берём.
+                chosen[i] = { pick = nil, twoHand = true } -- уже посчитан в правой
             else
-                RenderRow(row, slot, pick, MarkFor(list, pick))
-                AddContribution(total, pick, w)
+                chosen[i] = { pick = pick, mark = MarkFor(list, pick) }
             end
         else
-            RenderRow(row, slot, pick, MarkFor(list, pick))
-            AddContribution(total, pick, w)
+            chosen[i] = { pick = pick, mark = MarkFor(list, pick) }
         end
         -- MAINHAND идёт раньше OFFHAND в SLOTS, флаг успеет проставиться.
         if slot.key == "MAINHAND" then
             mhIs2H = pick ~= nil and twoHandID[pick.itemID] == true
         end
+    end
+
+    -- ВТОРОЙ ПРОХОД. Сначала складываем статы СО ШМОТА, и только потом
+    -- раскладываем камни. Порядок важен: пока не известно, сколько стата
+    -- уже есть с вещей, нельзя понять, не перельёт ли камень через софткап.
+    -- До 12 сентября все камни шли в топовый стат спека, и у воина
+    -- Неистовства с дорогими камнями скорость выходила 232 — это 55%
+    -- при пороге 30% (замечено пользователем).
+    for _, c in ipairs(chosen) do
+        local item = c.pick
+        if item then
+            for k, v in pairs(item.stats or {}) do total[k] = (total[k] or 0) + v end
+            local sb = item.socketBonus
+            if sb and sb.key and (item.sockets or 0) > 0 then
+                total[sb.key] = (total[sb.key] or 0) + sb.value
+            end
+        end
+    end
+
+    -- ТРЕТИЙ ПРОХОД: камни. GemPicks сам дописывает их в total, поэтому
+    -- следующая вещь уже видит обновлённую сумму и уводит камень в тот стат,
+    -- который ещё не упёрся в порог.
+    for i, slot in ipairs(SLOTS) do
+        local c = chosen[i]
+        local row = panel.slotRows[i]
+        local gems = c.pick and GemPicks(c.pick, w, total) or nil
+        RenderRow(row, slot, c.pick, c.mark, gems)
+        if c.twoHand then row.valueFS:SetText("— двуручное") end
     end
 
     -- Итог сборки: шмот плюс камни, которые окно само и советует. Считаем
