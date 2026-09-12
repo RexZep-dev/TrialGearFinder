@@ -465,6 +465,39 @@ local function GemByID(id)
     return gemByID[id]
 end
 
+-- Чара под слот и спек. Считаем так же, как вещь: сумма статов на вес,
+-- только основная характеристика у чар записана как main или all —
+-- подставляем свою. Стат, уже упёршийся в софткап, дальше не наливаем.
+--
+-- Проки (Рыцарь, Знак когтя) в stats записаны средним вкладом: у Рыцаря
+-- это 33 силы × аптайм, см. шапку Enchants.lua. Иначе формула их не увидит
+-- вовсе, а в слепке именно они у большинства.
+local function PickEnchant(slotKey, w, primary, running)
+    if not ns.Enchants or not w then return nil end
+    local key = slotKey
+    if key == "FINGER1" or key == "FINGER2" then key = "FINGER"
+    elseif key == "MAINHAND" or key == "OFFHAND" then key = "WEAPON" end
+
+    local CAP = { crit = 132.96, haste = 127.18, vers = 156.08, iskus = 132.96 }
+    local best, bestScore
+    for _, e in ipairs(ns.Enchants) do
+        if e.slot == key then
+            local score = 0
+            for stat, val in pairs(e.stats or {}) do
+                local k = stat
+                if k == "main" or k == "all" then k = primary end
+                -- Стат за порогом ценим вдвое дешевле: рейтинг там слабеет.
+                local mult = 1
+                if running and CAP[k] and (running[k] or 0) >= CAP[k] then mult = 0.5 end
+                score = score + val * (w[k] or 0) * mult
+                if stat == "all" and primary then score = score + val * (w.stam or 0) * 0.5 end
+            end
+            if score > 0 and (not bestScore or score > bestScore) then best, bestScore = e, score end
+        end
+    end
+    return best
+end
+
 -- Что вставить в КАЖДОЕ гнездо предмета, по порядку socketTypes.
 -- Шестерёнки считает CogwheelPicks (там своя арифметика из-за уникальности),
 -- обычное гнездо и мета - берут лучший камень под топовый стат спека.
@@ -727,6 +760,13 @@ local function MakeSlotRow(parent, index, y)
         -- только основное окно, и Шлем удара духа показывал 6/8/5 там
         -- и 7/10/6 здесь.
         if ns.FixTooltipStats then ns.FixTooltipStats(self.entry and self.entry.stats) end
+        if self.ench then
+            GameTooltip:AddLine(" ")
+            GameTooltip:AddLine("Чара: " .. self.ench.ru, 0.55, 0.78, 1, true)
+            if self.ench.proc then
+                GameTooltip:AddLine("Прок; в счёт идёт средний вклад за бой.", 0.6, 0.6, 0.6, true)
+            end
+        end
         if self.entry then
             GameTooltip:AddLine(" ")
             if communityId[self.itemID] then
@@ -762,9 +802,10 @@ end
 --   "gap"  - гайд этот слот вообще не закрывает (шея, кольца);
 --   "beat" - гайд закрывает, но вещь сообщества обошла его по статам;
 --   nil    - предмет из гайда, помечать нечего.
-local function RenderRow(row, slot, item, mark, gems)
+local function RenderRow(row, slot, item, mark, gems, ench)
     row.slotFS:SetText(slot.name)
     row.entry = item
+    row.ench = ench
     row.itemID = item and item.itemID or nil
     row.hyperlink = nil
     row.itemLink = nil
@@ -947,11 +988,27 @@ local function RenderSlots()
     -- означало бы, что однажды пересказ разойдётся с окном.
     ns.LastBuild = { specID = state.specID, slots = {} }
 
+    -- Основная характеристика спека — для чар «к основной» и «ко всем».
+    local primary
+    for _, k in ipairs({ "str", "agi", "int" }) do
+        if (w and w[k] or 0) > 0 and (not primary or w[k] > w[primary]) then primary = k end
+    end
+
     for i, slot in ipairs(SLOTS) do
         local c = chosen[i]
         local row = panel.slotRows[i]
         local gems = c.pick and GemPicks(c.pick, w, total, role) or nil
-        RenderRow(row, slot, c.pick, c.mark, gems)
+        local ench = c.pick and PickEnchant(slot.key, w, primary, total) or nil
+        if ench then
+            -- Чара идёт в сумму сборки наравне со шмотом и камнями.
+            for stat, val in pairs(ench.stats or {}) do
+                local k = stat
+                if k == "main" or k == "all" then k = primary end
+                if k then total[k] = (total[k] or 0) + val end
+                if stat == "all" then total.stam = (total.stam or 0) + val end
+            end
+        end
+        RenderRow(row, slot, c.pick, c.mark, gems, ench)
         if c.twoHand then row.valueFS:SetText("— двуручное") end
         if c.pick and not c.twoHand then
             local ids = {}
@@ -959,7 +1016,7 @@ local function RenderSlots()
                 ids[gi] = gems and gems[gi] and gems[gi].id or nil
             end
             ns.LastBuild.slots[#ns.LastBuild.slots + 1] = {
-                key = slot.key, name = slot.name, item = c.pick, gems = ids,
+                key = slot.key, name = slot.name, item = c.pick, gems = ids, ench = ench,
             }
         end
     end
@@ -1149,7 +1206,8 @@ function ns.ExportSimC()
             parts[#parts + 1] = "bonus_id=" .. table.concat(it.bonusIDs, "/")
         end
         parts[#parts + 1] = "drop_level=20"
-        print(string.format("# %s (%s)", C_Item.GetItemNameByID(it.itemID) or "?", s.name))
+        print(string.format("# %s (%s)%s", C_Item.GetItemNameByID(it.itemID) or "?", s.name,
+            s.ench and ("  |  чара: " .. s.ench.ru) or ""))
         print(string.format("%s=,%s", SIMC[s.key] or s.key:lower(), table.concat(parts, ",")))
     end
     if ns.CaptureStop then ns.CaptureStop() end

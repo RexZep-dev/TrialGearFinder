@@ -14,6 +14,7 @@
 Data.lua
 BiS_Community.lua
 Gems.lua
+Enchants.lua
 Core.lua
 Copy.lua
 BiS_Data.lua
