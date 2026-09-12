@@ -7,7 +7,7 @@
 ## X-Curse-Project-ID: 1681964
 ## Category: LvL20
 ## IconTexture: Interface\AddOns\TrialGearFinder\icon
-## Version: 1.0.0
+## Version: 1.0.1
 ## SavedVariables: TrialGearFinderDB, TwinkGearFinderDB
 ## SavedVariablesPerCharacter: TrialGearFinderCharDB
 
