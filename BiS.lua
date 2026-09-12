@@ -1170,9 +1170,10 @@ local function BuildPanel()
     gemToggle:SetSize(22, 22)
     if S.CheckBox then S.CheckBox(gemToggle, 10) end
     gemToggle.label = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    -- Правый верхний угол панели закрыт основным окном — тумблер там было
-    -- не видно. Место нашлось в блоке итога: он свой, ничем не накрыт.
-    gemToggle.label:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", CLASS_COL_W + 40, TOTALS_H - 30)
+    -- Место — свободная полоса под списком слотов, над блоком итога:
+    -- в правом верхнем углу панели тумблер закрывало основное окно,
+    -- а в самом блоке он мешал заголовку.
+    gemToggle.label:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", CLASS_COL_W + 40, TOTALS_H + 8)
     gemToggle.label:SetText("Дорогие камни")
     gemToggle.label:SetTextColor(C.text2[1], C.text2[2], C.text2[3])
     gemToggle:SetPoint("RIGHT", gemToggle.label, "LEFT", -4, 0)
@@ -1208,7 +1209,7 @@ local function BuildPanel()
         if S.RoundedPanel then S.RoundedPanel(card, C.block, C.borderSoft, "BACKGROUND", -6) end
 
         local title = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        title:SetPoint("TOPRIGHT", card, "TOPRIGHT", -10, -8)
+        title:SetPoint("TOPLEFT", card, "TOPLEFT", 10, -8)
         title:SetText("ИТОГ СБОРКИ")
         title:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
 
