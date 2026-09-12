@@ -121,11 +121,11 @@ ns.Gems = {
     { itemID = 213509, socket = "prismatic", stats = { stam = 5, iskus = 1 }, unique = false, expansion = "TWW" }, -- Янтарь искусности
     { itemID = 213502, socket = "prismatic", stats = { stam = 5, crit = 1 }, unique = false, expansion = "TWW" }, -- Янтарь смерти
     { itemID = 213503, socket = "prismatic", stats = { stam = 5, crit = 1 }, unique = false, expansion = "TWW" }, -- Янтарь смерти
-    { itemID = 213748, socket = "prismatic", stats = { main = 5 }, unique = true, expansion = "TWW", effect = "opponent's failed interrupt attempts grant Precognition" }, -- Кровавый камень разума
+    { itemID = 213748, socket = "prismatic", stats = { main = 5 }, unique = true, pvp = true, expansion = "TWW", effect = "opponent's failed interrupt attempts grant Precognition" }, -- Кровавый камень разума
     { itemID = 213743, socket = "prismatic", stats = { main = 5 }, unique = true, expansion = "TWW", effect = "0.15% Critical Effect per unique Algari gem color" }, -- Профанит апогея
-    { itemID = 213749, socket = "prismatic", stats = { main = 5 }, unique = true, expansion = "TWW", effect = "Getting snared increases damage of your next attack by 23(38) per stack(max 20)" }, -- Кровавый камень решительности
+    { itemID = 213749, socket = "prismatic", stats = { main = 5 }, unique = true, pvp = true, expansion = "TWW", effect = "Getting snared increases damage of your next attack by 23(38) per stack(max 20)" }, -- Кровавый камень решительности
     { itemID = 213746, socket = "prismatic", stats = { main = 5 }, unique = true, expansion = "TWW", effect = "2% Movement Speed per unique Algari gem color" }, -- Профанит неуловимости
-    { itemID = 213747, socket = "prismatic", stats = { main = 5 }, unique = true, expansion = "TWW", effect = "5% Damage Reduction when affected by Crowd Control" }, -- Кровавый камень выносливости
+    { itemID = 213747, socket = "prismatic", stats = { main = 5 }, unique = true, pvp = true, expansion = "TWW", effect = "5% Damage Reduction when affected by Crowd Control" }, -- Кровавый камень выносливости
     { itemID = 213740, socket = "prismatic", stats = { main = 5 }, unique = true, expansion = "TWW", effect = "1% Maximum Mana per unique Algari gem color" }, -- Профанит проницательности
     { itemID = 213488, socket = "prismatic", stats = { haste = 5 }, unique = false, expansion = "TWW" }, -- Изумруд скорости
     { itemID = 213485, socket = "prismatic", stats = { haste = 4, vers = 1 }, unique = false, expansion = "TWW" }, -- Изумруд универсальности

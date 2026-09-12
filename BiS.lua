@@ -408,7 +408,12 @@ local function UniquePrimaryGem(primary)
         -- а не силой или интеллектом: камень один, а класс подставляет игра.
         local v = g.stats and (g.stats[primary] or g.stats.main)
         if g.socket == "prismatic" and g.unique and v then
-            if not bestVal or v > bestVal then best, bestVal = g.itemID, v end
+            -- При равном значении берём НЕ-PvP: Кровавый камень добывается
+            -- на арене, Профанит доступен всем. Поймано 12 сентября, когда
+            -- выгрузка в SimC подставила Кровавый камень разума.
+            local better = not bestVal or v > bestVal
+                or (v == bestVal and bestPvp and not g.pvp)
+            if better then best, bestVal, bestPvp = g.itemID, v, g.pvp end
         end
     end
     return best, bestVal
