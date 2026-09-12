@@ -26,4 +26,18 @@ ns.TalentCodes = {
         code = "CkEASWsDSHNyPDXnbxuIhH3ZdHAAwYGmZmZmxsxMLDjxohZmZxMmZGzMMDAAAAMAMjBAAABAImBmZmBMAAAAwMAD",
         note = "Защита: сборка Кавочавоо",
     },
+
+    -- Охотник. Все три спека сняты с пробного персонажа пользователя 13 сентября.
+    [253] = {
+        code = "C0PAD57yiELKEty14ekTDtZEqAAAAAIAAAzMmZGzMYMzYm5BmHYmhZMzMzwMLLzMjZMDGaGAAAAAAAAMmZAACYWAAwA",
+        note = "Повелитель зверей",
+    },
+    [254] = {
+        code = "C4PAD57yiELKEty14ekTDtZEqAAACABAAAAAAAAAMjhZWWmxMzYGM0MGMLLLzMzMzMzMDmZZwAAAMPwMDDAAMAwsMzMA",
+        note = "Стрельба",
+    },
+    [255] = {
+        code = "C8PAD57yiELKEty14ekTDtZEqMAAQAACYmZmxMWGAAAAAAmxYmZZZGjZYwQzAAAAMA4BYbZmZWMzMzMzYAAghxYGAA",
+        note = "Выживание",
+    },
 }
