@@ -836,7 +836,9 @@ local function RenderRow(row, slot, item, mark, gems, ench)
             gems[i] = picks[i] and picks[i].id or 0
         end
     end
-    local link = ns.BuildItemLink and ns.BuildItemLink(id, item.bonusIDs or {}, gems) or ("item:" .. id)
+    local link = ns.BuildItemLink
+        and ns.BuildItemLink(id, item.bonusIDs or {}, gems, ench and ench.enchantID)
+        or ("item:" .. id)
     row.hyperlink, row.itemLink = link, link
 
     local _, _, _, _, icon = C_Item.GetItemInfoInstant(id)

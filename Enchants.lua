@@ -22,60 +22,60 @@ ns.Enchants = {
     -- ШЕЯ. Знак когтя — прок 6 скорости и 6 крита на 6 секунд; по прогону
     -- SimulationCraft аптайм 29%. Знак подготовленного солдата даёт 4
     -- искусности ровно, без прока — он и выигрывает у спеков на искусность.
-    { slot = "NECK", ru = "Знак когтя", stats = { crit = 2, haste = 2 }, proc = true, n = 36 },
-    { slot = "NECK", ru = "Знак подготовленного солдата", stats = { iskus = 4 }, n = 36 },
+    { slot = "NECK", ru = "Знак когтя", enchantID = 5437, stats = { crit = 2, haste = 2 }, proc = true, n = 36 },
+    { slot = "NECK", ru = "Знак подготовленного солдата", enchantID = 5890, stats = { iskus = 4 }, n = 36 },
     { slot = "NECK", ru = "Знак незримого сатира", stats = { crit = 2 }, proc = true, n = 24 },
 
     -- ПЛЕЧИ. Надписи, у каждой свой стат под тип персонажа.
-    { slot = "SHOULDER", ru = "+2 к силе атаки и +2 к вероятности критического удара", stats = { str = 2, agi = 2, crit = 2 }, n = 13 },
+    { slot = "SHOULDER", ru = "+2 к силе атаки и +2 к вероятности критического удара", enchantID = 3835, stats = { str = 2, agi = 2, crit = 2 }, n = 13 },
     { slot = "SHOULDER", ru = "+3 к интеллекту и +2 к универсальности", stats = { int = 3, vers = 2 }, n = 3 },
     { slot = "SHOULDER", ru = "+3 к силе заклинаний и +1 к вероятности критического удара", stats = { int = 3, crit = 1 }, n = 3 },
 
     -- СПИНА. Самая ходовая чара во всём слепке: 77 человек.
-    { slot = "BACK", ru = "+4 к основной характеристике", stats = { main = 4 }, n = 77 },
+    { slot = "BACK", ru = "+4 к основной характеристике", enchantID = 3243, stats = { main = 4 }, n = 77 },
     { slot = "BACK", ru = "+3 к скорости", stats = { haste = 3 }, n = 2 },
 
     -- ГРУДЬ. «Ко всем характеристикам» — это и основная, и выносливость.
-    { slot = "CHEST", ru = "+3 ко всем характеристикам", stats = { all = 3 }, n = 80 },
+    { slot = "CHEST", ru = "+3 ко всем характеристикам", enchantID = 2661, stats = { all = 3 }, n = 80 },
     { slot = "CHEST", ru = "+4 к универсальности", stats = { vers = 4 }, n = 7 },
 
     -- ЗАПЯСТЬЯ.
-    { slot = "WRIST", ru = "+4 к силе", stats = { str = 4 }, n = 18 },
-    { slot = "WRIST", ru = "+4 к ловкости", stats = { agi = 4 }, n = 3 },
-    { slot = "WRIST", ru = "+4 к интеллекту", stats = { int = 4 }, n = 3 },
-    { slot = "WRIST", ru = "+4 к выносливости", stats = { stam = 4 }, n = 6 },
+    { slot = "WRIST", ru = "+4 к силе", enchantID = 1885, stats = { str = 4 }, n = 18 },
+    { slot = "WRIST", ru = "+4 к ловкости", enchantID = 1887, stats = { agi = 4 }, n = 3 },
+    { slot = "WRIST", ru = "+4 к интеллекту", enchantID = 1883, stats = { int = 4 }, n = 3 },
+    { slot = "WRIST", ru = "+4 к выносливости", enchantID = 1886, stats = { stam = 4 }, n = 6 },
 
     -- КИСТИ.
-    { slot = "HANDS", ru = "+4 к силе", stats = { str = 4 }, n = 29 },
-    { slot = "HANDS", ru = "+4 к ловкости", stats = { agi = 4 }, n = 21 },
+    { slot = "HANDS", ru = "+4 к силе", enchantID = 1603, stats = { str = 4 }, n = 29 },
+    { slot = "HANDS", ru = "+4 к ловкости", enchantID = 1887, stats = { agi = 4 }, n = 21 },
     { slot = "HANDS", ru = "+4 к силе заклинаний", stats = { int = 4 }, n = 10 },
 
     -- ПОЯС. Вариант ровно один, гнезда он не добавляет (проверено
     -- по таблице: 3 выносливости).
-    { slot = "WAIST", ru = "Затененная поясная застежка", stats = { stam = 3 }, n = 25 },
+    { slot = "WAIST", ru = "Затененная поясная застежка", enchantID = 6904, stats = { stam = 3 }, n = 25 },
 
     -- НОГИ. Самые жирные чары в игре на двадцатке.
-    { slot = "LEGS", ru = "+3 к силе и +2 к вероятности критического удара", stats = { str = 3, crit = 2 }, n = 24 },
-    { slot = "LEGS", ru = "+3 к ловкости и +2 к вероятности критического удара", stats = { agi = 3, crit = 2 }, n = 22 },
+    { slot = "LEGS", ru = "+3 к силе и +2 к вероятности критического удара", enchantID = 4881, stats = { str = 3, crit = 2 }, n = 24 },
+    { slot = "LEGS", ru = "+3 к ловкости и +2 к вероятности критического удара", enchantID = 4880, stats = { agi = 3, crit = 2 }, n = 22 },
     { slot = "LEGS", ru = "+5 к интеллекту и +3 к выносливости", stats = { int = 5, stam = 3 }, n = 9 },
 
     -- СТУПНИ.
-    { slot = "FEET", ru = "+3 к выносливости и небольшое увеличение скорости", stats = { stam = 3 }, n = 32 },
+    { slot = "FEET", ru = "+3 к выносливости и небольшое увеличение скорости", enchantID = 3232, stats = { stam = 3 }, n = 32 },
     { slot = "FEET", ru = "+3 к универсальности", stats = { vers = 3 }, n = 6 },
     { slot = "FEET", ru = "+3 к силе атаки", stats = { str = 2, agi = 2 }, n = 3 },
 
     -- КОЛЬЦА. Четвёрка вторички, стат выбирается под спек.
-    { slot = "FINGER", ru = "+4 к скорости", stats = { haste = 4 }, n = 60 },
-    { slot = "FINGER", ru = "+4 к универсальности", stats = { vers = 4 }, n = 59 },
-    { slot = "FINGER", ru = "+4 к искусности", stats = { iskus = 4 }, n = 46 },
-    { slot = "FINGER", ru = "+4 к вероятности критического удара", stats = { crit = 4 }, n = 14 },
+    { slot = "FINGER", ru = "+4 к скорости", enchantID = 6109, stats = { haste = 4 }, n = 60 },
+    { slot = "FINGER", ru = "+4 к универсальности", enchantID = 6111, stats = { vers = 4 }, n = 59 },
+    { slot = "FINGER", ru = "+4 к искусности", enchantID = 6110, stats = { iskus = 4 }, n = 46 },
+    { slot = "FINGER", ru = "+4 к вероятности критического удара", enchantID = 6108, stats = { crit = 4 }, n = 14 },
 
     -- ОРУЖИЕ. Рыцарь — 33 силы на 15 секунд, прок раз в минуту на КАЖДОЕ
     -- оружие. Прямых статов нет, формула его не увидит, но в слепке он
     -- у 42 носителей, а по весам статов из SimulationCraft выходит около
     -- 93 DPS — больше, чем даёт любая чара с ровными статами.
-    { slot = "WEAPON", ru = "Рыцарь", stats = { str = 8, agi = 8 }, proc = true, n = 42 },
-    { slot = "WEAPON", ru = "Танцующая сталь", stats = { str = 4, agi = 4 }, proc = true, n = 18 },
+    { slot = "WEAPON", ru = "Рыцарь", enchantID = 1900, stats = { str = 8, agi = 8 }, proc = true, n = 42 },
+    { slot = "WEAPON", ru = "Танцующая сталь", enchantID = 4444, stats = { str = 4, agi = 4 }, proc = true, n = 18 },
     { slot = "WEAPON", ru = "+11 к силе заклинаний", stats = { int = 11 }, n = 14 },
     { slot = "WEAPON", ru = "+12 к ловкости", stats = { agi = 12 }, n = 3 },
     { slot = "WEAPON", ru = "+10 к силе", stats = { str = 10 }, n = 2 },

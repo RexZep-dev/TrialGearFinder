@@ -185,7 +185,7 @@ end
 -- советуем, что вставить (сейчас - шестерёнки Дракончика). Вставленные так
 -- камни клиент считает и рисует как настоящие: строка "+10 к скорости"
 -- и цвет гнезда приходят из игры, не переписываются нами.
-local function BuildItemLink(itemID, bonusIDs, gems)
+local function BuildItemLink(itemID, bonusIDs, gems, enchant)
     local bonusString = table.concat(bonusIDs, ":")
     local specID = GetSpecializationInfo(GetSpecialization() or 0) or 0
     local g1, g2, g3 = 0, 0, 0
