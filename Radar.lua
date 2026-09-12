@@ -137,9 +137,14 @@ function ns.MakeRadar(parent, radius)
                 fs:SetTextColor(0.80, 0.82, 0.85)
             end
             fs:ClearAllPoints()
-            local lx, ly = Point(i, n, 1.22, r)
+            -- Подпись отодвигается от сетки тем дальше, чем ближе ось
+            -- к вертикали: у верхней и нижней вершин иначе наезжали друг
+            -- на друга заголовок и строка про перебор.
+            local lx, ly = Point(i, n, 1.30, r)
+            local vertical = math.abs(lx) < r * 0.35
+            if vertical then ly = ly * 1.16 end
             local anchor = "CENTER"
-            if lx > r * 0.3 then anchor = "LEFT" elseif lx < -r * 0.3 then anchor = "RIGHT" end
+            if lx > r * 0.35 then anchor = "LEFT" elseif lx < -r * 0.35 then anchor = "RIGHT" end
             fs:SetPoint(anchor, self, "CENTER", lx, ly)
             fs:Show()
         end

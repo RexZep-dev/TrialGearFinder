@@ -1009,11 +1009,11 @@ local function BuildPanel()
     -- то две линии подряд, то вмятины от скругления.
     panel = CreateFrame("Frame", "TrialGearFinderBiSFrame", main, "BackdropTemplate")
     panel:SetWidth(PANEL_W + SEAM)
-    -- Панель ниже основного окна на высоту блока итога: иначе диаграмма
-    -- висела отдельной карточкой под окном, «как аппендикс» (слова
-    -- пользователя 12 сентября). Так это одно окно, просто выше.
+    -- Панель ровно той же высоты, что основное окно: блок итога живёт
+    -- ВНУТРИ неё, а окно подросло на его высоту (Core.lua, 13 строк списка).
+    -- Раньше панель свешивалась ниже окна и выглядела аппендиксом.
     panel:SetPoint("TOPRIGHT", main, "TOPLEFT", SEAM, 0)
-    panel:SetPoint("BOTTOMRIGHT", main, "BOTTOMLEFT", SEAM, -TOTALS_H)
+    panel:SetPoint("BOTTOMRIGHT", main, "BOTTOMLEFT", SEAM, 0)
     panel:SetFrameLevel(main:GetFrameLevel() + 2)
     panel:EnableMouse(true) -- иначе клики проваливаются на мир за окном
 
@@ -1212,11 +1212,11 @@ local function BuildPanel()
         title:SetText("ИТОГ СБОРКИ")
         title:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
 
-        panel.radar = ns.MakeRadar(card, 58)
-        panel.radar:SetPoint("CENTER", card, "CENTER", 0, -4)
+        panel.radar = ns.MakeRadar(card, 52)
+        panel.radar:SetPoint("CENTER", card, "CENTER", 0, 6)
 
         panel.overFS = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        panel.overFS:SetPoint("BOTTOM", card, "BOTTOM", 0, 6)
+        panel.overFS:SetPoint("BOTTOM", card, "BOTTOM", 0, 3)
         panel.overFS:SetWidth(PANEL_W - 20)
         panel.overFS:SetJustifyH("CENTER")
         panel.card = card

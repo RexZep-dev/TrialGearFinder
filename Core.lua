@@ -7,7 +7,7 @@ local ROW_PITCH = ROW_HEIGHT + ROW_SPACING
 -- Девятая строка занимает пустую полосу над фильтрами: окно фиксированной
 -- высоты, а строк помещалось восемь, и снизу оставалась мёртвая щель ровно
 -- в одну строку. Отсюда же берётся высота видимой области списка.
-local NUM_VISIBLE_ROWS = 9
+local NUM_VISIBLE_ROWS = 13 -- 12 сентября: окно подросло под блок итога в панели BiS
 
 -- Признак ежедневного рарника: слово в тексте источника. Отсюда зависят две
 -- вещи - сброс отметок на дневном сбросе и смысл самой жёлтой отметки.
@@ -374,7 +374,7 @@ ns.Style = {
 }
 
 local frame = CreateFrame("Frame", "TrialGearFinderFrame", UIParent, "BasicFrameTemplateWithInset")
-frame:SetSize(880, 632)
+frame:SetSize(880, 824)
 frame:SetPoint("CENTER")
 frame:SetFrameStrata("DIALOG") -- above plain HIGH-strata addon windows, which is
                                 -- apparently where some testers were seeing this
