@@ -82,4 +82,18 @@ ns.TalentCodes = {
         code = "CIQAR03Gt7xPmcDNOjs2Zlb3yOMDGAAAAAAAAAAAghZxMzMLzMmZWmZYG2MYmZGLMZYxMNAzAAIAgAAwgZYMzMjZhZAwMAA",
         note = "Тьма",
     },
+
+    -- Рыцарь смерти. Все три спека сняты с персонажа пользователя 13 сентября.
+    [252] = {
+        code = "CwPAkXBWxkyfx9CbGaHonEAhLBwMmZYGDz2MzMTziZmZMjBAAAAAAAgZGjZAwyMmZ2MzYMAAgAAEwAGAMPwMzYGAMMA",
+        note = "Нечестивость",
+    },
+    [251] = {
+        code = "CsPAkXBWxkyfx9CbGaHonEAhL9AAzMMjxYY2mZmZmhZmpZGjZMzYwDMjxMzMzMzAAAAAAAAAAAAAAhAMzMzYgBgBAAA",
+        note = "Лед",
+    },
+    [250] = {
+        code = "CoPAkXBWxkyfx9CbGaHonEAhLBz2YGmxYMMbzMz0MLmZmZmxAAAAAmZmZmZmZYmZMAYMzMzAAAAAABgAAgBzAAAAAA",
+        note = "Кровь",
+    },
 }
