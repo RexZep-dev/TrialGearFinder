@@ -937,12 +937,26 @@ local function RenderSlots()
     -- ТРЕТИЙ ПРОХОД: камни. GemPicks сам дописывает их в total, поэтому
     -- следующая вещь уже видит обновлённую сумму и уводит камень в тот стат,
     -- который ещё не упёрся в порог.
+    -- Слепок сборки для выгрузки в SimulationCraft (/tgf simc). Пишем здесь,
+    -- потому что здесь она и считается: пересказывать ту же логику второй раз
+    -- означало бы, что однажды пересказ разойдётся с окном.
+    ns.LastBuild = { specID = state.specID, slots = {} }
+
     for i, slot in ipairs(SLOTS) do
         local c = chosen[i]
         local row = panel.slotRows[i]
         local gems = c.pick and GemPicks(c.pick, w, total, role) or nil
         RenderRow(row, slot, c.pick, c.mark, gems)
         if c.twoHand then row.valueFS:SetText("— двуручное") end
+        if c.pick and not c.twoHand then
+            local ids = {}
+            for gi = 1, #(c.pick.socketTypes or {}) do
+                ids[gi] = gems and gems[gi] and gems[gi].id or nil
+            end
+            ns.LastBuild.slots[#ns.LastBuild.slots + 1] = {
+                key = slot.key, name = slot.name, item = c.pick, gems = ids,
+            }
+        end
     end
 
     -- Итог сборки: шмот плюс камни, которые окно само и советует. Считаем

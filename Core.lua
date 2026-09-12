@@ -3341,6 +3341,51 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         return
     end
 
+    -- /tgf simc — выгрузка ТЕКУЩЕЙ сборки из окна BiS в формат
+    -- SimulationCraft, чтобы просимить то, что советует аддон.
+    --
+    -- Берём готовый слепок ns.LastBuild: его кладёт само окно там, где
+    -- сборка и считается. Пересказывать ту же логику здесь нельзя — пересказ
+    -- однажды разойдётся с окном, и симуляция будет про другую сборку.
+    --
+    -- Чары не выгружаем: базы чар у аддона пока нет. Строки enchant_id
+    -- надо дописать из своего экспорта, о чём команда и предупреждает.
+    if msg == "simc" then
+        local b = ns.LastBuild
+        if not (b and b.slots and #b.slots > 0) then
+            print("|cFF86C7BD[TGF]|r Сначала открой окно BiS и выбери спек: /tgf bis")
+            return
+        end
+        local SIMC = {
+            HEAD = "head", NECK = "neck", SHOULDER = "shoulder", BACK = "back",
+            CHEST = "chest", WRIST = "wrist", HANDS = "hands", WAIST = "waist",
+            LEGS = "legs", FEET = "feet", FINGER1 = "finger1", FINGER2 = "finger2",
+            TRINKET1 = "trinket1", TRINKET2 = "trinket2",
+            MAINHAND = "main_hand", OFFHAND = "off_hand",
+        }
+        if ns.CaptureStart then ns.CaptureStart("simc") end
+        local _, specName = GetSpecializationInfoByID(b.specID or 0)
+        print(string.format("# TrialGearFinder: сборка BiS, %s %s",
+            UnitClass("player") or "?", specName or ""))
+        print("# Шапку профиля (класс, расу, таланты) взять из своего экспорта SimC.")
+        for _, s in ipairs(b.slots) do
+            local it = s.item
+            local parts = { "id=" .. it.itemID }
+            if s.gems and #s.gems > 0 then
+                parts[#parts + 1] = "gem_id=" .. table.concat(s.gems, "/")
+            end
+            if it.bonusIDs and #it.bonusIDs > 0 then
+                parts[#parts + 1] = "bonus_id=" .. table.concat(it.bonusIDs, "/")
+            end
+            parts[#parts + 1] = "drop_level=20"
+            print(string.format("# %s (%s)", C_Item.GetItemNameByID(it.itemID) or "?", s.name))
+            print(string.format("%s=,%s", SIMC[s.key] or s.key:lower(), table.concat(parts, ",")))
+        end
+        if ns.CaptureStop then ns.CaptureStop() end
+        print("|cFFFFD100[TGF]|r Скопировать: /tgf copy")
+        return
+    end
+
     if msg == "scan" then
         if ns.CaptureStart then ns.CaptureStart("scan") end
         if UnitLevel("player") ~= 20 then
