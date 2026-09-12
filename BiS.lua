@@ -355,9 +355,15 @@ end
 -- а окно рисует сборку целиком. Уникальные - Профанит, Кровавый камень,
 -- Слеза кошмаров - показываются отдельным списком, это разные задачи.
 local bestGemCache
-local function BestGem(socket, stat)
-    if not bestGemCache then
-        bestGemCache = {}
+local gemByID
+local function BuildGemIndex()
+    if bestGemCache then return end
+    bestGemCache = {}
+    gemByID = {}
+    do
+        for _, g in ipairs(ns.Gems or {}) do
+            gemByID[g.itemID] = g
+        end
         for _, g in ipairs(ns.Gems or {}) do
             if not g.unique and g.socket and g.stats then
                 local t = bestGemCache[g.socket]
@@ -369,9 +375,18 @@ local function BestGem(socket, stat)
             end
         end
     end
+end
+
+local function BestGem(socket, stat)
+    BuildGemIndex()
     local t = bestGemCache[socket]
     local e = t and t[stat]
     return e and e.id or nil, e and e.val or nil
+end
+
+local function GemByID(id)
+    BuildGemIndex()
+    return gemByID[id]
 end
 
 -- Что вставить в КАЖДОЕ гнездо предмета, по порядку socketTypes.
@@ -677,9 +692,36 @@ local function RenderRow(row, slot, item, mark)
     end)
 end
 
+-- Сколько рейтинга = 30% стата на двадцатке. Это СОФТКАП: до него штрафа нет,
+-- после каждая следующая единица рейтинга даёт на 10% меньше, и дальше по
+-- лестнице (39% -20%, 47% -30% и так далее, 126% - хардкап).
+--
+-- Числа из статьи гильдии «Характеристики»
+-- (forsaken.ucoz.net/publ/guides/kharakteristiki/1-1-0-33), разбор -
+-- вики «Софткапы Вторичек». Проценты у спеков разные, пороги общие.
+local SOFTCAP = { crit = 132.96, haste = 127.18, vers = 156.08, iskus = 132.96 }
+
+-- Что вещь даёт в сумму сборки: свои статы, камни в её гнёздах и бонус
+-- за совпадение цвета. Бонус берём как данность: гнёзда мы заполняем сами,
+-- а обычный камень подходит к любому цвету.
+local function AddContribution(total, item, w)
+    if not item then return end
+    for k, v in pairs(item.stats or {}) do total[k] = (total[k] or 0) + v end
+    local picks = GemPicks(item, w)
+    for _, p in ipairs(picks or {}) do
+        local gem = p and p.id and GemByID(p.id)
+        for k, v in pairs(gem and gem.stats or {}) do total[k] = (total[k] or 0) + v end
+    end
+    local sb = item.socketBonus
+    if sb and sb.key and (item.sockets or 0) > 0 then
+        total[sb.key] = (total[sb.key] or 0) + sb.value
+    end
+end
+
 local function RenderSlots()
     local buckets = state.classFile and BuildBuckets(state.classFile) or {}
     local w = ParsePriority(ns.BiSPriority and ns.BiSPriority[state.specID])
+    local total = {}
 
     local role = state.specID and GetSpecializationRoleByID
         and GetSpecializationRoleByID(state.specID) or nil
@@ -738,19 +780,54 @@ local function RenderSlots()
                 local mh = ranked["MAINHAND"]
                 pick = mh and mh[1] or nil
                 RenderRow(row, slot, pick, MarkFor(ranked["MAINHAND"], pick))
+                AddContribution(total, pick, w) -- Titan's Grip: вторая копия считается
             elseif mhIs2H then
                 RenderRow(row, slot, nil)
                 row.valueFS:SetText("— двуручное")
+                -- Двуручник уже посчитан в правой руке, второй раз не берём.
             else
                 RenderRow(row, slot, pick, MarkFor(list, pick))
+                AddContribution(total, pick, w)
             end
         else
             RenderRow(row, slot, pick, MarkFor(list, pick))
+            AddContribution(total, pick, w)
         end
         -- MAINHAND идёт раньше OFFHAND в SLOTS, флаг успеет проставиться.
         if slot.key == "MAINHAND" then
             mhIs2H = pick ~= nil and twoHandID[pick.itemID] == true
         end
+    end
+
+    -- Итог сборки: шмот плюс камни, которые окно само и советует. Считаем
+    -- здесь, а не в ScoreItem: счёт ранжирует ОДНУ вещь, а перебор вторички
+    -- бывает только у сборки целиком.
+    if panel.totalsFS then
+        local PRIMARY = { { "str", "сила" }, { "agi", "ловкость" }, { "int", "интеллект" }, { "stam", "вын" } }
+        local SECOND  = { { "crit", "крит" }, { "haste", "скор" }, { "vers", "верса" }, { "iskus", "иск" } }
+        local left, right, over = {}, {}, false
+        for _, p in ipairs(PRIMARY) do
+            local v = total[p[1]]
+            if v and v > 0 then left[#left + 1] = p[2] .. " " .. v end
+        end
+        for _, p in ipairs(SECOND) do
+            local v = total[p[1]] or 0
+            if v > 0 then
+                local pct = v * 30 / SOFTCAP[p[1]]
+                local s = string.format("%s %d (%.1f%%)", p[2], v, pct)
+                if pct >= 30 then
+                    over = true
+                    s = "|cffE06C5E" .. s .. "|r" -- перебор: дальше рейтинг слабеет
+                end
+                right[#right + 1] = s
+            end
+        end
+        local line = table.concat(left, " · ")
+        if #right > 0 then line = line .. "   |   " .. table.concat(right, " · ") end
+        if over then
+            line = line .. "\n|cffE06C5EПеребор: после 30% каждая единица рейтинга даёт на 10% меньше|r"
+        end
+        panel.totalsFS:SetText(line ~= "" and ("Итог сборки: " .. line) or "")
     end
 end
 
@@ -1044,6 +1121,18 @@ local function BuildPanel()
     for i = 1, #SLOTS do
         panel.slotRows[i] = MakeSlotRow(list, i, ry)
         ry = ry - ROW_H
+    end
+
+    -- Итог сборки: сумма статов со шмота и советуемых камней, с пометкой
+    -- перебора вторички. Живёт в том же зазоре внизу, что и подпись.
+    panel.totalsFS = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    panel.totalsFS:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", 10, 20)
+    panel.totalsFS:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -(8 + SEAM), 20)
+    panel.totalsFS:SetJustifyH("LEFT")
+    panel.totalsFS:SetSpacing(2)
+    do
+        local t2 = C.text2 or { 0.85, 0.85, 0.88 }
+        panel.totalsFS:SetTextColor(t2[1], t2[2], t2[3])
     end
 
     local footer = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
