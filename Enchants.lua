@@ -62,7 +62,7 @@ ns.Enchants = {
     -- СТУПНИ.
     { slot = "FEET", ru = "+3 к выносливости и небольшое увеличение скорости", enchantID = 3232, stats = { stam = 3 }, n = 32 },
     { slot = "FEET", ru = "+3 к универсальности", stats = { vers = 3 }, n = 6 },
-    { slot = "FEET", ru = "+3 к силе атаки", stats = { str = 2, agi = 2 }, n = 3 },
+    { slot = "FEET", ru = "+3 к силе атаки", stats = { str = 1, agi = 1 }, n = 3 },
 
     -- КОЛЬЦА. Четвёрка вторички, стат выбирается под спек.
     { slot = "FINGER", ru = "+4 к скорости", enchantID = 6109, stats = { haste = 4 }, n = 60 },
@@ -76,7 +76,7 @@ ns.Enchants = {
     -- 93 DPS — больше, чем даёт любая чара с ровными статами.
     { slot = "WEAPON", ru = "Рыцарь", enchantID = 1900, stats = { str = 8, agi = 8 }, proc = true, n = 42 },
     { slot = "WEAPON", ru = "Танцующая сталь", enchantID = 4444, stats = { str = 4, agi = 4 }, proc = true, n = 18 },
-    { slot = "WEAPON", ru = "+11 к силе заклинаний", stats = { int = 11 }, n = 14 },
-    { slot = "WEAPON", ru = "+12 к ловкости", stats = { agi = 12 }, n = 3 },
-    { slot = "WEAPON", ru = "+10 к силе", stats = { str = 10 }, n = 2 },
+    { slot = "WEAPON", ru = "+11 к силе заклинаний", stats = { int = 3 }, proc = true, n = 14 },
+    { slot = "WEAPON", ru = "+12 к ловкости", stats = { agi = 3 }, proc = true, n = 3 },
+    { slot = "WEAPON", ru = "+10 к силе", stats = { str = 3 }, proc = true, n = 2 },
 }
