@@ -190,8 +190,11 @@ local function BuildItemLink(itemID, bonusIDs, gems, enchant)
     local specID = GetSpecializationInfo(GetSpecialization() or 0) or 0
     local g1, g2, g3 = 0, 0, 0
     if gems then g1, g2, g3 = gems[1] or 0, gems[2] or 0, gems[3] or 0 end
-    return string.format("item:%d:0:%d:%d:%d:0:0:0:%d:%d:0:0:%d:%s:0",
-        itemID, g1, g2, g3, TWINK_LEVEL, specID, #bonusIDs, bonusString)
+    -- Поле сразу после itemID — зачарование. Передаём его туда, и игра сама
+    -- рисует зелёную строку «Чары: ...» на своём месте, над гнёздами, и на
+    -- своём языке. Раньше мы дописывали её текстом в конец тултипа.
+    return string.format("item:%d:%d:%d:%d:%d:0:0:0:%d:%d:0:0:%d:%s:0",
+        itemID, enchant or 0, g1, g2, g3, TWINK_LEVEL, specID, #bonusIDs, bonusString)
 end
 ns.BuildItemLink = BuildItemLink -- окну BiS нужен тот же приём: сырой itemID
                                  -- показывает вещь низкого уровня без bonusIDs.
