@@ -1194,7 +1194,8 @@ local function BuildPanel()
         card:SetPoint("TOPLEFT", panel, "BOTTOMLEFT", 0, -4)
         card:SetPoint("TOPRIGHT", panel, "BOTTOMRIGHT", 0, -4)
         card:SetHeight(190)
-        if S.RoundedPanel then S.RoundedPanel(card) end
+        -- Цвета обязательны: RoundedPanel(parent, заливка, рамка).
+        if S.RoundedPanel then S.RoundedPanel(card, C.bg, C.border, "BACKGROUND", -8) end
         card:SetFrameLevel(panel:GetFrameLevel())
 
         local title = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
