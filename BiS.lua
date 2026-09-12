@@ -1222,11 +1222,14 @@ local function BuildPanel()
         panel.card = card
     end
 
-    local footer = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    footer:SetPoint("BOTTOM", panel, "BOTTOM", 0, TOTALS_H + 2)
-    footer:SetText("раскладка адаптирована из Cap20 (MIT), автор Kkthnx")
-    local t3 = C.text3 or { 0.4, 0.4, 0.42 }
-    footer:SetTextColor(t3[1] * 0.8, t3[2] * 0.8, t3[3] * 0.8)
+    -- Строки «раскладка адаптирована из Cap20» в окне больше нет: решение
+    -- пользователя 12 сентября. От заимствованной раскладки не осталось
+    -- почти ничего — своя палитра, свои строки, колонка классов, вкладки,
+    -- блок итога, — и подпись обещала больше, чем есть.
+    --
+    -- Атрибуция при этом НИКУДА НЕ ДЕЛАСЬ: она в LICENSE.txt и в шапке
+    -- этого файла. MIT требует именно их, а не видимый кредит в интерфейсе.
+    -- Удалять их нельзя, пока в файле есть хоть что-то взятое из Cap20.
 
     return panel
 end
