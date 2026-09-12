@@ -419,6 +419,8 @@ end
 -- Выбирать по «стату, который ещё не упёрся» нельзя — так вместо двенадцати
 -- крита встанет двойка универсальности. Берём по весу спека: значение
 -- камня, умноженное на вес его стата.
+local HEALER_META = 25901 -- Провидческий алмаз земной бури
+
 local function BestMetaGem(w)
     local bestID, bestScore
     for _, k in ipairs({ "crit", "haste", "vers", "iskus" }) do
@@ -466,7 +468,7 @@ end
 -- уникальный Профанит или Кровавый камень, по одному на персонажа. Что из
 -- двух выгоднее на двадцатке - 5 основной или 5 вторички - НЕ ИЗМЕРЕНО,
 -- поэтому окно советует вторичку, а уникальные идут отдельным списком.
-local function GemPicks(item, w, running)
+local function GemPicks(item, w, running, role)
     local types = item.socketTypes or {}
     if #types == 0 or not w then return nil end
     local cog = CogwheelPicks(item, w)
@@ -517,7 +519,15 @@ local function GemPicks(item, w, running)
         elseif t == "meta" then
             -- Мета считается по весу, а не по «незакрытому» стату: +12 крита
             -- перевешивает любую двойку, даже если крит уже у порога.
-            local id = BestMetaGem(w) or BestGem("meta", top)
+            --
+            -- У ХИЛОВ иначе. По слепку гильдии они ставят Провидческий алмаз
+            -- земной бури: интеллект плюс возврат маны при касте. Прямых
+            -- статов там всего 2, формула его никогда не выберет, а на деле
+            -- мана хилу важнее крита — и это видно по тому, что носят живые
+            -- хилеры (трое из трёх с закрытой метой).
+            local id
+            if role == "HEALER" then id = HEALER_META end
+            id = id or BestMetaGem(w) or BestGem("meta", top)
             picks[i] = id and { key = "crit", id = id } or nil
             if id then Count(id) end
         else
@@ -930,7 +940,7 @@ local function RenderSlots()
     for i, slot in ipairs(SLOTS) do
         local c = chosen[i]
         local row = panel.slotRows[i]
-        local gems = c.pick and GemPicks(c.pick, w, total) or nil
+        local gems = c.pick and GemPicks(c.pick, w, total, role) or nil
         RenderRow(row, slot, c.pick, c.mark, gems)
         if c.twoHand then row.valueFS:SetText("— двуручное") end
     end
