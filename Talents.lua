@@ -68,4 +68,18 @@ ns.TalentCodes = {
         code = "CUQA5HmDzx68KWyrW/8Y781L7DghHYAAAAAgZZMWmM2wMzwMzgZmZWmZ2mZMjtZmZmZmxAmZZAAAAYwYAAAAIEwMAgZA",
         note = "Скрытность",
     },
+
+    -- Жрец. Все три спека сняты с персонажа пользователя 13 сентября.
+    [256] = {
+        code = "CAQAR03Gt7xPmcDNOjs2Zlb3yCDsMGWmZmZGwMmZZmZGjZGAAAAAAAAAAzwiBzMzAzMDQzEDAACAAAAAwYmZGDzMAYmAA",
+        note = "Послушание",
+    },
+    [257] = {
+        code = "CEQAR03Gt7xPmcDNOjs2Zlb3yyYAAAAAAAgZmlxMjZGDzMzYZGmBAAAwMsMDGPwMWmxMDgZKAAQAAAgZmZBQzgxYYmBAzAA",
+        note = "Свет",
+    },
+    [258] = {
+        code = "CIQAR03Gt7xPmcDNOjs2Zlb3yOMDGAAAAAAAAAAAghZxMzMLzMmZWmZYG2MYmZGLMZYxMNAzAAIAgAAwgZYMzMjZhZAwMAA",
+        note = "Тьма",
+    },
 }
