@@ -27,6 +27,13 @@ local AXIS_MAX = {
     str = 120, agi = 120, int = 120, stam = 150,
 }
 
+-- У вторичек край сетки — софткап: за ним рейтинг слабеет, и перебор
+-- красят красным. У основной характеристики и выносливости порога НЕТ:
+-- там край — просто «столько бывает у одетых», и перерасти его хорошо,
+-- а не плохо. Замечено пользователем 12 сентября: сила 150 горела
+-- красным, будто это перебор.
+local CAPPED = { crit = true, haste = true, vers = true, iskus = true }
+
 local LABEL = {
     str = "Сила", agi = "Ловкость", int = "Интеллект", stam = "Вын",
     crit = "Крит", haste = "Скор", vers = "Верса", iskus = "Иск",
@@ -129,7 +136,9 @@ function ns.MakeRadar(parent, radius)
             -- Подпись красится тем же правилом, что и грань рядом с ней:
             -- красный — за краем, зелёный — дошли, белый — недобор.
             local d = v / max
-            if d > 1.0 then
+            -- Ровно на пороге — это попадание, а не перебор: даём допуск
+            -- в пару процентов, иначе крит 134 при пороге 132.96 краснеет.
+            if CAPPED[key] and d > 1.02 then
                 fs:SetTextColor(0.88, 0.42, 0.37)
             elseif d >= 0.95 then
                 fs:SetTextColor(0.42, 0.78, 0.45)
@@ -170,9 +179,12 @@ function ns.MakeRadar(parent, radius)
         end
         for i = 1, n do
             local j = i % n + 1
+            -- Грань красная, только если ПЕРЕБРАЛ стат с порогом.
+            local over = (CAPPED[keys[i]] and ratio[i] > 1.02)
+                or (CAPPED[keys[j]] and ratio[j] > 1.02)
             local worst = math.max(ratio[i], ratio[j])
             local col = WHITE
-            if worst > 1.0 then col = RED
+            if over then col = RED
             elseif worst >= 0.95 then col = GREEN end
 
             ei = ei + 1
