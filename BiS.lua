@@ -580,28 +580,45 @@ local function GemPicks(item, w, running, role)
             picks[i] = id and { key = "crit", id = id } or nil
             if id then Count(id) end
         else
-            local stat = NextStat()
             local id
             -- Первое обычное гнездо сборки — под уникальный +5 к основной.
             -- Второго такого на персонаже не будет, поэтому флаг в running.
             if primary and running and not running.uniqueGemUsed then
-                id = UniquePrimaryGem(primary)
+                local uval
+                id, uval = UniquePrimaryGem(primary)
                 if id then
                     running.uniqueGemUsed = true
                     picks[i] = { key = primary, id = id }
-                    Count(id)
+                    running[primary] = (running[primary] or 0) + (uval or 0)
                 end
             end
             if not picks[i] then
-                -- Сначала дешёвый камень «2 к основной + 2 к вторичке»:
-                -- он даёт основную характеристику, а она по статье гильдии
-                -- ценнее, и стоит 100-200 золота против 2-5 тысяч.
-                -- Алгарийский +5 идёт в дело только там, где пары нет —
-                -- это универсальность у силовиков и ловкачей, такой камень
-                -- просто не отковали (проверено по базе камней 12 сентября).
-                id = primary and AffordableGem(primary, stat) or nil
-                id = id or BestGem(t, stat)
-                picks[i] = id and { key = stat, id = id } or nil
+                -- Честное сравнение ВСЕХ камней, а не «лучший под стат,
+                -- который ещё не упёрся». Прежняя логика теряла основную
+                -- характеристику: когда крит и скорость у порога, она
+                -- уводила гнездо в чистую универсальность (+5 версы), хотя
+                -- камень «2 к силе + 2 крита» сильнее даже с половинной
+                -- ценой упёршегося крита. Симулятор оценил эту ошибку
+                -- в 26 DPS у воина Неистовства (12 сентября).
+                local best, bestScore, bestRank
+                for _, g in ipairs(ns.Gems or {}) do
+                    if g.socket == "prismatic" and not g.unique and g.stats then
+                        local score = 0
+                        for k, val in pairs(g.stats) do
+                            local key = (k == "main" or k == "all") and primary or k
+                            local mult = 1
+                            if running and CAP[key] and (running[key] or 0) >= CAP[key] then mult = 0.5 end
+                            score = score + val * (w[key] or 0) * mult
+                        end
+                        local rank = FAMILY_RANK[g.expansion] or 9
+                        if score > 0 and (not bestScore or score > bestScore
+                            or (score == bestScore and rank < bestRank)) then
+                            best, bestScore, bestRank = g.itemID, score, rank
+                        end
+                    end
+                end
+                id = best
+                picks[i] = id and { key = primary or top, id = id } or nil
                 if id then Count(id) end
             end
         end
