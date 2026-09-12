@@ -384,6 +384,34 @@ local function BestGem(socket, stat)
     return e and e.id or nil, e and e.val or nil
 end
 
+-- Тумблер «Дорогие камни»: выключен - советуем то, что люди носят.
+local function ExpensiveGems()
+    return (TrialGearFinderDB and TrialGearFinderDB.bestGems) and true or false
+end
+
+-- Доступный камень: 2 к основной характеристике + 2 к нужной вторичке
+-- (аметрины, огнекамни, лавовые кораллы). Даёт четыре единицы против пяти
+-- у алгарийского самоцвета TWW, но стоит на аукционе 100-200 золота против
+-- 2-5 тысяч - цифры пользователя. По слепку двух гильдий (4108 камней)
+-- алгарийские стоят у 5% твинков, камни «2 и 2» - у 30%.
+--
+-- Что выгоднее ПО СИЛЕ - 2 основной + 2 вторички или 5 вторички - **не
+-- измерено**: статья гильдии говорит, что основные статы на триале дают
+-- наибольшую прибавку, но числа не приводит. Поэтому выбор оставлен
+-- тумблером, а не решён за пользователя.
+local function AffordableGem(primary, stat)
+    BuildGemIndex()
+    local best, bestVal
+    for _, g in ipairs(ns.Gems or {}) do
+        if g.socket == "prismatic" and not g.unique and g.stats
+            and g.stats[primary] and g.stats[stat] then
+            local v = g.stats[primary] + g.stats[stat]
+            if not bestVal or v > bestVal then best, bestVal = g.itemID, v end
+        end
+    end
+    return best
+end
+
 local function GemByID(id)
     BuildGemIndex()
     return gemByID[id]
@@ -411,13 +439,25 @@ local function GemPicks(item, w)
     local top = order[1]
     if not top then return cog end
 
+    -- Основная характеристика спека: в приоритете гайда она стоит первой,
+    -- поэтому вес у неё самый большой.
+    local primary
+    for _, k in ipairs({ "str", "agi", "int" }) do
+        if (w[k] or 0) > 0 and (not primary or w[k] > w[primary]) then primary = k end
+    end
+
     local picks = {}
     for i, t in ipairs(types) do
         if t == "cogwheel" then
             picks[i] = cog and cog[cogAt] or nil
             cogAt = cogAt + 1
         else
-            local id = BestGem(t, top)
+            -- У шестерёнок и меты дешёвой замены нет, там всегда лучшее.
+            local id
+            if t == "prismatic" and not ExpensiveGems() and primary then
+                id = AffordableGem(primary, top)
+            end
+            id = id or BestGem(t, top)
             picks[i] = id and { key = top, id = id } or nil
         end
     end
@@ -1122,6 +1162,34 @@ local function BuildPanel()
         panel.slotRows[i] = MakeSlotRow(list, i, ry)
         ry = ry - ROW_H
     end
+
+    -- Тумблер «Дорогие камни». Выключен (по умолчанию) - в гнёзда идут
+    -- аметрины и их родня: слабее на единицу, но стоят в 20 раз дешевле,
+    -- и именно их носит гильдия. Включён - алгарийские +5.
+    local gemToggle = CreateFrame("CheckButton", "TrialGearFinderGemToggle", panel, "UICheckButtonTemplate")
+    gemToggle:SetSize(22, 22)
+    if S.CheckBox then S.CheckBox(gemToggle, 10) end
+    gemToggle.label = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    gemToggle.label:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", 32, 38)
+    gemToggle.label:SetText("Дорогие камни")
+    gemToggle.label:SetTextColor(C.text2[1], C.text2[2], C.text2[3])
+    gemToggle:SetPoint("RIGHT", gemToggle.label, "LEFT", -4, 0)
+    gemToggle:SetChecked(ExpensiveGems())
+    gemToggle:SetScript("OnClick", function(self)
+        TrialGearFinderDB = TrialGearFinderDB or {}
+        TrialGearFinderDB.bestGems = not TrialGearFinderDB.bestGems
+        self:SetChecked(ExpensiveGems())
+        RenderSlots()
+    end)
+    gemToggle:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:AddLine("Дорогие камни")
+        GameTooltip:AddLine("Выключено: камни на 2 к основной и 2 к вторичке — аметрины и их родня, 100-200 золота. Их носят 30% гильдии.", 0.8, 0.8, 0.8, true)
+        GameTooltip:AddLine("Включено: алгарийские самоцветы +5 к вторичке, 2-5 тысяч золота. Носят 5%.", 0.8, 0.8, 0.8, true)
+        GameTooltip:Show()
+    end)
+    gemToggle:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    panel.gemToggle = gemToggle
 
     -- Итог сборки: сумма статов со шмота и советуемых камней, с пометкой
     -- перебора вторички. Живёт в том же зазоре внизу, что и подпись.

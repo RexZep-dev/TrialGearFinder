@@ -370,6 +370,7 @@ ns.Style = {
     RING = RING_TEXTURE,
     CIRCLE = CIRCLE_TEXTURE,
     PILL = PILL_TEXTURE,
+    CheckBox = StyleCheckBox, -- окну BiS нужен тот же вид тумблера
 }
 
 local frame = CreateFrame("Frame", "TrialGearFinderFrame", UIParent, "BasicFrameTemplateWithInset")
