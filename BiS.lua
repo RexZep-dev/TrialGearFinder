@@ -479,7 +479,7 @@ local function PickEnchant(slotKey, w, primary, running)
     elseif key == "MAINHAND" or key == "OFFHAND" then key = "WEAPON" end
 
     local CAP = { crit = 132.96, haste = 127.18, vers = 156.08, iskus = 132.96 }
-    local best, bestScore
+    local best, bestScore, fallback
     for _, e in ipairs(ns.Enchants) do
         if e.slot == key then
             local score = 0
@@ -493,9 +493,14 @@ local function PickEnchant(slotKey, w, primary, running)
                 if stat == "all" and primary then score = score + val * (w.stam or 0) * 0.5 end
             end
             if score > 0 and (not bestScore or score > bestScore) then best, bestScore = e, score end
+            -- Запасной вариант: у застёжки на пояс только выносливость,
+            -- а её нет в приоритете ни у одного спека — счёт выходит ноль,
+            -- и слот оставался без чары вовсе. Когда считать нечем, берём
+            -- то, что носят в гильдии: поле n в Enchants.lua.
+            if not fallback or (e.n or 0) > (fallback.n or 0) then fallback = e end
         end
     end
-    return best
+    return best or fallback
 end
 
 -- Что вставить в КАЖДОЕ гнездо предмета, по порядку socketTypes.
