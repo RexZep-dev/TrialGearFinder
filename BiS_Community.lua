@@ -129,6 +129,18 @@ ns.CommunityItems = {
     -- Статы с тултипа пользователя: 18 уровень, по 8 каждой вторички.
     { itemID = 128978, bonusIDs = { 6710, 6652 }, classes = nil, sourceType = "Craft", source = "Крафт (аукцион)", note = "[ДД] Карта Таро Пророчества: три вторички разом - крит, универсальность, искусность. Уникальная использующаяся", ilvl = 18, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { crit = 8, vers = 8, iskus = 8 } },
 
+    -- Найдено 13 сентября сверкой двух источников: логи с forsaken-dungeons
+    -- (295 отчётов, 1409 записей об игроках) показали, ЧТО носят в рейтинге,
+    -- а слепок армори дал статы этих вещей на двадцатке. В базе их не было.
+    -- Гнёзда — только родные, проверены тултипом со связкой (см. вики
+    -- «Бонус За Гнездо» § Сверка гнёзд тултипом).
+    -- Источники не выяснены: в логах их нет, а гадать не стали.
+    { itemID = 178781, bonusIDs = { 6710, 6652 }, classes = nil, sourceType = "Dungeon", source = "уточнить", note = "Ритуальный перстень командира: кольцо на крит/универсальность (в рейтинге ×16)", ilvl = 23, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { stam = 6, crit = 7, vers = 11 } },
+    { itemID = 159462, bonusIDs = { 6710, 6652 }, classes = nil, sourceType = "World", source = "уточнить", note = "Кольцо чемпиона по футбомбометанию: на скорость/искусность (в рейтинге ×19)", ilvl = 23, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { stam = 6, haste = 9, iskus = 10 } },
+    { itemID = 27737, bonusIDs = { 6710, 6652 }, classes = { "DEMONHUNTER", "ROGUE", "MONK", "DRUID" }, sourceType = "Dungeon", source = "уточнить", note = "Наплечники Лунной поляны: кожаные плечи на версу, два гнезда (в рейтинге ×8)", ilvl = 23, armor = 7, sockets = 2, socketTypes = { "prismatic", "prismatic" }, socketBonus = nil, stats = { agi = 5, int = 5, stam = 7, crit = 4, vers = 5 } },
+    { itemID = 37188, bonusIDs = { 6710, 6652, 8810 }, classes = { "EVOKER", "HUNTER", "SHAMAN" }, sourceType = "Dungeon", source = "уточнить", note = "Шлем расхитителя: кольчужная голова на крит/скорость, два гнезда (в рейтинге ×8)", ilvl = 23, armor = 11, sockets = 2, socketTypes = { "prismatic", "prismatic" }, socketBonus = nil, stats = { agi = 7, int = 7, stam = 10, crit = 5, haste = 8 } },
+    { itemID = 161113, bonusIDs = { 6710, 6652 }, classes = nil, sourceType = "World", source = "уточнить", note = "[ДД] Беспрерывно тикающие часы: аксессуар со всеми основными статами разом (в рейтинге ×8)", ilvl = 23, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { str = 6, agi = 6, int = 6 } },
+
     -- ── Прочие слоты (пред-BiS) ──────────────────────────────────────────
     -- Не из гайда, но у одетых согильдийцев (котёл из 67 с BiS-шмотом) на них
     -- сходится 5+ человек. Статы/уровень/гнёзда — с армори, источник не выяснен.
