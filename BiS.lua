@@ -760,7 +760,8 @@ local function MakeSlotRow(parent, index, y)
         -- только основное окно, и Шлем удара духа показывал 6/8/5 там
         -- и 7/10/6 здесь.
         if ns.FixTooltipStats then ns.FixTooltipStats(self.entry and self.entry.stats) end
-        if self.ench then
+        if self.ench and not self.ench.enchantID then
+            -- Номера нет — игра нарисовать не сможет, пишем сами.
             GameTooltip:AddLine(" ")
             GameTooltip:AddLine("Чара: " .. self.ench.ru, 0.55, 0.78, 1, true)
             if self.ench.proc then
