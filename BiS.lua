@@ -1532,6 +1532,36 @@ local function BuildPanel()
         simc:SetScript("OnLeave", function() GameTooltip:Hide() end)
         panel.simcBtn = simc
 
+        -- Кнопка талантов: печатает код сборки и открывает окно копирования.
+        -- Новичку нужен именно код — он вставляется в игре одной кнопкой,
+        -- а список названий ему ничего не скажет.
+        local tal = CreateFrame("Button", nil, card, "UIPanelButtonTemplate")
+        tal:SetSize(74, 20)
+        tal:SetPoint("RIGHT", simc, "LEFT", -6, 0)
+        tal:SetText("Таланты")
+        tal:SetScript("OnClick", function()
+            local t = ns.TalentCodes and ns.TalentCodes[state.specID]
+            if not t then
+                print("|cFF86C7BD[TGF]|r Кода талантов для этого спека пока нет. Пришлите свой: окно талантов, кнопка «Экспорт».")
+                return
+            end
+            if ns.CaptureStart then ns.CaptureStart("talents") end
+            print("# TrialGearFinder: таланты, " .. (t.note or ""))
+            print(t.code)
+            if ns.CaptureStop then ns.CaptureStop() end
+            if ns.ShowCopyWindow then ns.ShowCopyWindow(true) end
+        end)
+        tal:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+            local t = ns.TalentCodes and ns.TalentCodes[state.specID]
+            GameTooltip:AddLine("Код талантов")
+            GameTooltip:AddLine(t and (t.note or "") or "Для этого спека кода пока нет.", 0.8, 0.8, 0.8, true)
+            GameTooltip:AddLine("Вставляется в игре: окно талантов — Загрузить сборку.", 0.6, 0.6, 0.6, true)
+            GameTooltip:Show()
+        end)
+        tal:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        panel.talentBtn = tal
+
         panel.card = card
     end
 
