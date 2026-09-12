@@ -431,14 +431,23 @@ local function BestMetaGem(w)
     return bestID
 end
 
+-- При равенстве камней берём тот, что дешевле на аукционе. Цены сняты
+-- со скриншотов пользователя 12 сентября: огнекамни (TBC) 22-45 золота,
+-- аметрины (WotLK) 134-201, лавовые кораллы (Катаклизм) не проверены.
+-- Статы у всех троих одинаковые — 2 к основной и 2 к вторичке.
+local FAMILY_RANK = { TBC = 1, WotLK = 2, Cataclysm = 3 }
+
 local function AffordableGem(primary, stat)
     BuildGemIndex()
-    local best, bestVal
+    local best, bestVal, bestRank
     for _, g in ipairs(ns.Gems or {}) do
         if g.socket == "prismatic" and not g.unique and g.stats
             and g.stats[primary] and g.stats[stat] then
             local v = g.stats[primary] + g.stats[stat]
-            if not bestVal or v > bestVal then best, bestVal = g.itemID, v end
+            local rank = FAMILY_RANK[g.expansion] or 9
+            if not bestVal or v > bestVal or (v == bestVal and rank < bestRank) then
+                best, bestVal, bestRank = g.itemID, v, rank
+            end
         end
     end
     return best
