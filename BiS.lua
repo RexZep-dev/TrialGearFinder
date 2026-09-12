@@ -842,32 +842,26 @@ local function RenderSlots()
     -- Итог сборки: шмот плюс камни, которые окно само и советует. Считаем
     -- здесь, а не в ScoreItem: счёт ранжирует ОДНУ вещь, а перебор вторички
     -- бывает только у сборки целиком.
-    if panel.totalsFS then
-        local PRIMARY = { { "str", "сила" }, { "agi", "ловкость" }, { "int", "интеллект" }, { "stam", "вын" } }
-        local SECOND  = { { "crit", "крит" }, { "haste", "скор" }, { "vers", "верса" }, { "iskus", "иск" } }
-        local left, right, over = {}, {}, false
-        for _, p in ipairs(PRIMARY) do
-            local v = total[p[1]]
-            if v and v > 0 then left[#left + 1] = p[2] .. " " .. v end
+    if panel.radar then
+        -- Основная характеристика — только СВОЯ: жрецу интеллект, воину сила.
+        -- Чужие оси не рисуем вовсе, чтобы фигура не тянулась в ноль.
+        local values = {}
+        local primary
+        for _, k in ipairs({ "str", "agi", "int" }) do
+            if (w and w[k] or 0) > 0 and (not primary or w[k] > w[primary]) then primary = k end
         end
-        for _, p in ipairs(SECOND) do
-            local v = total[p[1]] or 0
-            if v > 0 then
-                local pct = v * 30 / SOFTCAP[p[1]]
-                local s = string.format("%s %d (%.1f%%)", p[2], v, pct)
-                if pct >= 30 then
-                    over = true
-                    s = "|cffE06C5E" .. s .. "|r" -- перебор: дальше рейтинг слабеет
-                end
-                right[#right + 1] = s
-            end
+        if primary then values[primary] = total[primary] or 0 end
+        for _, k in ipairs({ "stam", "crit", "haste", "iskus", "vers" }) do
+            values[k] = total[k] or 0
         end
-        local line = table.concat(left, " · ")
-        if #right > 0 then line = line .. "   |   " .. table.concat(right, " · ") end
-        if over then
-            line = line .. "\n|cffE06C5EПеребор: после 30% каждая единица рейтинга даёт на 10% меньше|r"
+        panel.radar:Update(values)
+
+        local over = {}
+        for _, k in ipairs({ "crit", "haste", "iskus", "vers" }) do
+            if (total[k] or 0) * 30 / SOFTCAP[k] >= 30 then over[#over + 1] = k end
         end
-        panel.totalsFS:SetText(line ~= "" and ("Итог сборки: " .. line) or "")
+        panel.overFS:SetText(#over > 0
+            and "|cffE06C5EПеребор: после 30% каждая единица рейтинга даёт на 10% меньше|r" or "")
     end
 end
 
@@ -1166,11 +1160,12 @@ local function BuildPanel()
     -- Тумблер «Дорогие камни». Выключен (по умолчанию) - в гнёзда идут
     -- аметрины и их родня: слабее на единицу, но стоят в 20 раз дешевле,
     -- и именно их носит гильдия. Включён - алгарийские +5.
+    -- Живёт в правом верхнем углу панели: внизу его не замечали.
     local gemToggle = CreateFrame("CheckButton", "TrialGearFinderGemToggle", panel, "UICheckButtonTemplate")
     gemToggle:SetSize(22, 22)
     if S.CheckBox then S.CheckBox(gemToggle, 10) end
     gemToggle.label = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    gemToggle.label:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", 32, 38)
+    gemToggle.label:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -(12 + SEAM), -10)
     gemToggle.label:SetText("Дорогие камни")
     gemToggle.label:SetTextColor(C.text2[1], C.text2[2], C.text2[3])
     gemToggle:SetPoint("RIGHT", gemToggle.label, "LEFT", -4, 0)
@@ -1191,16 +1186,30 @@ local function BuildPanel()
     gemToggle:SetScript("OnLeave", function() GameTooltip:Hide() end)
     panel.gemToggle = gemToggle
 
-    -- Итог сборки: сумма статов со шмота и советуемых камней, с пометкой
-    -- перебора вторички. Живёт в том же зазоре внизу, что и подпись.
-    panel.totalsFS = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    panel.totalsFS:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", 10, 20)
-    panel.totalsFS:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -(8 + SEAM), 20)
-    panel.totalsFS:SetJustifyH("LEFT")
-    panel.totalsFS:SetSpacing(2)
-    do
-        local t2 = C.text2 or { 0.85, 0.85, 0.88 }
-        panel.totalsFS:SetTextColor(t2[1], t2[2], t2[3])
+    -- Итог сборки — многоугольником, а не строкой цифр: цифры не влезали
+    -- по ширине, а перекос по форме виден сразу. Блок висит ПОД панелью,
+    -- своей карточкой: внутри места нет, список занимает панель целиком.
+    if ns.MakeRadar then
+        local card = CreateFrame("Frame", nil, panel, "BackdropTemplate")
+        card:SetPoint("TOPLEFT", panel, "BOTTOMLEFT", 0, -4)
+        card:SetPoint("TOPRIGHT", panel, "BOTTOMRIGHT", 0, -4)
+        card:SetHeight(190)
+        if S.RoundedPanel then S.RoundedPanel(card) end
+        card:SetFrameLevel(panel:GetFrameLevel())
+
+        local title = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        title:SetPoint("TOP", card, "TOP", 0, -8)
+        title:SetText("ИТОГ СБОРКИ")
+        title:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
+
+        panel.radar = ns.MakeRadar(card, 58)
+        panel.radar:SetPoint("CENTER", card, "CENTER", 0, -4)
+
+        panel.overFS = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        panel.overFS:SetPoint("BOTTOM", card, "BOTTOM", 0, 6)
+        panel.overFS:SetWidth(PANEL_W - 20)
+        panel.overFS:SetJustifyH("CENTER")
+        panel.card = card
     end
 
     local footer = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
