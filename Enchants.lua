@@ -28,7 +28,7 @@ ns.Enchants = {
 
     -- ПЛЕЧИ. Надписи, у каждой свой стат под тип персонажа.
     { slot = "SHOULDER", ru = "+2 к силе атаки и +2 к вероятности критического удара", enchantID = 3835, stats = { str = 2, agi = 2, crit = 2 }, n = 13 },
-    { slot = "SHOULDER", ru = "+3 к интеллекту и +2 к универсальности", stats = { int = 3, vers = 2 }, n = 3 },
+    { slot = "SHOULDER", ru = "+3 к интеллекту и +2 к универсальности", enchantID = 3836, stats = { int = 3, vers = 2 }, n = 3 },
     { slot = "SHOULDER", ru = "+3 к силе заклинаний и +1 к вероятности критического удара", stats = { int = 3, crit = 1 }, n = 3 },
 
     -- СПИНА. Самая ходовая чара во всём слепке: 77 человек.
@@ -48,7 +48,7 @@ ns.Enchants = {
     -- КИСТИ.
     { slot = "HANDS", ru = "+4 к силе", enchantID = 1603, stats = { str = 4 }, n = 29 },
     { slot = "HANDS", ru = "+4 к ловкости", enchantID = 1887, stats = { agi = 4 }, n = 21 },
-    { slot = "HANDS", ru = "+4 к силе заклинаний", stats = { int = 4 }, n = 10 },
+    { slot = "HANDS", ru = "+4 к силе заклинаний", enchantID = 2322, stats = { int = 4 }, n = 10 },
 
     -- ПОЯС. Вариант ровно один, гнезда он не добавляет (проверено
     -- по таблице: 3 выносливости).
@@ -57,7 +57,7 @@ ns.Enchants = {
     -- НОГИ. Самые жирные чары в игре на двадцатке.
     { slot = "LEGS", ru = "+3 к силе и +2 к вероятности критического удара", enchantID = 4881, stats = { str = 3, crit = 2 }, n = 24 },
     { slot = "LEGS", ru = "+3 к ловкости и +2 к вероятности критического удара", enchantID = 4880, stats = { agi = 3, crit = 2 }, n = 22 },
-    { slot = "LEGS", ru = "+5 к интеллекту и +3 к выносливости", stats = { int = 5, stam = 3 }, n = 9 },
+    { slot = "LEGS", ru = "+5 к интеллекту и +5% маны", enchantID = 6544, stats = { int = 5 }, n = 9 },
 
     -- СТУПНИ.
     { slot = "FEET", ru = "+3 к выносливости и небольшое увеличение скорости", enchantID = 3232, stats = { stam = 3 }, n = 32 },
@@ -76,7 +76,12 @@ ns.Enchants = {
     -- 93 DPS — больше, чем даёт любая чара с ровными статами.
     { slot = "WEAPON", ru = "Рыцарь", enchantID = 1900, stats = { str = 8, agi = 8 }, proc = true, n = 42 },
     { slot = "WEAPON", ru = "Танцующая сталь", enchantID = 4444, stats = { str = 4, agi = 4 }, proc = true, n = 18 },
-    { slot = "WEAPON", ru = "+11 к силе заклинаний", stats = { int = 3 }, proc = true, n = 14 },
+    { slot = "WEAPON", ru = "+11 к силе заклинаний", enchantID = 2505, stats = { int = 3 }, proc = true, n = 14 },
     { slot = "WEAPON", ru = "+12 к ловкости", stats = { agi = 3 }, proc = true, n = 3 },
     { slot = "WEAPON", ru = "+10 к силе", stats = { str = 3 }, proc = true, n = 2 },
+    { slot = "CHEST", ru = "Пробужденные характеристики", enchantID = 6625, stats = { all = 3 }, n = 4 },
+    { slot = "FEET", ru = "+2 к искусности и небольшой бонус к скорости", enchantID = 4429, stats = { iskus = 2 }, n = 8 },
+    { slot = "WRIST", ru = "+3 к силе заклинаний", enchantID = 2326, stats = { int = 3 }, n = 16 },
+    -- Левая рука у кастера — своя чара, к оружейным она отношения не имеет.
+    { slot = "OFFHAND", ru = "+4 к интеллекту", enchantID = 4434, stats = { int = 4 }, n = 15 },
 }

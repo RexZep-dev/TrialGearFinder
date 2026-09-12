@@ -474,14 +474,20 @@ end
 -- вовсе, а в слепке именно они у большинства.
 local function PickEnchant(slotKey, w, primary, running)
     if not ns.Enchants or not w then return nil end
-    local key = slotKey
-    if key == "FINGER1" or key == "FINGER2" then key = "FINGER"
-    elseif key == "MAINHAND" or key == "OFFHAND" then key = "WEAPON" end
+    -- Левая рука бывает и оружием, и держимым предметом: у кастера там своя
+    -- чара на интеллект, у воина — оружейная. Поэтому сначала ищем в списке
+    -- левой руки, а если там нечего — берём оружейные.
+    local keys = { slotKey }
+    if slotKey == "FINGER1" or slotKey == "FINGER2" then keys = { "FINGER" }
+    elseif slotKey == "MAINHAND" then keys = { "WEAPON" }
+    elseif slotKey == "OFFHAND" then keys = { "OFFHAND", "WEAPON" } end
 
     local CAP = { crit = 132.96, haste = 127.18, vers = 156.08, iskus = 132.96 }
     local best, bestScore, fallback
     for _, e in ipairs(ns.Enchants) do
-        if e.slot == key then
+        local match = false
+        for _, k in ipairs(keys) do if e.slot == k then match = true end end
+        if match then
             local score = 0
             for stat, val in pairs(e.stats or {}) do
                 local k = stat
