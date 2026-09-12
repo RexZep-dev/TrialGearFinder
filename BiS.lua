@@ -234,6 +234,26 @@ local function BuildBuckets(classFile)
 end
 
 -- Приоритет гайда -> веса статов: первый стат самый тяжёлый.
+-- Веса статов из строки приоритета гайда.
+--
+-- Раньше вес был просто «место в строке»: 5, 4, 3, 2, 1. Это сильно врёт.
+-- SimulationCraft посчитал настоящие веса для воина Неистовства на нашей же
+-- сборке (12 сентября): сила 5.65 DPS за единицу, универсальность 2.50,
+-- скорость 2.27, крит 2.08, искусность 1.31. То есть основная характеристика
+-- дороже любой вторички примерно В ДВА С ПОЛОВИНОЙ РАЗА, а вторички между
+-- собой различаются в полтора, а не в пять.
+--
+-- Цена старой шкалы измерена: окно уводило камни в скорость вместо силы,
+-- и сборка теряла 60 DPS (1310 против 1372).
+--
+-- Порядок статов по-прежнему из гайда — меняются только расстояния между
+-- ними. Числа ниже — форма, снятая с того замера, а не сам замер: для
+-- каждого спека веса свои, и когда дойдут руки прогнать их все, эту
+-- таблицу заменит ns.StatWeights.
+local PRIMARY_W = 2.5
+local SECOND_W = { 1.0, 0.85, 0.7, 0.55 }
+local STAM_W = 0.3
+
 local function ParsePriority(s)
     if not s then return nil end
     local order = {}
@@ -242,8 +262,17 @@ local function ParsePriority(s)
         if pos then order[#order + 1] = { pos = pos, key = key } end
     end
     table.sort(order, function(a, b) return a.pos < b.pos end)
-    local w = {}
-    for i, e in ipairs(order) do w[e.key] = #order - i + 1 end
+    local w, secIdx = {}, 0
+    for _, e in ipairs(order) do
+        if e.key == "str" or e.key == "agi" or e.key == "int" then
+            w[e.key] = PRIMARY_W
+        elseif e.key == "stam" then
+            w[e.key] = STAM_W
+        else
+            secIdx = secIdx + 1
+            w[e.key] = SECOND_W[secIdx] or 0.4
+        end
+    end
     return w
 end
 

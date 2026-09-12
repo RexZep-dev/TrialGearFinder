@@ -121,8 +121,8 @@ ns.CommunityItems = {
     -- 0.37 от этого — множитель выведен по шести вещам, которые уже в базе
     -- и у которых известны оба числа (Дубинка сына Горамала 54 → 20, плащи,
     -- щиты). Ждёт проверки живым тултипом.
-    { itemID = 127661, bonusIDs = { 572, 13619 }, classes = nil, sourceType = "World", source = "Танаанские джунгли", note = "[ДД] Клык Расте: три вторички разом - крит, скорость, искусность. Падает с рарника, раз в день", ilvl = 26, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { crit = 10, haste = 10, iskus = 10 } },
-    { itemID = 127660, bonusIDs = { 572, 13619 }, classes = nil, sourceType = "World", source = "Танаанские джунгли", note = "[ДД] Обузданный огонь: три вторички разом - крит, универсальность, искусность. Падает с рарника, раз в день", ilvl = 26, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { crit = 10, vers = 10, iskus = 10 } },
+    { itemID = 127661, bonusIDs = { 6710, 6652 }, classes = nil, sourceType = "World", source = "Танаанские джунгли", note = "[ДД] Клык Расте: три вторички разом - крит, скорость, искусность. Падает с рарника, раз в день", ilvl = 23, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { crit = 9, haste = 9, iskus = 9 } },
+    { itemID = 127660, bonusIDs = { 6710, 6652 }, classes = nil, sourceType = "World", source = "Танаанские джунгли", note = "[ДД] Обузданный огонь: три вторички разом - крит, универсальность, искусность. Падает с рарника, раз в день", ilvl = 23, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { crit = 9, vers = 9, iskus = 9 } },
 
     -- ── Прочие слоты (пред-BiS) ──────────────────────────────────────────
     -- Не из гайда, но у одетых согильдийцев (котёл из 67 с BiS-шмотом) на них
