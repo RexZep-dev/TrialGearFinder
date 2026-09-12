@@ -551,13 +551,13 @@ local PANEL_W = 500
 -- Содержимое панели отступает на столько же, чтобы не залезть за стык.
 local SEAM = 12
 -- Высота блока итога сборки внизу панели: диаграмма плюс подписи.
-local TOTALS_H = 190
+local TOTALS_H = 210
 local HEADER_H = 30
-local CLASS_COL_W = 44 -- 8:>=:0 36 ?;NA 7>;>B>5 :>;LF> +4 ?> :@0O<
+local CLASS_COL_W = 52 -- иконка 44 плюс поля; комментарий тут был в битой кодировке
 -- 16 AB@>: 4>;6=K C<5AB8BLAO <564C AB@>:>9 ?@8>@8B5B0 8 ?>4?8ALN 2=87C:
 -- ?@8 2KA>B5 >:=0 632 =0 A?8A>: >AB0QBAO >:>;> 462 B>G5:, 462/16 = 28.
 local ROW_H = 28
-local CLASS_ICON = 36
+local CLASS_ICON = 44 -- 12 сентября: окно выросло, иконки классов вместе с ним
 
 local panel, arrow
 local state = { classID = nil, classFile = nil, specID = nil }
@@ -1172,7 +1172,7 @@ local function BuildPanel()
     gemToggle.label = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     -- Правый верхний угол панели закрыт основным окном — тумблер там было
     -- не видно. Место нашлось в блоке итога: он свой, ничем не накрыт.
-    gemToggle.label:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", 38, TOTALS_H - 26)
+    gemToggle.label:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", CLASS_COL_W + 40, TOTALS_H - 30)
     gemToggle.label:SetText("Дорогие камни")
     gemToggle.label:SetTextColor(C.text2[1], C.text2[2], C.text2[3])
     gemToggle:SetPoint("RIGHT", gemToggle.label, "LEFT", -4, 0)
@@ -1199,9 +1199,9 @@ local function BuildPanel()
     if ns.MakeRadar then
         -- Блок итога — нижняя часть САМОЙ панели, не отдельная карточка.
         local card = CreateFrame("Frame", nil, panel)
-        card:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", 8, 8)
-        card:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -(8 + SEAM), 8)
-        card:SetHeight(TOTALS_H - 16)
+        card:SetPoint("BOTTOMLEFT", panel, "BOTTOMLEFT", CLASS_COL_W + 10, 16)
+        card:SetPoint("BOTTOMRIGHT", panel, "BOTTOMRIGHT", -(8 + SEAM), 16)
+        card:SetHeight(TOTALS_H - 24)
         -- Мышь ловим, иначе сквозь блок выделяются объекты мира (замечено
         -- пользователем 12 сентября) — та же болезнь, что была у панели.
         card:EnableMouse(true)
@@ -1212,8 +1212,8 @@ local function BuildPanel()
         title:SetText("ИТОГ СБОРКИ")
         title:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
 
-        panel.radar = ns.MakeRadar(card, 52)
-        panel.radar:SetPoint("CENTER", card, "CENTER", 0, 6)
+        panel.radar = ns.MakeRadar(card, 56)
+        panel.radar:SetPoint("CENTER", card, "CENTER", 0, 8)
 
         panel.overFS = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         panel.overFS:SetPoint("BOTTOM", card, "BOTTOM", 0, 3)
