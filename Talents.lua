@@ -40,4 +40,18 @@ ns.TalentCodes = {
         code = "C8PAD57yiELKEty14ekTDtZEqMAAQAACYmZmxMWGAAAAAAmxYmZZZGjZYwQzAAAAMA4BYbZmZWMzMzMzYAAghxYGAA",
         note = "Выживание",
     },
+
+    -- Паладин. Все три спека сняты с персонажа пользователя 13 сентября.
+    [70] = {
+        code = "CYEAzbn3egSOtoSwvPw1U1vTLAAAAAANbbzMz2YGzMAAAAAAzUmFDzMz2Y2GmZzYMGDDLsNAAggAAAAYAwYGGYGDbAYYMMA",
+        note = "Воздаяние",
+    },
+    [66] = {
+        code = "CIEAzbn3egSOtoSwvPw1U1vTLsNDjxwMmZGbMmtZhZMAADAAAAAAaamhZMzwY2aDADMgZwGAAABAIALLYAwYGGDAAAzMAsA",
+        note = "Защита",
+    },
+    [65] = {
+        code = "CEEAzbn3egSOtoSwvPw1U1vTLAAAALAwMAAwyYGmZMzMMGzMzyMMzGTTMLzYmZGjZLDADAbgNYmBABAAAAL8ADYA2MDAAAMgA",
+        note = "Свет",
+    },
 }
