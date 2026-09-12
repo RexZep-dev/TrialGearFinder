@@ -1208,12 +1208,12 @@ local function BuildPanel()
         if S.RoundedPanel then S.RoundedPanel(card, C.block, C.borderSoft, "BACKGROUND", -6) end
 
         local title = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        title:SetPoint("TOP", card, "TOP", 0, -8)
+        title:SetPoint("TOPRIGHT", card, "TOPRIGHT", -10, -8)
         title:SetText("ИТОГ СБОРКИ")
         title:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
 
-        panel.radar = ns.MakeRadar(card, 56)
-        panel.radar:SetPoint("CENTER", card, "CENTER", 0, 8)
+        panel.radar = ns.MakeRadar(card, 44)
+        panel.radar:SetPoint("CENTER", card, "CENTER", 0, 4)
 
         panel.overFS = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         panel.overFS:SetPoint("BOTTOM", card, "BOTTOM", 0, 3)
