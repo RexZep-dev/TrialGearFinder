@@ -1113,6 +1113,44 @@ local function Bevel(frame, fill, border)
     frame:SetBackdropBorderColor(border[1], border[2], border[3], 1)
 end
 
+-- Выгрузка сборки в SimulationCraft. Живёт здесь, а не в обработчике
+-- команды: сборку считает это окно, и слепок лежит рядом. Зовут двое —
+-- команда /tgf simc и кнопка «SimC» в блоке итога.
+function ns.ExportSimC()
+    local b = ns.LastBuild
+    if not (b and b.slots and #b.slots > 0) then
+        print("|cFF86C7BD[TGF]|r Сначала открой окно BiS и выбери спек: /tgf bis")
+        return
+    end
+    local SIMC = {
+        HEAD = "head", NECK = "neck", SHOULDER = "shoulder", BACK = "back",
+        CHEST = "chest", WRIST = "wrist", HANDS = "hands", WAIST = "waist",
+        LEGS = "legs", FEET = "feet", FINGER1 = "finger1", FINGER2 = "finger2",
+        TRINKET1 = "trinket1", TRINKET2 = "trinket2",
+        MAINHAND = "main_hand", OFFHAND = "off_hand",
+    }
+    if ns.CaptureStart then ns.CaptureStart("simc") end
+    local _, specName = GetSpecializationInfoByID(b.specID or 0)
+    print(string.format("# TrialGearFinder: сборка BiS, %s %s",
+        UnitClass("player") or "?", specName or ""))
+    print("# Шапку профиля (класс, расу, таланты) взять из своего экспорта SimC.")
+    for _, s in ipairs(b.slots) do
+        local it = s.item
+        local parts = { "id=" .. it.itemID }
+        if s.gems and #s.gems > 0 then
+            parts[#parts + 1] = "gem_id=" .. table.concat(s.gems, "/")
+        end
+        if it.bonusIDs and #it.bonusIDs > 0 then
+            parts[#parts + 1] = "bonus_id=" .. table.concat(it.bonusIDs, "/")
+        end
+        parts[#parts + 1] = "drop_level=20"
+        print(string.format("# %s (%s)", C_Item.GetItemNameByID(it.itemID) or "?", s.name))
+        print(string.format("%s=,%s", SIMC[s.key] or s.key:lower(), table.concat(parts, ",")))
+    end
+    if ns.CaptureStop then ns.CaptureStop() end
+    print("|cFFFFD100[TGF]|r Скопировать: /tgf copy")
+end
+
 local function BuildPanel()
     if panel then return panel end
     local main = _G[MAIN]
@@ -1306,6 +1344,25 @@ local function BuildPanel()
         panel.overFS:SetPoint("BOTTOM", card, "BOTTOM", 0, 3)
         panel.overFS:SetWidth(PANEL_W - 20)
         panel.overFS:SetJustifyH("CENTER")
+        -- Кнопка выгрузки в SimulationCraft: печатает сборку и сразу
+        -- открывает окно копирования, чтобы не вспоминать /tgf copy.
+        local simc = CreateFrame("Button", nil, card, "UIPanelButtonTemplate")
+        simc:SetSize(64, 20)
+        simc:SetPoint("TOPRIGHT", card, "TOPRIGHT", -8, -6)
+        simc:SetText("SimC")
+        simc:SetScript("OnClick", function()
+            if ns.ExportSimC then ns.ExportSimC() end
+            if ns.ShowCopyWindow then ns.ShowCopyWindow(true) end
+        end)
+        simc:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+            GameTooltip:AddLine("Выгрузить сборку для SimulationCraft")
+            GameTooltip:AddLine("Шапку профиля и строки чар берите из своего экспорта SimC.", 0.8, 0.8, 0.8, true)
+            GameTooltip:Show()
+        end)
+        simc:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        panel.simcBtn = simc
+
         panel.card = card
     end
 
