@@ -399,6 +399,43 @@ end
 -- измерено**: статья гильдии говорит, что основные статы на триале дают
 -- наибольшую прибавку, но числа не приводит. Поэтому выбор оставлен
 -- тумблером, а не решён за пользователя.
+-- Уникальный камень на +5 к ОСНОВНОЙ характеристике: Профанит и Кровавый
+-- камень. «Уникальный использующийся» — на персонаже он ровно один, поэтому
+-- раньше такие камни отбрасывались вместе со всеми уникальными. Это была
+-- ошибка: статья гильдии прямо говорит, что основные характеристики дают
+-- наибольшую прибавку, а +5 основной против +5 вторички — это лучший
+-- одиночный апгрейд, какой есть. Ставим ровно в одно гнездо на сборку.
+local function UniquePrimaryGem(primary)
+    BuildGemIndex()
+    local best, bestVal
+    for _, g in ipairs(ns.Gems or {}) do
+        -- У этих камней стат записан как main («основная характеристика»),
+        -- а не силой или интеллектом: камень один, а класс подставляет игра.
+        local v = g.stats and (g.stats[primary] or g.stats.main)
+        if g.socket == "prismatic" and g.unique and v then
+            if not bestVal or v > bestVal then best, bestVal = g.itemID, v end
+        end
+    end
+    return best, bestVal
+end
+
+-- Мета-гнездо (только шлем) особенное: там есть Плотный неуравновешенный
+-- алмаз на +12 крита, а у всех остальных мета-камней прямых статов по 2.
+-- Выбирать по «стату, который ещё не упёрся» нельзя — так вместо двенадцати
+-- крита встанет двойка универсальности. Берём по весу спека: значение
+-- камня, умноженное на вес его стата.
+local function BestMetaGem(w)
+    local bestID, bestScore
+    for _, k in ipairs({ "crit", "haste", "vers", "iskus" }) do
+        local id, val = BestGem("meta", k)
+        if id then
+            local score = (val or 0) * (w[k] or 0)
+            if not bestScore or score > bestScore then bestID, bestScore = id, score end
+        end
+    end
+    return bestID
+end
+
 local function AffordableGem(primary, stat)
     BuildGemIndex()
     local best, bestVal
@@ -473,16 +510,36 @@ local function GemPicks(item, w, running)
             picks[i] = cog and cog[cogAt] or nil
             cogAt = cogAt + 1
             if picks[i] then Count(picks[i].id) end
+        elseif t == "meta" then
+            -- Мета считается по весу, а не по «незакрытому» стату: +12 крита
+            -- перевешивает любую двойку, даже если крит уже у порога.
+            local id = BestMetaGem(w) or BestGem("meta", top)
+            picks[i] = id and { key = "crit", id = id } or nil
+            if id then Count(id) end
         else
             local stat = NextStat()
-            -- У шестерёнок и меты дешёвой замены нет, там всегда лучшее.
             local id
-            if t == "prismatic" and not ExpensiveGems() and primary then
-                id = AffordableGem(primary, stat)
+            -- Первое обычное гнездо сборки — под уникальный +5 к основной.
+            -- Второго такого на персонаже не будет, поэтому флаг в running.
+            if primary and running and not running.uniqueGemUsed then
+                id = UniquePrimaryGem(primary)
+                if id then
+                    running.uniqueGemUsed = true
+                    picks[i] = { key = primary, id = id }
+                    Count(id)
+                end
             end
-            id = id or BestGem(t, stat)
-            picks[i] = id and { key = stat, id = id } or nil
-            if id then Count(id) end
+            if not picks[i] then
+                -- У шестерёнок дешёвой замены нет, а у обычного гнезда есть.
+                if not ExpensiveGems() and primary then
+                    id = AffordableGem(primary, stat)
+                else
+                    id = nil
+                end
+                id = id or BestGem(t, stat)
+                picks[i] = id and { key = stat, id = id } or nil
+                if id then Count(id) end
+            end
         end
     end
     return picks
