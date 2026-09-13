@@ -110,4 +110,18 @@ ns.TalentCodes = {
         code = "CsQAMrNP5kak+EBqLfUa3dMm+aMzMzoZD2MzYYxMmZZGWWMDAAGzYmZ2AAgAAEYAAgBwsAAAMmZYWAAAMzMzAAYmB",
         note = "Разрушение",
     },
+
+    -- Монах. Все три спека сняты с пробного персонажа пользователя 13 сентября.
+    [269] = {
+        code = "C0QAQnG51S19isUJoJoTeJ/IKbGmBMDbzM2mZGAAAAAAAAAAAYZYEmxGGwMGmZAzyYmhZZmAAWmZWGzMzMzMQAAABBAAAAglZGwAA",
+        note = "Танцующий с ветром",
+    },
+    [270] = {
+        code = "C4QAQnG51S19isUJoJoTeJ/IKDAAAAAAAgxMWmZZMbWMjZsNzsgxgZWsMzYhZ0MmBMYWMYZMzMMLwDwsMTAAAAAEAAAIAYAAAMAbTAA",
+        note = "Ткач туманов",
+    },
+    [268] = {
+        code = "CwQAQnG51S19isUJoJoTeJ/IKDAAAgxyMmhZYmZhZmBAAAAAAglFMiZGYGGLmxYegZmhZBGzsMssZZb2YmFAAACAAAEADLAAmmZAAAA",
+        note = "Хмелевар",
+    },
 }
