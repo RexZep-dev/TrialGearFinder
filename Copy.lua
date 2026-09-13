@@ -186,6 +186,23 @@ local function Build()
     return frame
 end
 
+-- Вывести текст в поле и выделить его целиком: остаётся только Ctrl+C.
+local function Display(text, nLines)
+    frame:Show()
+    -- Ширину берём от окна, а не от скролла: у только что показанного скролла
+    -- размер ещё может быть не посчитан (был пустой EditBox).
+    local w = math.max(1, (scroll:GetWidth() or 0))
+    if w < 50 then w = frame:GetWidth() - 46 end
+    editBox:SetWidth(w)
+    local _, fh = editBox:GetFont()
+    editBox:SetHeight(math.max(200, (nLines + 3) * (fh or 14) + 16))
+    editBox:SetText(text)
+    scroll:SetVerticalScroll(0)
+    editBox:SetCursorPosition(0)
+    editBox:SetFocus()
+    editBox:HighlightText()
+end
+
 -- Показать. По умолчанию — лог (метки TGF + прогоны). Кнопка переключает
 -- на весь видимый чат. keepMode = не трогать флаг (вызов из кнопки).
 function ns.ShowCopyWindow(keepMode)
@@ -207,20 +224,17 @@ function ns.ShowCopyWindow(keepMode)
             and "Чат пуст."
             or "Строк [TGF] пока нет.\n\nНажми кнопку сверху — «Сверить» или «Слепок надетого» — вывод появится здесь.\nЛибо переключи на «весь чат»."
     end
+    Display(text, #lines)
+end
 
-    frame:Show()
-    -- Ширину берём от окна, а не от скролла: у только что показанного скролла
-    -- размер ещё может быть не посчитан (был пустой EditBox).
-    local w = math.max(1, (scroll:GetWidth() or 0))
-    if w < 50 then w = frame:GetWidth() - 46 end
-    editBox:SetWidth(w)
-    local _, fh = editBox:GetFont()
-    editBox:SetHeight(math.max(200, (#lines + 3) * (fh or 14) + 16))
-    editBox:SetText(text)
-    scroll:SetVerticalScroll(0)
-    editBox:SetCursorPosition(0)
-    editBox:SetFocus()
-    editBox:HighlightText()
+-- Показать ровно этот текст, без журнала: то, что целиком уходит в буфер
+-- обмена и вставляется в игру (код талантов). В журнал его не пишем.
+-- showAll = true, чтобы кнопка режима первым нажатием вернула журнал TGF.
+function ns.ShowCopyText(text)
+    Build()
+    frame.showAll = true
+    frame.modeBtn:SetText("Показать: только код")
+    Display(text or "", 1)
 end
 
 -- ---------------------------------------------------------------------------

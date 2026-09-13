@@ -1545,11 +1545,10 @@ local function BuildPanel()
                 print("|cFF86C7BD[TGF]|r Кода талантов для этого спека пока нет. Пришлите свой: окно талантов, кнопка «Экспорт».")
                 return
             end
-            if ns.CaptureStart then ns.CaptureStart("talents") end
-            print("# TrialGearFinder: таланты, " .. (t.note or ""))
-            print(t.code)
-            if ns.CaptureStop then ns.CaptureStop() end
-            if ns.ShowCopyWindow then ns.ShowCopyWindow(true) end
+            -- В окне — только сам код. Раньше туда шли черта-заголовок журнала
+            -- и подпись сборки: копировались вместе с кодом и путали (13 сентября).
+            -- Подпись сборки осталась в подсказке кнопки.
+            if ns.ShowCopyText then ns.ShowCopyText(t.code) end
         end)
         tal:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_LEFT")
