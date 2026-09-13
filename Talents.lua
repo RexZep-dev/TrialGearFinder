@@ -142,4 +142,18 @@ ns.TalentCodes = {
         code = "CkGADBD3hSPCL9Y9gz68WcKvMMjZmxYGjZMLDGGbMLjZAAAAAAAAAAwC0sMzYamBY2MzMzwgBAAAAgBMgZGAACAAAEAYmBzYD0MAAAAA",
         note = "Исцеление",
     },
+
+    -- Охотник на демонов. Все три спека сняты с пробного персонажа пользователя 13 сентября.
+    [577] = {
+        code = "CEkAp/epaxe7D0A403L+Tvk0iamZGzMzmxMzMzMz0MGDAAAAAAYMmhBGmZGMzYmlZGYZAAAJmxYGAAAAAAQAAYGACAAA",
+        note = "Истребление",
+    },
+    [581] = {
+        code = "CUkAp/epaxe7D0A403L+Tvk0iCAYMzMzMmxkxMYWMjZMmZMDzYmZGDzMzM2GzghBAAAAAAQAmZAAAAADMACAAzAAAAA",
+        note = "Месть",
+    },
+    [1480] = {
+        code = "CgcBp/epaxe7D0A403L+Tvk0iCA2mxMmZmZmxwMAAAAAAAMGwMAAAAAAAAMjZYmZmZmZmZmxMLmxgW2AQAAMGACYMDjB",
+        note = "Пожиратель",
+    },
 }
