@@ -124,4 +124,22 @@ ns.TalentCodes = {
         code = "CwQAQnG51S19isUJoJoTeJ/IKDAAAgxyMmhZYmZhZmBAAAAAAglFMiZGYGGLmxYegZmhZBGzsMssZZb2YmFAAACAAAEADLAAmmZAAAA",
         note = "Хмелевар",
     },
+
+    -- Друид. Все четыре спека сняты с пробного персонажа пользователя 13 сентября.
+    [102] = {
+        code = "CYGADBD3hSPCL9Y9gz68WcKvMAAAAAAAAAAAAAAAAA2oMbNjxMDwswMzMLMgxMLjlZmZsMz2MLjZGshBADAACIAAAAYmZMYzYGjBAAgFA",
+        note = "Баланс",
+    },
+    [103] = {
+        code = "CcGADBD3hSPCL9Y9gz68WcKvMAAAAAAgZM2MzMzMzYWY2GLzMzMmZAAAAYLY2MwMzUzYWYmZmlxMAAAAAAAAAAAgAAQAgZGgFmhBAAAAA",
+        note = "Сила зверя",
+    },
+    [104] = {
+        code = "CgGADBD3hSPCL9Y9gz68WcKvMAAAAAAAAAAAAgZmZmlxMjZWmZzwMLLDMbwoJamZWMzMzsMmBAAAAAgZsNDAAAAFAAAAmZAWYwAYBAAA",
+        note = "Страж",
+    },
+    [105] = {
+        code = "CkGADBD3hSPCL9Y9gz68WcKvMMjZmxYGjZMLDGGbMLjZAAAAAAAAAAwC0sMzYamBY2MzMzwgBAAAAgBMgZGAACAAAEAYmBzYD0MAAAAA",
+        note = "Исцеление",
+    },
 }
