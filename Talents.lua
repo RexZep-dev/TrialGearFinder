@@ -156,4 +156,18 @@ ns.TalentCodes = {
         code = "CgcBp/epaxe7D0A403L+Tvk0iCA2mxMmZmZmxwMAAAAAAAMGwMAAAAAAAAMjZYmZmZmZmZmxMLmxgW2AQAAMGACYMDjB",
         note = "Пожиратель",
     },
+
+    -- Пробудитель. Все три спека сняты с пробного персонажа пользователя 13 сентября.
+    [1467] = {
+        code = "CsbBPJc41CfcseY0baneJ1IHrBAAAAAAAAAAAzYGmZYGzMwMYmZamZmJjxyMMzMzMzMzAMzAmxYGMDAAABgQAgBAmB",
+        note = "Опустошитель",
+    },
+    [1468] = {
+        code = "CwbBPJc41CfcseY0baneJ1IHrBAAAAAmZmZ2WGzYYmxsAwyMGAAMzMzYGMMTmxMAAAgZmRwMzMbjZAAAAAAhwMADAAA",
+        note = "Хранитель",
+    },
+    [1473] = {
+        code = "CEcBPJc41CfcseY0baneJ1IHrNmZGmZmZsMYmZZmZMMDAAAAAAAAzMzgZYGqxMzMAAAAwMDYmtxMDMz2AAAAAEBMmBAGA",
+        note = "Насыщатель",
+    },
 }
