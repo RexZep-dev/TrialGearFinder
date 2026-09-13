@@ -184,4 +184,18 @@ ns.TalentCodes = {
         code = "C4DAche08tHz49KSVf7iKFnyuxsYsMzY2wMDNzMDAAADAACAACAAsBzMzstZZmxsgxMzMzM2YGzMzAAMAAADAAGAAzM",
         note = "Тайная магия",
     },
+
+    -- Шаман. Все три спека сняты с пробного персонажа пользователя 13 сентября.
+    [262] = {
+        code = "CYQALMl7AwW51MWzGneuHE3tPCAAAAmZZZmZmZmZZZZGmxMAAAAAAAAACBAYWmZMDLGBjFziZmZmZYWmxiZmxMLAADAAYA",
+        note = "Стихии",
+    },
+    [263] = {
+        code = "CcQALMl7AwW51MWzGneuHE3tPOzMDjZmZmZmhZmZAAAAAAAAAWAAACAQAAmlZMzwiBYmFziZmZGDjZAAmhxMDzEAYwAA",
+        note = "Совершенствование",
+    },
+    [264] = {
+        code = "CgQALMl7AwW51MWzGneuHE3tPCAAAgBAAAAzMzsssMjZGjZYmZMAAgAQAYGmhZZMmphZGmxswiZmZegBWmBAAAYAAYmBG",
+        note = "Исцеление",
+    },
 }
