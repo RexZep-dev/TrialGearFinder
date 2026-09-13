@@ -96,4 +96,18 @@ ns.TalentCodes = {
         code = "CoPAkXBWxkyfx9CbGaHonEAhLBz2YGmxYMMbzMz0MLmZmZmxAAAAAmZmZmZmZYmZMAYMzMzAAAAAABgAAgBzAAAAAA",
         note = "Кровь",
     },
+
+    -- Чернокнижник. Все три спека сняты с пробного персонажа пользователя 13 сентября.
+    [265] = {
+        code = "CkQAMrNP5kak+EBqLfUa3dMm+aMjZGNbmx2MzY2AAAmZmlZxMziZAAAAIAEAAAAgBAAAGzMMLjBGzMzMzDwMzYAAzAA",
+        note = "Колдовство",
+    },
+    [266] = {
+        code = "CoQAMrNP5kak+EBqLfUa3dMm+aMjZGNbmx2MzY2AAAAAAAAAAAQIAzMjZbGzMzAAzYGzMAYMzwsAAAGzMjZMGGDAA",
+        note = "Демонология",
+    },
+    [267] = {
+        code = "CsQAMrNP5kak+EBqLfUa3dMm+aMzMzoZD2MzYYxMmZZGWWMDAAGzYmZ2AAgAAEYAAgBwsAAAMmZYWAAAMzMzAAYmB",
+        note = "Разрушение",
+    },
 }
