@@ -170,4 +170,18 @@ ns.TalentCodes = {
         code = "CEcBPJc41CfcseY0baneJ1IHrNmZGmZmZsMYmZZmZMMDAAAAAAAAzMzgZYGqxMzMAAAAwMDYmtxMDMz2AAAAAEBMmBAGA",
         note = "Насыщатель",
     },
+
+    -- Маг. Все три спека сняты с пробного персонажа пользователя 13 сентября.
+    [64] = {
+        code = "CAEAche08tHz49KSVf7iKFnyuBGLzMzsxMzEzMGzMzMDzMzMmxABAAAgAAAbAAAgFA22GzMzgZzwMzYBAAAAMDjBMAA",
+        note = "Лед",
+    },
+    [63] = {
+        code = "C8DAche08tHz49KSVf7iKFnyuZmNYmZmNbPwMjMzYAAAYAAQAAAMzMWGzMzYDAAAAAbMzMDAAMmxMjZmZmNDAQGjxAAA",
+        note = "Огонь",
+    },
+    [62] = {
+        code = "C4DAche08tHz49KSVf7iKFnyuxsYsMzY2wMDNzMDAAADAACAACAAsBzMzstZZmxsgxMzMzM2YGzMzAAMAAADAAGAAzM",
+        note = "Тайная магия",
+    },
 }
