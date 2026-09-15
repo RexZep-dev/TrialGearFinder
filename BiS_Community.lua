@@ -23,6 +23,14 @@ ns.CommunityItems = {
     -- статы сняты со скриншота с триала — в игре аддоном не сверялись.
     { itemID = 127234, bonusIDs = { 6710, 6652 }, classes = { "ROGUE" }, sourceType = "Dungeon", source = "Гробницы маны", note = "Двойной клинок мастерства: кинжал разбойника, обе руки (от сообщества)", ilvl = 23, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { agi = 3, stam = 3, crit = 7, haste = 4 } },
 
+    -- Кинжалы разбойника, которые НЕ надо выбивать — награды за задания
+    -- (13 сентября). Двойной клинок мастерства падает с шансом 0,13 %,
+    -- Клинок Черного яда — 0,53 % (Wowhead). В SimC пара Водин + штормградский
+    -- у Ликвидации сильнее обоих: 1546 против 1537 у Клинка Черного яда ×2.
+    -- Статы и bonusIDs сняты с армори согильдийцев, у кого эти кинжалы надеты.
+    { itemID = 41825, bonusIDs = { 4811, 4815 }, classes = { "ROGUE" }, sourceType = "Quest", source = "Зул'Драк — задание «Чемпион Амфитеатра Страданий»", note = "Почти лучшая заточка Водина: кинжал, награда за задание, обе фракции, с 20 ур. (от сообщества)", ilvl = 23, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { agi = 3, stam = 4, crit = 4, haste = 5 } },
+    { itemID = 138770, bonusIDs = { 4811 }, classes = { "ROGUE" }, sourceType = "Quest", source = "Задание «Битва за Расколотый берег» — только Альянс", note = "Кинжал штормградского бойца авангарда: награда за задание, только Альянс, с 10 ур. (от сообщества)", ilvl = 23, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { agi = 3, stam = 5, haste = 4, iskus = 3 } },
+
     -- ── Шеи и кольца (пред-BiS) ──────────────────────────────────────────
     -- В базе гайда их нет (шеи удалены к 1.0 — часть больше не выбить; колец
     -- не было). Это НЕ идеальный ролл, а пред-BiS: то, что реально выбивает
@@ -111,6 +119,36 @@ ns.CommunityItems = {
     -- современные 188xxx, вывод тот же и так же НЕ ПРОВЕРЕН.
     { itemID = 188502, bonusIDs = { 13668, 13828, 7756 }, classes = nil, sourceType = "Dungeon", source = "Путешествие во времени: Катаклизм", note = "Бадья: кольцо на универсальность/искусность. Тир 32", ilvl = 32, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 6, vers = 11, iskus = 10 } },
     { itemID = 188505, bonusIDs = { 13668, 13828, 7756 }, classes = nil, sourceType = "Dungeon", source = "Путешествие во времени: Катаклизм", note = "Кольцо череподробителя (Skullcracker Ring): на крит/искусность. Тир 32", ilvl = 32, armor = nil, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { stam = 6, crit = 11, iskus = 10 } },
+
+    -- Оружие и аксессуар того же пула, Катаклизм (13 сентября). Статы — с тултипов
+    -- пользователя (смотрел воином, поэтому ловкость там серая). Гнезда нет,
+    -- поэтому связка без 13668: у оружия и аксессуаров тира 32 она 13828/7756.
+    -- НОМЕРА — ВЫВОД: у каждой вещи 2-3 номера (обычная, героическая,
+    -- современная копии), а дамп simc и тултип-ручка Wowhead их не различают.
+    -- Взят современный, где есть (133213), иначе героический 56xxx: Путешествия
+    -- во времени идут по героическим версиям, и Благоволение Тиа в гильдии
+    -- носят именно под 56394. Проверяется в неделю Путешествий во времени.
+    -- В ИГРЕ НЕ ПРОВЕРЕНО.
+    { itemID = 56390, bonusIDs = { 13828, 7756 }, classes = { "ROGUE" }, sourceType = "Dungeon", source = "Путешествие во времени: Катаклизм", note = "падает с Зубохлопа (Затерянный город Тол'вир); Кинжал Барима (Barim's Main Gauche): на крит/искусность. Тир 32", ilvl = 32, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { agi = 4, stam = 6, crit = 4, iskus = 4 } },
+    { itemID = 133213, bonusIDs = { 13828, 7756 }, classes = { "ROGUE" }, sourceType = "Dungeon", source = "Путешествие во времени: Катаклизм", note = "падает с Камнешкура (Каменные Недра); Ртутный клинок (Quicksilver Blade): кинжал на скорость/искусность. Тир 32", ilvl = 32, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { agi = 4, stam = 6, haste = 4, iskus = 3 } },
+    { itemID = 72822, bonusIDs = { 13828, 7756 }, classes = { "ROGUE" }, sourceType = "Dungeon", source = "Путешествие во времени: Катаклизм", note = "падает в Конце Времен; Зазубренное лезвие времени (Jagged Edge of Time): кинжал на крит/скорость. Тир 32", ilvl = 32, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { agi = 4, stam = 6, crit = 4, haste = 4 } },
+    { itemID = 65163, bonusIDs = { 13828, 7756 }, classes = { "ROGUE" }, sourceType = "Dungeon", source = "Путешествие во времени: Катаклизм", note = "падает с Глубтока (Мертвые копи); Шип-клинок (Buzzer Blade): кинжал на крит. Тир 32", ilvl = 32, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { agi = 4, stam = 6, crit = 7 } },
+    { itemID = 56302, bonusIDs = { 13828, 7756 }, classes = { "ROGUE" }, sourceType = "Dungeon", source = "Путешествие во времени: Катаклизм", note = "падает с Карша Гнущего Сталь (Пещеры Черной горы); Шедевр Гнущего Сталь (Steelbender's Masterpiece): кинжал на крит/искусность. Тир 32", ilvl = 32, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { agi = 4, stam = 6, crit = 4, iskus = 3 } },
+    { itemID = 56396, bonusIDs = { 13828, 7756 }, classes = { "ROGUE", "SHAMAN", "MONK" }, sourceType = "Dungeon", source = "Путешествие во времени: Катаклизм", note = "падает с Сиамата (Затерянный город Тол'вир); Молот Искр (Hammer of Sparks): булава на ловкость, крит/скорость. Тир 32", ilvl = 32, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { agi = 4, stam = 6, crit = 4, haste = 4 } },
+    { itemID = 55822, bonusIDs = { 13828, 7756 }, classes = { "ROGUE", "SHAMAN", "MONK" }, sourceType = "Dungeon", source = "Путешествие во времени: Катаклизм", note = "падает в Каменных Недрах; Тяжелая жеодовая палица (Heavy Geode Mace): булава на ловкость, крит/скорость. Тир 32", ilvl = 32, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { agi = 4, stam = 6, crit = 4, haste = 4 } },
+    { itemID = 56394, bonusIDs = { 13828, 7756 }, classes = { "DEMONHUNTER", "DRUID", "HUNTER", "MONK", "ROGUE", "SHAMAN" }, sourceType = "Dungeon", source = "Путешествие во времени: Катаклизм", note = "[ДД] падает с Сиамата (Затерянный город Тол'вир); Благоволение Тиа (Tia's Grace): атаки дают +1 ловкости на 15 сек., до 10 раз. Тир 32", ilvl = 32, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { iskus = 11 } },
+
+    -- Пандария, Путешествие во времени (13 сентября) — ДРУГОЙ пул и другая неделя,
+    -- не катаклизменная: Врата Заходящего Солнца, Монастырь Шадо-Пан, Дворец
+    -- Могу'шан. Статы — с тултипов пользователя (смотрел воином, ловкость серая).
+    -- Номера — современные копии 144xxx (у каждой вещи есть и старый номер
+    -- 8xxxx), по тому же правилу, что шеи и кольца: вывод, не замер. Цвет
+    -- названия копию не выдаёт — связка 13828 сама делает вещь редкой.
+    -- В ИГРЕ НЕ ПРОВЕРЕНО.
+    { itemID = 144098, bonusIDs = { 13828, 7756 }, classes = { "ROGUE" }, sourceType = "Dungeon", source = "Путешествие во времени: Пандария", note = "падает с Командира Ри'мока (Врата Заходящего Солнца); Вертлуг богомола: кинжал на крит/скорость. Тир 32", ilvl = 32, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { agi = 4, stam = 6, crit = 4, haste = 4 } },
+    { itemID = 144148, bonusIDs = { 13828, 7756 }, classes = { "ROGUE", "SHAMAN", "MONK", "DEMONHUNTER" }, sourceType = "Dungeon", source = "Путешествие во времени: Пандария", note = "падает с Геккана (Дворец Могу'шан); Когти Геккана: кистевое оружие на крит/скорость. Тир 32", ilvl = 32, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { agi = 4, stam = 6, crit = 4, haste = 3 } },
+    { itemID = 144215, bonusIDs = { 13828, 7756 }, classes = { "ROGUE", "SHAMAN", "MONK", "DEMONHUNTER" }, sourceType = "Dungeon", source = "Путешествие во времени: Пандария", note = "из ящика Тажаня Чжу (Монастырь Шадо-Пан); Ка'эн, дыхание тьмы (Ka'eng, Breath of the Shadow): кистевое оружие на крит/скорость. Тир 32", ilvl = 32, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { agi = 4, stam = 6, crit = 4, haste = 3 } },
+    { itemID = 144099, bonusIDs = { 13828, 7756 }, classes = { "ROGUE", "SHAMAN", "MONK", "DEMONHUNTER" }, sourceType = "Dungeon", source = "Путешествие во времени: Пандария", note = "падает с Ша Жестокости (Монастырь Шадо-Пан); Гнойный полумесяц: одноручный топор на скорость/искусность. Тир 32", ilvl = 32, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { agi = 4, stam = 6, haste = 4, iskus = 4 } },
 
     -- Рарники Танаанских джунглей: найдены 12 сентября прогоном по собранной
     -- базе рарников. Три вторички разом плюс гнездо — по очкам вровень
