@@ -228,13 +228,14 @@ function ns.ShowCopyWindow(keepMode)
 end
 
 -- Показать ровно этот текст, без журнала: то, что целиком уходит в буфер
--- обмена и вставляется в игру (код талантов). В журнал его не пишем.
+-- обмена (код талантов, профиль SimC). В журнал его не пишем.
+-- nLines — число строк, от него высота поля: профиль SimC — полсотни строк.
 -- showAll = true, чтобы кнопка режима первым нажатием вернула журнал TGF.
-function ns.ShowCopyText(text)
+function ns.ShowCopyText(text, nLines)
     Build()
     frame.showAll = true
     frame.modeBtn:SetText("Показать: только код")
-    Display(text or "", 1)
+    Display(text or "", nLines or 1)
 end
 
 -- ---------------------------------------------------------------------------

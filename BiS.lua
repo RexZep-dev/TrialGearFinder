@@ -199,6 +199,16 @@ local CLASS_ARMOR = {
 -- Ручная поправка для слота: спека бьёт класс, класс бьёт тип брони.
 -- Возвращает itemID, false (слот пуст) или nil (поправки нет).
 local function SlotOverride(classFile, specID, slotKey)
+    -- С включённым «Комьюнити» (вещи сообщества и «Тайм Волк») сначала свой
+    -- набор: там стоит топовое оружие 32 уровня, а обычные закрепления его
+    -- перебили бы — они действуют при любом положении тумблера.
+    if CommunityOn() then
+        local c = ns.BiSPickCommunity and specID and ns.BiSPickCommunity[specID]
+        if c and c[slotKey] ~= nil then return c[slotKey] end
+    elseif ns.BiSPickGuideAll and ns.BiSPickGuideAll[slotKey] ~= nil then
+        -- Тумблер выключен: общие поправки обычного BiS для всех спеков.
+        return ns.BiSPickGuideAll[slotKey]
+    end
     local t = ns.BiSPick and specID and ns.BiSPick[specID]
     if t and t[slotKey] ~= nil then return t[slotKey] end
     t = ns.BiSPickClass and classFile and ns.BiSPickClass[classFile]
@@ -1099,6 +1109,8 @@ local function RenderSlots()
     for _, k in ipairs({ "str", "agi", "int" }) do
         if (w and w[k] or 0) > 0 and (not primary or w[k] > w[primary]) then primary = k end
     end
+    -- Выгрузке нужна та же основная: в stats= идёт только она (SimC.lua).
+    ns.LastBuild.primary = primary
 
     for i, slot in ipairs(SLOTS) do
         local c = chosen[i]
@@ -1297,27 +1309,54 @@ function ns.ExportSimC()
         TRINKET1 = "trinket1", TRINKET2 = "trinket2",
         MAINHAND = "main_hand", OFFHAND = "off_hand",
     }
-    if ns.CaptureStart then ns.CaptureStart("simc") end
-    local _, specName = GetSpecializationInfoByID(b.specID or 0)
-    print(string.format("# TrialGearFinder: сборка BiS, %s %s",
-        UnitClass("player") or "?", specName or ""))
-    print("# Шапку профиля (класс, расу, таланты) взять из своего экспорта SimC.")
+    -- Текст собирается целиком и сразу открывается в окне копирования.
+    -- Раньше строки шли в чат и копировались из журнала — вместе со служебной
+    -- чертой «───── [TGF] /tgf simc ─────» и подсказкой «[TGF] Скопировать»;
+    -- SimC на Raidbots ругался на них «Unknown option» (15 сентября).
+    local out = {}
+    -- Шапка (класс, раса, спек, таланты) — SimC.lua. Без неё Raidbots
+    -- не узнаёт персонажа и ругается на каждую строку вещи.
+    for _, line in ipairs(ns.SimCHeader and ns.SimCHeader(b.specID) or {}) do
+        out[#out + 1] = line
+    end
+    local procs = ns.SimCProcs and ns.SimCProcs(b.slots) or {}
     for _, s in ipairs(b.slots) do
         local it = s.item
         local parts = { "id=" .. it.itemID }
+        -- Порядок полей — как у аддона SimulationCraft: id, enchant_id, gem_id, bonus_id.
+        if s.ench and s.ench.enchantID then
+            parts[#parts + 1] = "enchant_id=" .. s.ench.enchantID
+        end
         if s.gems and #s.gems > 0 then
             parts[#parts + 1] = "gem_id=" .. table.concat(s.gems, "/")
         end
         if it.bonusIDs and #it.bonusIDs > 0 then
             parts[#parts + 1] = "bonus_id=" .. table.concat(it.bonusIDs, "/")
         end
+        -- Статы из базы (армори) только с основной характеристикой спека — SimC.lua.
+        local stats = ns.SimCStats and ns.SimCStats(it, b.primary)
+        if stats then parts[#parts + 1] = "stats=" .. stats end
         parts[#parts + 1] = "drop_level=20"
-        print(string.format("# %s (%s)%s", C_Item.GetItemNameByID(it.itemID) or "?", s.name,
-            s.ench and ("  |  чара: " .. s.ench.ru) or ""))
-        print(string.format("%s=,%s", SIMC[s.key] or s.key:lower(), table.concat(parts, ",")))
+        if procs[s.key] then parts[#parts + 1] = "equip=" .. procs[s.key] end
+        -- Без «|»: в поле ввода игры черта — служебный символ разметки.
+        out[#out + 1] = string.format("# %s (%s)%s", C_Item.GetItemNameByID(it.itemID) or "?", s.name,
+            s.ench and (" - чара: " .. s.ench.ru
+                .. (s.ench.enchantID and "" or " (номера нет, в симе не учтена)")) or "")
+        out[#out + 1] = string.format("%s=,%s", SIMC[s.key] or s.key:lower(), table.concat(parts, ","))
     end
-    if ns.CaptureStop then ns.CaptureStop() end
-    print("|cFFFFD100[TGF]|r Скопировать: /tgf copy")
+    for _, line in ipairs(ns.SimCActions and ns.SimCActions(b.specID) or {}) do
+        out[#out + 1] = line
+    end
+
+    if ns.ShowCopyText then
+        -- «|» в поле ввода — служебный символ («|c» начинает цвет), а в ротации
+        -- он значит «или». Удваиваем для показа: в буфер обмена уходит одинарный.
+        -- Так же делает аддон SimulationCraft (комментарий у его Checksum).
+        ns.ShowCopyText((table.concat(out, "\n"):gsub("|", "||")), #out)
+        print("|cFF86C7BD[TGF]|r Профиль SimC — в окне копирования: Ctrl+C и вставить в Advanced Sim на Raidbots.")
+    else
+        for _, line in ipairs(out) do print(line) end
+    end
 end
 
 local function BuildPanel()
@@ -1513,20 +1552,20 @@ local function BuildPanel()
         panel.overFS:SetPoint("BOTTOM", card, "BOTTOM", 0, 3)
         panel.overFS:SetWidth(PANEL_W - 20)
         panel.overFS:SetJustifyH("CENTER")
-        -- Кнопка выгрузки в SimulationCraft: печатает сборку и сразу
-        -- открывает окно копирования, чтобы не вспоминать /tgf copy.
+        -- Кнопка выгрузки в SimulationCraft. Окно копирования с профилем
+        -- открывает сама ExportSimC; журнал сюда больше не зовём — он перебил
+        -- бы чистый профиль строками чата.
         local simc = CreateFrame("Button", nil, card, "UIPanelButtonTemplate")
         simc:SetSize(64, 20)
         simc:SetPoint("TOPRIGHT", card, "TOPRIGHT", -8, -6)
         simc:SetText("SimC")
         simc:SetScript("OnClick", function()
             if ns.ExportSimC then ns.ExportSimC() end
-            if ns.ShowCopyWindow then ns.ShowCopyWindow(true) end
         end)
         simc:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_LEFT")
             GameTooltip:AddLine("Выгрузить сборку для SimulationCraft")
-            GameTooltip:AddLine("Шапку профиля и строки чар берите из своего экспорта SimC.", 0.8, 0.8, 0.8, true)
+            GameTooltip:AddLine("Готовый профиль для Advanced Sim на Raidbots: персонаж, вещи, чары и ротация двадцатки.", 0.8, 0.8, 0.8, true)
             GameTooltip:Show()
         end)
         simc:SetScript("OnLeave", function() GameTooltip:Hide() end)
