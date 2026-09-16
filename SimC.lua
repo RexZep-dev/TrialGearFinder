@@ -113,6 +113,8 @@ function ns.SimCHeader(specID)
     end
     local realm = GetRealmName() or ""
     local region = (GetCurrentRegionName and GetCurrentRegionName()) or ""
+    -- Роль нужна дважды: строкой role= и ниже, чтобы выбрать уровень цели.
+    local role = ROLES[specID] or ROLE_BY_GAME[gameRole] or "attack"
 
     local lines = {
         string.format("# %s - %s - %s - %s/%s", name, spec, date("%Y-%m-%d %H:%M"), Lower(region), realm),
@@ -131,7 +133,7 @@ function ns.SimCHeader(specID)
         "race=" .. RaceToken(),
         "region=" .. Tokenize(region),
         "server=" .. Tokenize(realm),
-        "role=" .. (ROLES[specID] or ROLE_BY_GAME[gameRole] or "attack"),
+        "role=" .. role,
         "spec=" .. Tokenize(spec),
         "",
         -- SimC по умолчанию выдаёт флягу, еду, зелье и руну максимального уровня:
@@ -144,6 +146,21 @@ function ns.SimCHeader(specID)
         "augmentation=disabled",
         "temporary_enchant=disabled",
     }
+
+    -- Уровень цели. По умолчанию SimC ставит врага на три уровня выше — болванку
+    -- 23, а двадцатки ходят в высокоуровневые подземелья, где мобы 38 (решение
+    -- пользователя, 16 сентября): у Танцующего с ветром 1555 по болванке против
+    -- 1200 по цели 38, у Неистовства 1485 против 1346.
+    --
+    -- Кастерам цель не трогаем: магия по высокоуровневой цели мажет — это
+    -- правило игры, а не ошибка сима. Замер на жреце Тьмы 16 сентября: промах
+    -- заклинаний растёт примерно на 11 % за уровень цели — 0 % по 23, 44 %
+    -- по 27, 88 % по 31, а с 33 и выше все заклинания мимо и урон ноль.
+    if role ~= "spell" then
+        lines[#lines + 1] = ""
+        lines[#lines + 1] = "# Цель — моб подземелья 38 уровня: двадцатки ходят в высокоуровневые данжи."
+        lines[#lines + 1] = "target_level=38"
+    end
     local code, fromGame = TalentCode(specID)
     if code then
         if not fromGame then
