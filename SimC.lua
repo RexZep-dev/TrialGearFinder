@@ -242,6 +242,29 @@ local ACTIONS = {
         "actions+=/whirlwind",
         "actions+=/slam",
     },
+    [269] = { -- Танцующий с ветром: после спендера — Лапа, спендеры Кулаки > Журавль > Нокаут.
+              -- «combo_strike» — не повторять предыдущий приём: за это монах получает урон,
+              -- поэтому цепочка Лапа → спендер → Лапа. Удар восходящего солнца не жмём:
+              -- по мобам подземелья он мажет. Ротация Кронова, снята на его монахе.
+              -- Замер 16 сентября против штатной ротации SimC: +12,5 % на болванке
+              -- (1382 → 1555) и +21,3 % на цели 38 уровня (990 → 1200).
+              -- Расовую (у дворфа Чёрного Железа это fireblood, +0,8 %) не пишем:
+              -- она у каждой расы своя, а чужая строка сим не ломает, но и не работает.
+        "actions.precombat=snapshot_stats",
+        "actions=auto_attack",
+        "actions+=/touch_of_death",
+        "actions+=/tiger_palm,if=combo_strike&(prev_gcd.1.fists_of_fury|prev_gcd.1.spinning_crane_kick|prev_gcd.1.blackout_kick)",
+        "actions+=/fists_of_fury,if=combo_strike",
+        "actions+=/spinning_crane_kick,if=combo_strike",
+        "actions+=/blackout_kick,if=combo_strike",
+        -- Запасной выход: без него промах Лапы (ци даётся только с попадания)
+        -- вместе с запретом повтора оставлял монаха стоять до Мудрости боя.
+        "actions+=/tiger_palm,if=combo_strike|chi<1",
+        "actions+=/fists_of_fury",
+        "actions+=/spinning_crane_kick",
+        "actions+=/blackout_kick",
+        "actions+=/tiger_palm",
+    },
     [268] = { -- Хмелевар: бочка, журавль, нокаутирующий; энергию копить под бочку
         "actions.precombat=snapshot_stats",
         "actions=auto_attack",
@@ -299,7 +322,8 @@ function ns.SimCActions(specID)
         for _, l in ipairs(list) do lines[#lines + 1] = l end
     else
         -- Не «занижен в разы» у всех: у воинов и Хмелевара штатная ротация на двадцатке
-        -- почти не жмёт приёмы, а у Танцующего с ветром работает (16 сентября).
+        -- почти не жмёт приёмы, у жреца Тьмы работает как надо, а у Танцующего с ветром
+        -- жала, но слабо — своя дала +12,5 % (16 сентября), теперь она здесь же.
         lines[#lines + 1] = "# Ротации двадцатки для этого спека в аддоне нет: SimC возьмёт свою,"
         lines[#lines + 1] = "# под максимальный уровень. У одних спеков она на двадцатке почти не жмёт"
         lines[#lines + 1] = "# приёмы, у других работает — цифре верить с оглядкой."
