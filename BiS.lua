@@ -286,6 +286,44 @@ local function ParsePriority(s)
     return w
 end
 
+-- Какие веса брать: при включённом «Комьюнити» — наши замеры симулятором
+-- (ns.StatWeights в BiS_Data.lua), при выключенном — приоритет главы гильдии.
+-- Решение пользователя 18 сентября, тот же тумблер, что и у вещей.
+--
+-- Выносливость симулятор не считает (у него только урон), поэтому её вес
+-- берём прежний: без неё аксессуары танка проседали бы на ровном месте.
+-- Спека нет в замерах — молча остаётся гайд.
+local function SpecWeights(specID)
+    local m = CommunityOn() and ns.StatWeights and ns.StatWeights[specID]
+    if not m then
+        return ParsePriority(ns.BiSPriority and ns.BiSPriority[specID]), false
+    end
+    local w = {}
+    for k, v in pairs(m) do w[k] = v end
+    w.stam = w.stam or STAM_W
+    return w, true
+end
+
+-- Строка приоритета для окна, собранная из замеренных весов: тот же порядок,
+-- что увидит раскладка камней. Иначе подпись и расчёт разъехались бы.
+local WEIGHT_NAMES = {}
+for name, key in pairs(PRIO_NAMES) do WEIGHT_NAMES[key] = name end
+
+local function WeightsToText(w)
+    local order = {}
+    for k, v in pairs(w) do
+        if k ~= "stam" and WEIGHT_NAMES[k] and (v or 0) > 0 then
+            order[#order + 1] = { key = k, v = v }
+        end
+    end
+    table.sort(order, function(a, b) return a.v > b.v end)
+    local parts = {}
+    for _, e in ipairs(order) do
+        parts[#parts + 1] = string.format("%s %.2f", WEIGHT_NAMES[e.key], e.v)
+    end
+    return table.concat(parts, " > ")
+end
+
 -- Сколько стата даёт камень на двадцатке — ПО ТИПУ ГНЕЗДА. Раньше здесь
 -- стояло одно число на все гнёзда (3), и это сильно занижало два случая.
 --
@@ -973,7 +1011,7 @@ local SOFTCAP = { crit = 132.96, haste = 127.18, vers = 156.08, iskus = 132.96 }
 
 local function RenderSlots()
     local buckets = state.classFile and BuildBuckets(state.classFile) or {}
-    local w = ParsePriority(ns.BiSPriority and ns.BiSPriority[state.specID])
+    local w = SpecWeights(state.specID)
     local total, chosen = {}, {}
 
     local role = state.specID and GetSpecializationRoleByID
@@ -1191,9 +1229,15 @@ local function SelectSpec(specID)
             t.label:SetTextColor(t2[1], t2[2], t2[3])
         end
     end
-    -- Приоритет статов — из гайда гильдии (BiS_Data.lua), дословно.
-    local prio = ns.BiSPriority and ns.BiSPriority[specID]
-    panel.priorityFS:SetText(prio and ("Статы: " .. prio) or "")
+    -- Приоритет статов: с включённым «Комьюнити» — наш замер симулятором,
+    -- иначе дословная строка из гайда гильдии (BiS_Data.lua).
+    local w, measured = SpecWeights(specID)
+    if measured then
+        panel.priorityFS:SetText("Статы (наш замер): " .. WeightsToText(w))
+    else
+        local prio = ns.BiSPriority and ns.BiSPriority[specID]
+        panel.priorityFS:SetText(prio and ("Статы: " .. prio) or "")
+    end
     RenderSlots()
 end
 
