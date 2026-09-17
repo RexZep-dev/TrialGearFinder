@@ -272,14 +272,20 @@ local ACTIONS = {
         "actions+=/touch_of_death",
         "actions+=/tiger_palm,if=combo_strike&(prev_gcd.1.fists_of_fury|prev_gcd.1.spinning_crane_kick|prev_gcd.1.blackout_kick)",
         "actions+=/fists_of_fury,if=combo_strike",
-        "actions+=/spinning_crane_kick,if=combo_strike",
-        "actions+=/blackout_kick,if=combo_strike",
+        -- Копить ци под Кулаки: за 6 сек. до их отката Журавль и Нокаут ци не
+        -- тратят, пока её не хватит и на Кулаки. Без этого Лапа даёт 2 ци,
+        -- Журавль (2 ци) их сразу съедает, и до 3 ци на Кулаки запас не
+        -- доходит — Кулаков ноль, хотя в логах они треть урона. Замер
+        -- 17 сентября: болванка 1541 → 1622, цель 38 на движке без ошибки
+        -- возврата ци 711 → 751; порог подобран из 2–30 сек.
+        "actions+=/spinning_crane_kick,if=combo_strike&(cooldown.fists_of_fury.remains>6|chi>=5)",
+        "actions+=/blackout_kick,if=combo_strike&(cooldown.fists_of_fury.remains>6|chi>=4)",
         -- Запасной выход: без него промах Лапы (ци даётся только с попадания)
         -- вместе с запретом повтора оставлял монаха стоять до Мудрости боя.
         "actions+=/tiger_palm,if=combo_strike|chi<1",
         "actions+=/fists_of_fury",
-        "actions+=/spinning_crane_kick",
-        "actions+=/blackout_kick",
+        "actions+=/spinning_crane_kick,if=cooldown.fists_of_fury.remains>6|chi>=5",
+        "actions+=/blackout_kick,if=cooldown.fists_of_fury.remains>6|chi>=4",
         "actions+=/tiger_palm",
     },
     [268] = { -- Хмелевар: бочка, журавль, нокаутирующий; энергию копить под бочку
