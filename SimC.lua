@@ -252,8 +252,12 @@ local ACTIONS = {
         "actions+=/shield_block",
         "actions+=/ignore_pain",
         "actions+=/demoralizing_shout",
-        "actions+=/shield_slam",
+        -- Реванш первым спендером: в логах он главный приём Защиты (29 % урона
+        -- против 13 % у Мощного удара щитом). Замер 18 сентября на выгрузке
+        -- Кавочавоо, цель 45: 344 → 356 на одной цели, 667 → 713 на трёх;
+        -- доля Реванша стала 29 %, ровно как в логах.
         "actions+=/revenge",
+        "actions+=/shield_slam",
         "actions+=/thunder_clap",
         "actions+=/execute",
         "actions+=/devastate",
