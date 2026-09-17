@@ -235,8 +235,13 @@ local ACTIONS = {
         "actions.precombat=battle_stance,toggle=on",
         "actions=auto_attack",
         "actions+=/sweeping_strikes,if=active_enemies>=2",
-        "actions+=/rend,if=refreshable",
+        -- Кровопускание ПОСЛЕ Смертельного удара: у Оружия ярость копится
+        -- медленно, и если обновлять дот первым, он съедает её всю —
+        -- Смертельный удар тогда не жмётся ни разу. Замер 18 сентября
+        -- на выгрузке Кавочавоо, цель 45: 290 против 392. У Неистовства
+        -- порядок не важен (Кровожадность сама даёт ярость), там дот раньше.
         "actions+=/mortal_strike",
+        "actions+=/rend,if=refreshable",
         "actions+=/overpower",
         "actions+=/execute",
         "actions+=/whirlwind,if=active_enemies>=2",
