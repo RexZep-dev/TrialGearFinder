@@ -1271,6 +1271,24 @@ local function ClearSpecTabs()
     for _, t in ipairs(panel.specTabs or {}) do t:Hide() end
 end
 
+-- Приоритет статов: с включённым «Комьюнити» — наш замер симулятором,
+-- иначе дословная строка из гайда гильдии (BiS_Data.lua).
+--
+-- Отдельной функцией, потому что подпись меняется от ДВУХ вещей: выбора
+-- спека и тумблера. Пока она стояла внутри SelectSpec, переключение тумблера
+-- её не трогало, и строка обновлялась, только если после тумблера сменить
+-- спек (18 сентября, нашёл пользователь).
+local function UpdatePriorityText(specID)
+    if not (panel and panel.priorityFS) then return end
+    local w, measured = SpecWeights(specID)
+    if measured then
+        panel.priorityFS:SetText("Статы (наш замер): " .. WeightsToText(w))
+    else
+        local prio = ns.BiSPriority and ns.BiSPriority[specID]
+        panel.priorityFS:SetText(prio and ("Статы: " .. prio) or "")
+    end
+end
+
 local function SelectSpec(specID)
     state.specID = specID
     -- Выбранная вкладка — золотой обводкой и текстом, как подземелья
@@ -1293,15 +1311,7 @@ local function SelectSpec(specID)
             t.label:SetTextColor(t2[1], t2[2], t2[3])
         end
     end
-    -- Приоритет статов: с включённым «Комьюнити» — наш замер симулятором,
-    -- иначе дословная строка из гайда гильдии (BiS_Data.lua).
-    local w, measured = SpecWeights(specID)
-    if measured then
-        panel.priorityFS:SetText("Статы (наш замер): " .. WeightsToText(w))
-    else
-        local prio = ns.BiSPriority and ns.BiSPriority[specID]
-        panel.priorityFS:SetText(prio and ("Статы: " .. prio) or "")
-    end
+    UpdatePriorityText(specID)
     RenderSlots()
 end
 
@@ -1830,6 +1840,8 @@ ns.RefreshBiS = function()
     -- PlayerClassSpec и всегда возвращает на спек игрока, а при переключении
     -- тумблера человек как раз сравнивает шмот в чужой вкладке.
     if state.classFile and state.specID then
+        -- Подпись со статами тоже зависит от тумблера, а не только список вещей.
+        UpdatePriorityText(state.specID)
         RenderSlots()
     else
         Populate()
