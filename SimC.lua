@@ -357,7 +357,10 @@ local ACTIONS = {
         "actions=auto_shot",
         "actions+=/rapid_fire",
         "actions+=/aimed_shot",
-        "actions+=/multishot,if=active_enemies>=3",
+        -- Залп от двух целей, не от трёх: на двух даёт +2 % (653 против 640),
+        -- на трёх разницы нет. В рейдовых логах гильдии он даёт стрелкам
+        -- 14-22 % урона — на трэше между боссами.
+        "actions+=/multishot,if=active_enemies>=2",
         "actions+=/arcane_shot",
         "actions+=/steady_shot",
     },
