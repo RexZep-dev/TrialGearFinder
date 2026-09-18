@@ -355,6 +355,12 @@ local ACTIONS = {
         "actions+=/shield_of_the_righteous,if=holy_power>=3",
         "actions+=/judgment",
         "actions+=/avengers_shield",
+        -- Молот гнева сейчас — усиленное Правосудие под Крыльями, отдельной
+        -- кнопки нет («During Avenging Wrath, Judgment is empowered into
+        -- Hammer of Wrath» в данных игры). Двадцатки Крылья не берут: в логах
+        -- на 68 боёв 0,3 нажатия Крыльев. Строка молчит, пока их нет, и
+        -- сработает у того, кто взял. В логах он нажат 36 раз за бой —
+        -- это прошлая версия игры, где он был добиванием.
         "actions+=/hammer_of_wrath",
         "actions+=/consecration,if=!consecration.up",
         -- Благословенный молот — талант, у кого не взят, строка просто молчит.
