@@ -34,18 +34,21 @@ ns.TalentCodes = {
         note = "Защита: сборка Кавочавоо",
     },
 
-    -- Охотник. Все три спека сняты с пробного персонажа пользователя 13 сентября.
+    -- Охотник. Все три спека взяты с армори двадцаток гильдии 18 сентября
+    -- и проверены симулятором. Прежние были сняты на высоком уровне: в игре
+    -- на двадцатке не загружались, а в симуляторе давали 920, 893 и 670 урона
+    -- против 623, 324 и 254 у настоящих двадцаточных.
     [253] = {
-        code = "C0PAD57yiELKEty14ekTDtZEqAAAAAIAAAzMmZGzMYMzYm5BmHYmhZMzMzwMLLzMjZMDGaGAAAAAAAAMmZAACYWAAwA",
-        note = "Повелитель зверей",
+        code = "C0PAD57yiELKEty14ekTDtZEqAAAAAAAAgBDYGMAAAMGAwDwwAAAAAAAAAAAAAAMAAA",
+        note = "Повелитель зверей: лучшая из 35 сборок двадцаток гильдии",
     },
     [254] = {
-        code = "C4PAD57yiELKEty14ekTDtZEqAAACABAAAAAAAAAMjhZWWmxMzYGM0MGMLLLzMzMzMzMDmZZwAAAMPwMDDAAMAwsMzMA",
-        note = "Стрельба",
+        code = "C4PAD57yiELKEty14ekTDtZEqAAAAAAAAAAAAAAAzAAeAGGAAADMDDADAAAAAAAMAAA",
+        note = "Стрельба: лучшая из тех, где есть Быстрая стрельба — её жмут 98 % игроков",
     },
     [255] = {
-        code = "C8PAD57yiELKEty14ekTDtZEqMAAQAACYmZmxMWGAAAAAAmxYmZZZGjZYwQzAAAAMA4BYbZmZWMzMzMzYAAghxYGAA",
-        note = "Выживание",
+        code = "C8PAD57yiELKEty14ekTDtZEqMAAAAAAGzAAAAAAAAzAAeAGAAAAAAAAAwYAAAAMAAA",
+        note = "Выживание: лучшая из 38 сборок двадцаток гильдии",
     },
 
     -- Паладин. Все три спека взяты с армори двадцаток гильдии 18 сентября
