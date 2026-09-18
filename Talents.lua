@@ -103,18 +103,19 @@ ns.TalentCodes = {
         note = "Тьма",
     },
 
-    -- Рыцарь смерти. Все три спека сняты с персонажа пользователя 13 сентября.
+    -- Рыцарь смерти. Все три спека взяты с армори двадцаток гильдии
+    -- 19 сентября и проверены симулятором; прежние были с высокого уровня.
     [252] = {
-        code = "CwPAkXBWxkyfx9CbGaHonEAhLBwMmZYGDz2MzMTziZmZMjBAAAAAAAgZGjZAwyMmZ2MzYMAAgAAEwAGAMPwMzYGAMMA",
-        note = "Нечестивость",
+        code = "CwPAkXBWxkyfx9CbGaHonEAhLBAAADMDDwAAAAAAAAAAwAAAMzAAAAAAAAAAwAAAA",
+        note = "Нечестивость: лучшая из сборок двадцаток гильдии",
     },
     [251] = {
-        code = "CsPAkXBWxkyfx9CbGaHonEAhL9AAzMMjxYY2mZmZmhZmpZGjZMzYwDMjxMzMzMzAAAAAAAAAAAAAAhAMzMzYgBgBAAA",
-        note = "Лед",
+        code = "CsPAkXBWxkyfx9CbGaHonEAhLBwAAAGzAQGAMAAMzMAAAAAAAAAAAAAAAAAAAAAAA",
+        note = "Лёд: лучшая из сборок двадцаток гильдии",
     },
     [250] = {
-        code = "CoPAkXBWxkyfx9CbGaHonEAhLBz2YGmxYMMbzMz0MLmZmZmxAAAAAmZmZmZmZYmZMAYMzMzAAAAAABgAAgBzAAAAAA",
-        note = "Кровь",
+        code = "CoPAkXBWxkyfx9CbGaHonEAhLBAAAwMTYgBAAAAAMAAAAAzMAAAAAAAAAAAAAAAAA",
+        note = "Кровь: лучшая из сборок двадцаток гильдии",
     },
 
     -- Чернокнижник. Все три спека сняты с пробного персонажа пользователя 13 сентября.
