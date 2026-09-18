@@ -145,22 +145,23 @@ ns.TalentCodes = {
         note = "Хмелевар",
     },
 
-    -- Друид. Все четыре спека сняты с пробного персонажа пользователя 13 сентября.
+    -- Друид. Все четыре спека взяты с армори двадцаток гильдии 19 сентября
+    -- и проверены симулятором; прежние были сняты на высоком уровне.
     [102] = {
-        code = "CYGADBD3hSPCL9Y9gz68WcKvMAAAAAAAAAAAAAAAAA2oMbNjxMDwswMzMLMgxMLjlZmZsMz2MLjZGshBADAACIAAAAYmZMYzYGjBAAgFA",
-        note = "Баланс",
+        code = "CYGA8cL7tpvige+kkmGM9zUPWDAAAAAAAAAAAAAAAAMAwDAzAAwAYADAwYwAAAGAAAAAAAAAAAAAAAA",
+        note = "Баланс: лучшая из 14 сборок двадцаток гильдии",
     },
     [103] = {
-        code = "CcGADBD3hSPCL9Y9gz68WcKvMAAAAAAgZM2MzMzMzYWY2GLzMzMmZAAAAYLY2MwMzUzYWYmZmlxMAAAAAAAAAAAgAAQAgZGgFmhBAAAAA",
-        note = "Сила зверя",
+        code = "CcGADBD3hSPCL9Y9gz68WcKvMAAAAAAAAAAAAmZGAAAAAAMGwAAGDAAAAAAAAAAAAAAAAAAAAAAAA",
+        note = "Сила зверя: лучшая из 16 сборок двадцаток гильдии",
     },
     [104] = {
-        code = "CgGADBD3hSPCL9Y9gz68WcKvMAAAAAAAAAAAAgZmZmlxMjZWmZzwMLLDMbwoJamZWMzMzsMmBAAAAAgZsNDAAAAFAAAAmZAWYwAYBAAA",
-        note = "Страж",
+        code = "CgGA8cL7tpvige+kkmGM9zUPWDAAAAAAAAAAAgZAAAghBAMGwAAGAAAAAAgBAAAAAAAAAAAAwAAAAA",
+        note = "Страж: лучшая из 14 сборок двадцаток гильдии",
     },
     [105] = {
-        code = "CkGADBD3hSPCL9Y9gz68WcKvMMjZmxYGjZMLDGGbMLjZAAAAAAAAAAwC0sMzYamBY2MzMzwgBAAAAgBMgZGAACAAAEAYmBzYD0MAAAAA",
-        note = "Исцеление",
+        code = "CkGADBD3hSPCL9Y9gz68WcKvMgxMwAAAgNAAAAAAAAAAAGEwEM8AAgBAAAAAAAAAAAAAAAAAAABAAAAA",
+        note = "Исцеление: сборка двадцатки гильдии. Лекаря симулятор не считает — не замерена",
     },
 
     -- Охотник на демонов. Все три спека сняты с пробного персонажа пользователя 13 сентября.
