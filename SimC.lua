@@ -307,6 +307,23 @@ local ACTIONS = {
         "actions+=/blackout_kick,if=cooldown.fists_of_fury.remains>6|chi>=4",
         "actions+=/tiger_palm",
     },
+    [260] = { -- Головорез: Коварный удар и Выстрел из пистоли, финишеры — Промеж
+              -- глаз и Потрошение; Бросок костей до боя, Шквал клинков от двух целей.
+              -- Штатная ротация SimC на двадцатке почти не жмёт приёмы: 121 против
+              -- 262 у этой (18 сентября, цель 45, сборка BiS разбойника).
+              -- Состав сверен с логами: Коварный удар, «Правой, левой», Выстрел
+              -- из пистоли — те же приёмы и в том же порядке по доле урона.
+              -- У Ликвидации и Скрытности штатная ротация работает лучше любой
+              -- нашей, поэтому им строк не пишем.
+        "actions.precombat=apply_poison",
+        "actions=auto_attack",
+        "actions+=/roll_the_bones,if=!buff.roll_the_bones.up",
+        "actions+=/between_the_eyes,if=combo_points>=5",
+        "actions+=/dispatch,if=combo_points>=5",
+        "actions+=/blade_flurry,if=active_enemies>=2",
+        "actions+=/pistol_shot,if=buff.opportunity.up",
+        "actions+=/sinister_strike",
+    },
     [268] = { -- Хмелевар: бочка, журавль, нокаутирующий; энергию копить под бочку
         "actions.precombat=snapshot_stats",
         "actions=auto_attack",
