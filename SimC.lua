@@ -209,10 +209,22 @@ end
 -- ---------------------------------------------------------------------------
 
 -- Прок самой вещи — по номеру предмета.
+--
+-- Почему SimC их теряет (разобрано 19 сентября): у старых вещей прок записан
+-- как «при попадании», а движок перебирает только «при использовании»
+-- и «при надевании» — такие вещи он пропускает молча, ещё до всякой проверки
+-- шансов. Вдобавок частоты срабатывания в нынешних данных игры нет вовсе.
+-- В нашей сборке это починено, но на Raidbots правок нет, поэтому строки
+-- ниже остаются: с ними цифра верна и там.
 local ITEM_PROCS = {
     -- Рука-клинок: +61 к скорости на 10 сек., раз в 45 сек. Шанс неизвестен,
     -- 100 % — верхняя граница.
     [29348] = "procby/wmelee_procon/hit_61haste_100%_10dur_45cd",
+    -- Буздыхан затмения: «Ослепляющая скорость», +скорость на 10 сек.
+    -- Частота 1,2 раза в минуту — подобрана по замеру коллеги К. на его
+    -- монахе (аптайм 27 % при 1 PPM) и сверена у нас: аптайм 40 %, +3,9 %
+    -- урона. У каждой вещи она своя: у Рыцаря, например, 1 раз в минуту.
+    [27901] = "procby/melee_procon/hit_46haste_1.2ppm_10dur",
 }
 
 local CRUSADER = 1900 -- Рыцарь: 33 силы на 15 сек., раз в минуту на оружие
@@ -306,24 +318,23 @@ local ACTIONS = {
               -- она у каждой расы своя, а чужая строка сим не ломает, но и не работает.
         "actions.precombat=snapshot_stats",
         "actions=auto_attack",
+        "actions+=/use_items",
         "actions+=/touch_of_death",
-        "actions+=/tiger_palm,if=combo_strike&(prev_gcd.1.fists_of_fury|prev_gcd.1.spinning_crane_kick|prev_gcd.1.blackout_kick)",
         "actions+=/fists_of_fury,if=combo_strike",
+        "actions+=/blackout_kick,if=combo_strike",
+        "actions+=/tiger_palm,if=combo_strike&(prev_gcd.1.fists_of_fury|prev_gcd.1.spinning_crane_kick|prev_gcd.1.blackout_kick)",
+        "actions+=/spinning_crane_kick,if=combo_strike&active_enemies>=2",
         -- Копить ци под Кулаки: за 6 сек. до их отката Журавль и Нокаут ци не
         -- тратят, пока её не хватит и на Кулаки. Без этого Лапа даёт 2 ци,
         -- Журавль (2 ци) их сразу съедает, и до 3 ци на Кулаки запас не
         -- доходит — Кулаков ноль, хотя в логах они треть урона. Замер
         -- 17 сентября: болванка 1541 → 1622, цель 38 на движке без ошибки
         -- возврата ци 711 → 751; порог подобран из 2–30 сек.
-        "actions+=/spinning_crane_kick,if=combo_strike&(cooldown.fists_of_fury.remains>6|chi>=5)",
-        "actions+=/blackout_kick,if=combo_strike&(cooldown.fists_of_fury.remains>6|chi>=4)",
+
         -- Запасной выход: без него промах Лапы (ци даётся только с попадания)
         -- вместе с запретом повтора оставлял монаха стоять до Мудрости боя.
         "actions+=/tiger_palm,if=combo_strike|chi<1",
-        "actions+=/fists_of_fury",
-        "actions+=/spinning_crane_kick,if=cooldown.fists_of_fury.remains>6|chi>=5",
-        "actions+=/blackout_kick,if=cooldown.fists_of_fury.remains>6|chi>=4",
-        "actions+=/tiger_palm",
+
     },
     [260] = { -- Головорез: Коварный удар и Выстрел из пистоли, финишеры — Промеж
               -- глаз и Потрошение; Бросок костей до боя, Шквал клинков от двух целей.
