@@ -54,6 +54,58 @@ local enUS = {
     ["гнездо"]             = "socket",
     ["гнёзда"]             = "sockets",
 
+    -- Окно BiS-сборок
+    ["BiS-сборки"]         = "BiS Builds",
+    ["ИТОГ СБОРКИ"]        = "BUILD TOTALS",
+    ["Таланты"]            = "Talents",
+    ["Кисти"]              = "Hands",
+    ["Кольцо 1"]           = "Ring 1",
+    ["Кольцо 2"]           = "Ring 2",
+    ["Аксессуар 1"]        = "Trinket 1",
+    ["Аксессуар 2"]        = "Trinket 2",
+    ["— двуручное"]        = "— two-handed",
+    ["[Танк]"]             = "[Tank]",
+    ["[ДД]"]               = "[DPS]",
+    ["[Хил]"]              = "[Healer]",
+    ["Чара: "]             = "Enchant: ",
+    ["Источник: "]         = "Source: ",
+    ["Статы: "]            = "Stats: ",
+    ["Статы (наш замер): "] = "Stats (our sim): ",
+    ["Прок; в счёт идёт средний вклад за бой."] = "Proc; counted as its average contribution over the fight.",
+    ["Пред-BiS от сообщества — не из гайда гильдии, но выбить может любой."] =
+        "Community pre-BiS: not from the guild guide, but anyone can farm it.",
+    ["|cffE06C5EПеребор: после 30% каждая единица рейтинга даёт на 10% меньше|r"] =
+        "|cffE06C5EOvercap: past 30% each point of rating gives 10% less|r",
+    ["  |cff5fd35fвыше гайда|r"]  = "  |cff5fd35fabove guide|r",
+    ["  |cff9a9a9aнет в гайде|r"] = "  |cff9a9a9anot in guide|r",
+    ["  |cff9a9a9aпред-BiS|r"]    = "  |cff9a9a9apre-BiS|r",
+    ["  |cff3fc7ebТайм Волк|r"]   = "  |cff3fc7ebTimewalking|r",
+    [" - чара: "]                 = " - enchant: ",
+    [" (номера нет, в симе не учтена)"] = " (no id, not counted in the sim)",
+
+    -- Главное окно: строка поиска, тумблеры, заголовки колонок
+    ["Поиск"]              = "Search",
+    ["Предмет"]            = "Item",
+    ["Комьюнити"]          = "Community",
+    ["Мин-Макс"]           = "Min-Max",
+
+    -- Материал брони и типы источников
+    ["Ткань"]              = "Cloth",
+    ["Кожа"]               = "Leather",
+    ["Кольчуга"]           = "Mail",
+    ["Латы"]               = "Plate",
+    ["Подземелье"]         = "Dungeon",
+    ["Квест"]              = "Quest",
+    ["Рарники"]            = "Rare mobs",
+    ["Фамильные вещи"]     = "Heirlooms",
+    ["%d ур."]             = "ilvl %d",
+
+    -- Сообщения в чат
+    ["|cFF86C7BD[TGF]|r Сначала открой окно BiS и выбери спек: /tgf bis"] =
+        "|cFF86C7BD[TGF]|r Open the BiS window and pick a spec first: /tgf bis",
+    ["|cFF86C7BD[TGF]|r Профиль SimC — в окне копирования: Ctrl+C и вставить в Advanced Sim на Raidbots."] =
+        "|cFF86C7BD[TGF]|r The SimC profile is in the copy window: Ctrl+C, then paste into Advanced Sim on Raidbots.",
+
     -- Параметры
     ["Язык"]               = "Language",
     ["Как в игре"]         = "Same as game client",

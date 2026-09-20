@@ -103,10 +103,10 @@ end
 -- display/dropdown only.
 local ARMOR_CLASS_ID = 4 -- Enum.ItemClass.Armor
 local ARMOR_SUBCLASSES = {
-    { id = 1, label = "Ткань" },
-    { id = 2, label = "Кожа" },
-    { id = 3, label = "Кольчуга" },
-    { id = 4, label = "Латы" },
+    { id = 1, labelRU = "Ткань" },
+    { id = 2, labelRU = "Кожа" },
+    { id = 3, labelRU = "Кольчуга" },
+    { id = 4, labelRU = "Латы" },
 }
 -- Class names live in Locale.lua, same as slot names.
 
@@ -116,11 +116,11 @@ local ARMOR_SUBCLASSES = {
 -- две фамильные вещи нельзя было отобрать никак, они показывались только
 -- в «Все». Проверяется хуком pre-commit, чтобы не разошлось снова.
 local SOURCE_TYPES = {
-    { key = "Dungeon", label = "Подземелье" },
-    { key = "Quest", label = "Квест" },
-    { key = "World", label = "Рарники" },
-    { key = "Craft", label = "Крафт" },
-    { key = "PvP", label = "Фамильные вещи" },
+    { key = "Dungeon", labelRU = "Подземелье" },
+    { key = "Quest", labelRU = "Квест" },
+    { key = "World", labelRU = "Рарники" },
+    { key = "Craft", labelRU = "Крафт" },
+    { key = "PvP", labelRU = "Фамильные вещи" },
 }
 
 local filters = { slot = "ALL", class = "ALL", armor = "ALL", sourceType = "ALL", search = "" }
@@ -471,7 +471,8 @@ local searchBox = CreateFrame("EditBox", nil, frame, "SearchBoxTemplate")
 searchBox:SetSize(300, 26) -- одна высота с кнопками фильтров внизу
 searchBox:SetPoint("TOP", frame.title, "BOTTOM", 0, -10)
 searchBox:SetAutoFocus(false)
-searchBox.Instructions:SetText("Поиск")
+searchBox.Instructions:SetText(ns.L"Поиск")
+ns.OnLocaleReady(function() searchBox.Instructions:SetText(ns.L"Поиск") end)
 searchBox:SetScript("OnEscapePressed", searchBox.ClearFocus)
 
 -- Обшивка шаблона - золотистая рамка с объёмными торцами, для плоской тёмной
@@ -711,11 +712,11 @@ local classDrop = CreateSelect("TrialGearFinderClassDrop", slotDrop, "Класс
     function(key) filters.class = key; RefreshResults() end)
 
 local armorDrop = CreateSelect("TrialGearFinderArmorDrop", classDrop, "Броня", ARMOR_SUBCLASSES,
-    function(a) return a.id end, function(a) return a.label end,
+    function(a) return a.id end, function(a) return ns.L(a.labelRU) end,
     function(key) filters.armor = key; RefreshResults() end)
 
 local sourceDrop = CreateSelect("TrialGearFinderSourceDrop", armorDrop, "Источник", SOURCE_TYPES,
-    function(s) return s.key end, function(s) return s.label end,
+    function(s) return s.key end, function(s) return ns.L(s.labelRU) end,
     function(key) filters.sourceType = key; RefreshResults() end)
 
 ------------------------------------------------------------
@@ -860,16 +861,16 @@ local COL_VERS_X = COL_ISKUS_X + COL_STAT_W + COL_STAT_GAP
 local COL_SOURCE_X = COL_VERS_X + COL_STAT_W + 16
 local COL_SOURCE_W = ROW_WIDTH - COL_SOURCE_X - 10
 
-AddHeaderLabel(COL_NAME_X, COL_NAME_W, "Предмет", "LEFT")
-AddHeaderLabel(COL_STR_X, COL_STAT_W, "Сила", "CENTER", "str", "Сила")
-AddHeaderLabel(COL_AGI_X, COL_STAT_W, "Лов", "CENTER", "agi", "Ловкость")
-AddHeaderLabel(COL_INT_X, COL_STAT_W, "Инт", "CENTER", "int", "Интеллект")
-AddHeaderLabel(COL_STAM_X, COL_STAT_W, "Вын", "CENTER", "stam", "Выносливость")
-AddHeaderLabel(COL_CRIT_X, COL_STAT_W, "Крит", "CENTER", "crit", "Критический удар")
-AddHeaderLabel(COL_HASTE_X, COL_STAT_W, "Скор", "CENTER", "haste", "Скорость")
-AddHeaderLabel(COL_ISKUS_X, COL_STAT_W, "Иск", "CENTER", "iskus", "Искусность")
-AddHeaderLabel(COL_VERS_X, COL_STAT_W, "Уни", "CENTER", "vers", "Универсальность")
-AddHeaderLabel(COL_SOURCE_X, COL_SOURCE_W, "Источник", "CENTER", "source")
+AddHeaderLabel(COL_NAME_X, COL_NAME_W, ns.L"Предмет", "LEFT")
+AddHeaderLabel(COL_STR_X, COL_STAT_W, ns.L"Сила", "CENTER", "str", ns.L"Сила")
+AddHeaderLabel(COL_AGI_X, COL_STAT_W, ns.L"Лов", "CENTER", "agi", ns.L"Ловкость")
+AddHeaderLabel(COL_INT_X, COL_STAT_W, ns.L"Инт", "CENTER", "int", ns.L"Интеллект")
+AddHeaderLabel(COL_STAM_X, COL_STAT_W, ns.L"Вын", "CENTER", "stam", ns.L"Выносливость")
+AddHeaderLabel(COL_CRIT_X, COL_STAT_W, ns.L"Крит", "CENTER", "crit", ns.L"Критический удар")
+AddHeaderLabel(COL_HASTE_X, COL_STAT_W, ns.L"Скор", "CENTER", "haste", ns.L"Скорость")
+AddHeaderLabel(COL_ISKUS_X, COL_STAT_W, ns.L"Иск", "CENTER", "iskus", ns.L"Искусность")
+AddHeaderLabel(COL_VERS_X, COL_STAT_W, ns.L"Уни", "CENTER", "vers", ns.L"Универсальность")
+AddHeaderLabel(COL_SOURCE_X, COL_SOURCE_W, ns.L"Источник", "CENTER", "source")
 
 ------------------------------------------------------------
 -- Scroll area + rows
@@ -1020,21 +1021,97 @@ local SOCKET_ICON_PATHS = {
     prismatic = "Interface\\AddOns\\TrialGearFinder\\socket-prismatic.png",
 }
 
+-- Слова, по которым гнездо узнаётся в подсказке. На русском клиенте - наши,
+-- на остальных языках игра называет их сама (EMPTY_SOCKET_*), поэтому разбор
+-- не завязан на язык.
+local SOCKET_GLOBALS = {
+    meta = "EMPTY_SOCKET_META", prismatic = "EMPTY_SOCKET_PRISMATIC",
+    red = "EMPTY_SOCKET_RED", yellow = "EMPTY_SOCKET_YELLOW",
+    blue = "EMPTY_SOCKET_BLUE", cogwheel = "EMPTY_SOCKET_COGWHEEL",
+    domination = "EMPTY_SOCKET_DOMINATION",
+}
+
 local REVERSE_SOCKET_LABELS = {}
 for typeKey, word in pairs(SOCKET_LABELS) do REVERSE_SOCKET_LABELS[word] = typeKey end
+
+-- Общее слово «гнездо» тоже клиентское: из EMPTY_SOCKET_PRISMATIC («Radiant
+-- Socket», «Радужное гнездо») берём последнее слово и ищем уже его.
+local SOCKET_WORD_RU = "гнезд"
+local SOCKET_WORD = SOCKET_WORD_RU
+do
+    local sample = _G.EMPTY_SOCKET_PRISMATIC or _G.EMPTY_SOCKET_META
+    if sample then
+        local tail = sample:match("(%S+)%s*$")
+        if tail and tail ~= "" then SOCKET_WORD = tail:lower() end
+    end
+    for key, globalName in pairs(SOCKET_GLOBALS) do
+        local word = _G[globalName]
+        if word and word ~= "" then REVERSE_SOCKET_LABELS[word] = key end
+    end
+end
+
+local function SocketWord()
+    if ns.IsRussian() then return SOCKET_WORD_RU end
+    return SOCKET_WORD
+end
 
 local ScanTooltip = CreateFrame("GameTooltip", "TrialGearFinderScanTooltip", nil, "GameTooltipTemplate")
 ScanTooltip:SetOwner(UIParent, "ANCHOR_NONE")
 
+-- Характеристика по строке подсказки.
+--
+-- Русские корни - потому что в русском тултипе стоит падеж: «+7 к критическому
+-- удару», а константа игры даёт «к критическому удару» не во всех местах
+-- одинаково. Для остальных языков сравниваем с самими константами клиента
+-- (на английском ITEM_MOD_CRIT_RATING_SHORT = "Critical Strike"), поэтому
+-- разбор работает на любом клиенте, а не только на русском.
+local STAT_CONSTANTS = {
+    str   = { ITEM_MOD_STRENGTH_SHORT, STAT_STRENGTH },
+    agi   = { ITEM_MOD_AGILITY_SHORT, STAT_AGILITY },
+    int   = { ITEM_MOD_INTELLECT_SHORT, STAT_INTELLECT },
+    stam  = { ITEM_MOD_STAMINA_SHORT, STAT_STAMINA },
+    crit  = { ITEM_MOD_CRIT_RATING_SHORT },
+    haste = { ITEM_MOD_HASTE_RATING_SHORT },
+    iskus = { ITEM_MOD_MASTERY_RATING_SHORT },
+    vers  = { ITEM_MOD_VERSATILITY },
+}
+
+local STAT_STEMS_RU = {
+    { "сил", "str" }, { "ловкост", "agi" }, { "интеллект", "int" },
+    { "вынослив", "stam" }, { "критическ", "crit" }, { "скорост", "haste" },
+    { "искусност", "iskus" }, { "универсальност", "vers" },
+}
+
+-- Начало блока «бонус за цвет гнёзд». На русском клиенте ищем кусок фразы,
+-- на прочих - саму константу игры (ITEM_SOCKET_BONUS = "Socket Bonus: %s").
+local SOCKET_BONUS_MARK = (ITEM_SOCKET_BONUS or ""):gsub("%%s", ""):gsub("[:%s]+$", "")
+
+local function IsSocketBonusLine(text)
+    if ns.IsRussian() then return text:find("соответствии цвета") ~= nil end
+    return SOCKET_BONUS_MARK ~= "" and text:find(SOCKET_BONUS_MARK, 1, true) ~= nil
+end
+
+-- Строка прибавки: «+7 к критическому удару» в русском клиенте и «+7 Critical
+-- Strike» в остальных. Возвращает число и название характеристики.
+local function MatchStatLine(text)
+    local value, rest = text:match("^%s*%+(%d+)%s+к%s+(.+)$")
+    if value then return value, rest end
+    return text:match("^%s*%+(%d+)%s+(.+)$")
+end
+
 local function StemToStatKey(text)
-    if text:find("сил") then return "str" end
-    if text:find("ловкост") then return "agi" end
-    if text:find("интеллект") then return "int" end
-    if text:find("вынослив") then return "stam" end
-    if text:find("критическ") then return "crit" end
-    if text:find("скорост") then return "haste" end
-    if text:find("искусност") then return "iskus" end
-    if text:find("универсальност") then return "vers" end
+    if ns.IsRussian() then
+        for _, pair in ipairs(STAT_STEMS_RU) do
+            if text:find(pair[1]) then return pair[2] end
+        end
+        return nil
+    end
+    local lowered = text:lower()
+    for key, names in pairs(STAT_CONSTANTS) do
+        for _, name in ipairs(names) do
+            if name and name ~= "" and lowered:find(name:lower(), 1, true) then return key end
+        end
+    end
     return nil
 end
 
@@ -1060,9 +1137,9 @@ function ns.FixTooltipStats(base)
         if text then
             -- Ниже строки «При соответствии цвета» идёт бонус за гнёзда,
             -- это не статы предмета - там не трогаем ничего.
-            if text:find("соответствии цвета") then inSB = true end
+            if IsSocketBonusLine(text) then inSB = true end
             if not inSB then
-                local val, rest = text:match("^%s*%+(%d+)%s+к%s+(.+)$")
+                local val, rest = MatchStatLine(text)
                 local key = val and StemToStatKey(rest)
                 local bv = key and base[key]
                 if bv and bv ~= tonumber(val) then
@@ -1114,10 +1191,10 @@ local function ScanItemLink(link)
         local fs = _G["TrialGearFinderScanTooltipTextLeft" .. i]
         local text = fs and fs:GetText()
         if text then
-            if text:find("соответствии цвета") then inSocketBonusZone = true end
+            if IsSocketBonusLine(text) then inSocketBonusZone = true end
 
             do
-                local value, rest = text:match("^%+(%d+)%s+к%s+(.+)$")
+                local value, rest = MatchStatLine(text)
                 if value then
                     local key = StemToStatKey(rest)
                     if key then
@@ -1135,7 +1212,7 @@ local function ScanItemLink(link)
             -- «<тип> гнездо», и гнёзда-шестерёнки (инженерные) не находились вовсе -
             -- в игре они подписаны иначе.
             local lowered = text:lower()
-            if lowered:find("гнезд", 1, true) then
+            if lowered:find(SocketWord(), 1, true) then
                 local socketType = "prismatic"
                 for word, key in pairs(REVERSE_SOCKET_LABELS) do
                     if lowered:find(word:lower(), 1, true) then socketType = key break end
@@ -2027,7 +2104,8 @@ statsToggle.label = frame.titleBg:CreateFontString(nil, "OVERLAY", "GameFontNorm
 -- шире квадратика), и стоять по её центру.
 statsToggle.label:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -20, -48)
 statsToggle:SetPoint("TOP", statsToggle.label, "BOTTOM", 0, -2)
-statsToggle.label:SetText("Мин-Макс")
+statsToggle.label:SetText(ns.L"Мин-Макс")
+ns.OnLocaleReady(function() statsToggle.label:SetText(ns.L"Мин-Макс") end)
 -- Шрифт GameFontNormalSmall золотой - единственное золото в окне после перехода
 -- на свою палитру. Белым, как подписи колонок.
 statsToggle.label:SetTextColor(C.text[1], C.text[2], C.text[3])
@@ -2040,7 +2118,8 @@ StyleCheckBox(commToggle, 11)
 commToggle.label = frame.titleBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 commToggle.label:SetPoint("TOPRIGHT", statsToggle.label, "TOPLEFT", -16, 0)
 commToggle:SetPoint("TOP", commToggle.label, "BOTTOM", 0, -2)
-commToggle.label:SetText("Комьюнити")
+commToggle.label:SetText(ns.L"Комьюнити")
+ns.OnLocaleReady(function() commToggle.label:SetText(ns.L"Комьюнити") end)
 commToggle.label:SetTextColor(C.text[1], C.text[2], C.text[3])
 commToggle:SetScript("OnClick", function()
     TrialGearFinderDB = TrialGearFinderDB or {}
@@ -2251,7 +2330,7 @@ local function BuildRowData(item)
     local materialLabel
     if classID == ARMOR_CLASS_ID then
         for _, sub in ipairs(ARMOR_SUBCLASSES) do
-            if sub.id == subclassID then materialLabel = sub.label break end
+            if sub.id == subclassID then materialLabel = ns.L(sub.labelRU) break end
         end
     end
     -- Подпись не повторяет то, что уже сказано фильтром: при «Слот: Голова»
@@ -2274,7 +2353,7 @@ local function BuildRowData(item)
     -- Уровень тоже убираем, как только включён любой фильтр: строка под
     -- названием должна быть тихой, а не повторять то, что и так выбрано сверху.
     if item.ilvl and armorFree and slotFree then
-        local lvl = string.format("%d ур.", item.ilvl)
+        local lvl = string.format(ns.L"%d ур.", item.ilvl)
         typeLabel = typeLabel ~= "" and (typeLabel .. " | " .. lvl) or lvl
     end
     local stats = item.stats or {}

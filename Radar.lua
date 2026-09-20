@@ -34,10 +34,13 @@ local AXIS_MAX = {
 -- красным, будто это перебор.
 local CAPPED = { crit = true, haste = true, vers = true, iskus = true }
 
-local LABEL = {
+-- Подписи по-русски служат ключами словаря в Locale.lua: перевод берётся
+-- при отрисовке, а не здесь, иначе выбранный язык бы не доехал.
+local LABEL_RU = {
     str = "Сила", agi = "Ловкость", int = "Интеллект", stam = "Вын",
     crit = "Крит", haste = "Скор", vers = "Верса", iskus = "Иск",
 }
+local LABEL = setmetatable({}, { __index = function(_, k) return ns.L(LABEL_RU[k] or k) end })
 
 -- Порядок обхода: основная характеристика наверху, дальше по часовой.
 local ORDER = { "str", "agi", "int", "crit", "haste", "iskus", "vers", "stam" }

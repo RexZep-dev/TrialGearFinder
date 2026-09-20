@@ -21,22 +21,22 @@ local MAIN = "TrialGearFinderFrame" -- создаётся в Core.lua раньш
 -- Слоты в порядке показа.
 -- ---------------------------------------------------------------------------
 local SLOTS = {
-    { key = "HEAD",     name = "Голова" },
-    { key = "NECK",     name = "Шея" },
-    { key = "SHOULDER", name = "Плечи" },
-    { key = "BACK",     name = "Спина" },
-    { key = "CHEST",    name = "Грудь" },
-    { key = "WRIST",    name = "Запястья" },
-    { key = "HANDS",    name = "Кисти" },
-    { key = "WAIST",    name = "Пояс" },
-    { key = "LEGS",     name = "Ноги" },
-    { key = "FEET",     name = "Ступни" },
-    { key = "FINGER1",  name = "Кольцо 1" },
-    { key = "FINGER2",  name = "Кольцо 2" },
-    { key = "TRINKET1", name = "Аксессуар 1" },
-    { key = "TRINKET2", name = "Аксессуар 2" },
-    { key = "MAINHAND", name = "Правая рука" },
-    { key = "OFFHAND",  name = "Левая рука" },
+    { key = "HEAD",     nameRU = "Голова" },
+    { key = "NECK",     nameRU = "Шея" },
+    { key = "SHOULDER", nameRU = "Плечи" },
+    { key = "BACK",     nameRU = "Спина" },
+    { key = "CHEST",    nameRU = "Грудь" },
+    { key = "WRIST",    nameRU = "Запястья" },
+    { key = "HANDS",    nameRU = "Кисти" },
+    { key = "WAIST",    nameRU = "Пояс" },
+    { key = "LEGS",     nameRU = "Ноги" },
+    { key = "FEET",     nameRU = "Ступни" },
+    { key = "FINGER1",  nameRU = "Кольцо 1" },
+    { key = "FINGER2",  nameRU = "Кольцо 2" },
+    { key = "TRINKET1", nameRU = "Аксессуар 1" },
+    { key = "TRINKET2", nameRU = "Аксессуар 2" },
+    { key = "MAINHAND", nameRU = "Правая рука" },
+    { key = "OFFHAND",  nameRU = "Левая рука" },
 }
 
 -- equipLoc предмета -> ключ слота. Парные слоты (кольца, аксессуары) собираются
@@ -729,7 +729,7 @@ end
 --   [ДД]  → DAMAGER   [Танк] → TANK   [Хил] → HEALER
 -- Строки роли — как у GetSpecializationRoleByID, чтобы сравнивать напрямую.
 -- Пометка есть только у аксессуаров, у остальных вещей её нет и не нужно.
-local NOTE_ROLE = { ["[Танк]"] = "TANK", ["[ДД]"] = "DAMAGER", ["[Хил]"] = "HEALER" }
+local NOTE_ROLE = { [ns.L"[Танк]"] = "TANK", [ns.L"[ДД]"] = "DAMAGER", [ns.L"[Хил]"] = "HEALER" }
 local function NoteRole(item)
     local n = item.note or ""
     for tag, role in pairs(NOTE_ROLE) do
@@ -946,18 +946,18 @@ local function MakeSlotRow(parent, index, y)
         if self.ench and not self.ench.enchantID then
             -- Номера нет — игра нарисовать не сможет, пишем сами.
             GameTooltip:AddLine(" ")
-            GameTooltip:AddLine("Чара: " .. self.ench.ru, 0.55, 0.78, 1, true)
+            GameTooltip:AddLine(ns.L"Чара: " .. self.ench.ru, 0.55, 0.78, 1, true)
             if self.ench.proc then
-                GameTooltip:AddLine("Прок; в счёт идёт средний вклад за бой.", 0.6, 0.6, 0.6, true)
+                GameTooltip:AddLine(ns.L"Прок; в счёт идёт средний вклад за бой.", 0.6, 0.6, 0.6, true)
             end
         end
         if self.entry then
             GameTooltip:AddLine(" ")
             if communityId[self.itemID] then
-                GameTooltip:AddLine("Пред-BiS от сообщества — не из гайда гильдии, но выбить может любой.", 0.85, 0.72, 0.42, true)
+                GameTooltip:AddLine(ns.L"Пред-BiS от сообщества — не из гайда гильдии, но выбить может любой.", 0.85, 0.72, 0.42, true)
             end
             if self.entry.source then
-                GameTooltip:AddLine("Источник: " .. self.entry.source, 0.55, 0.78, 1, true)
+                GameTooltip:AddLine(ns.L"Источник: " .. self.entry.source, 0.55, 0.78, 1, true)
             end
             if self.entry.note then
                 GameTooltip:AddLine(self.entry.note, 0.7, 0.7, 0.7, true)
@@ -987,7 +987,7 @@ end
 --   "beat" - гайд закрывает, но вещь сообщества обошла его по статам;
 --   nil    - предмет из гайда, помечать нечего.
 local function RenderRow(row, slot, item, mark, gems, ench)
-    row.slotFS:SetText(slot.name)
+    row.slotFS:SetText(ns.L(slot.nameRU))
     row.entry = item
     row.ench = ench
     row.itemID = item and item.itemID or nil
@@ -1044,17 +1044,17 @@ local function RenderRow(row, slot, item, mark, gems, ench)
         -- посчиталась лучше. Второе и есть ответ «что даёт комьюнити».
         if communityId[id] then
             if mark == "beat" then
-                label = label .. "  |cff5fd35fвыше гайда|r"
+                label = label .. ns.L"  |cff5fd35fвыше гайда|r"
             elseif mark == "gap" then
-                label = label .. "  |cff9a9a9aнет в гайде|r"
+                label = label .. ns.L"  |cff9a9a9aнет в гайде|r"
             else
-                label = label .. "  |cff9a9a9aпред-BiS|r"
+                label = label .. ns.L"  |cff9a9a9aпред-BiS|r"
             end
         end
         -- Тайм Волк: вещь только из недели Путешествий во времени. Отдельной
         -- меткой, потому что это про доступность, а не про источник данных.
         if ns.IsTimewalk(item) then
-            label = label .. "  |cff3fc7ebТайм Волк|r"
+            label = label .. ns.L"  |cff3fc7ebТайм Волк|r"
         end
         row.valueFS:SetText(label)
         local q = mixin:GetItemQualityColor()
@@ -1229,14 +1229,14 @@ local function RenderSlots()
             end
         end
         RenderRow(row, slot, c.pick, c.mark, gems, ench)
-        if c.twoHand then row.valueFS:SetText("— двуручное") end
+        if c.twoHand then row.valueFS:SetText(ns.L"— двуручное") end
         if c.pick and not c.twoHand then
             local ids = {}
             for gi = 1, #(c.pick.socketTypes or {}) do
                 ids[gi] = gems and gems[gi] and gems[gi].id or nil
             end
             ns.LastBuild.slots[#ns.LastBuild.slots + 1] = {
-                key = slot.key, name = slot.name, item = c.pick, gems = ids, ench = ench,
+                key = slot.key, name = ns.L(slot.nameRU), item = c.pick, gems = ids, ench = ench,
             }
         end
     end
@@ -1263,7 +1263,7 @@ local function RenderSlots()
             if (total[k] or 0) * 30 / SOFTCAP[k] >= 30 then over[#over + 1] = k end
         end
         panel.overFS:SetText(#over > 0
-            and "|cffE06C5EПеребор: после 30% каждая единица рейтинга даёт на 10% меньше|r" or "")
+            and ns.L"|cffE06C5EПеребор: после 30% каждая единица рейтинга даёт на 10% меньше|r" or "")
     end
 end
 
@@ -1282,10 +1282,10 @@ local function UpdatePriorityText(specID)
     if not (panel and panel.priorityFS) then return end
     local w, measured = SpecWeights(specID)
     if measured then
-        panel.priorityFS:SetText("Статы (наш замер): " .. WeightsToText(w))
+        panel.priorityFS:SetText(ns.L"Статы (наш замер): " .. WeightsToText(w))
     else
         local prio = ns.BiSPriority and ns.BiSPriority[specID]
-        panel.priorityFS:SetText(prio and ("Статы: " .. prio) or "")
+        panel.priorityFS:SetText(prio and (ns.L"Статы: " .. prio) or "")
     end
 end
 
@@ -1458,8 +1458,8 @@ function ns.ExportSimC()
         if procs[s.key] then parts[#parts + 1] = "equip=" .. procs[s.key] end
         -- Без «|»: в поле ввода игры черта — служебный символ разметки.
         out[#out + 1] = string.format("# %s (%s)%s", C_Item.GetItemNameByID(it.itemID) or "?", s.name,
-            s.ench and (" - чара: " .. s.ench.ru
-                .. (s.ench.enchantID and "" or " (номера нет, в симе не учтена)")) or "")
+            s.ench and (ns.L" - чара: " .. s.ench.ru
+                .. (s.ench.enchantID and "" or ns.L" (номера нет, в симе не учтена)")) or "")
         out[#out + 1] = string.format("%s=,%s", SIMC[s.key] or s.key:lower(), table.concat(parts, ","))
     end
     for _, line in ipairs(ns.SimCActions and ns.SimCActions(b.specID) or {}) do
@@ -1560,7 +1560,7 @@ local function BuildPanel()
     Bevel(header, C.block or { 0.06, 0.07, 0.08 }, C.border or { 0.18, 0.20, 0.22 })
     local title = header:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     title:SetPoint("CENTER", header, "CENTER", 0, 0)
-    title:SetText("BiS-сборки")
+    title:SetText(ns.L"BiS-сборки")
     if C.text then title:SetTextColor(C.text[1], C.text[2], C.text[3]) end
 
     -- Колонка классов — во всю высоту панели, иконки круглые.
@@ -1660,7 +1660,7 @@ local function BuildPanel()
 
         local title = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         title:SetPoint("TOPLEFT", card, "TOPLEFT", 10, -8)
-        title:SetText("ИТОГ СБОРКИ")
+        title:SetText(ns.L"ИТОГ СБОРКИ")
         title:SetTextColor(GOLD[1], GOLD[2], GOLD[3])
 
         panel.radar = ns.MakeRadar(card, 44)
@@ -1695,7 +1695,7 @@ local function BuildPanel()
         local tal = CreateFrame("Button", nil, card, "UIPanelButtonTemplate")
         tal:SetSize(74, 20)
         tal:SetPoint("RIGHT", simc, "LEFT", -6, 0)
-        tal:SetText("Таланты")
+        tal:SetText(ns.L"Таланты")
         tal:SetScript("OnClick", function()
             local t = ns.TalentCodes and ns.TalentCodes[state.specID]
             if not t then
