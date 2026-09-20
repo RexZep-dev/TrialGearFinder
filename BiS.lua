@@ -319,7 +319,7 @@ local function WeightsToText(w)
     table.sort(order, function(a, b) return a.v > b.v end)
     local parts = {}
     for _, e in ipairs(order) do
-        parts[#parts + 1] = string.format("%s %.2f", WEIGHT_NAMES[e.key], e.v)
+        parts[#parts + 1] = string.format("%s %.2f", ns.L(WEIGHT_NAMES[e.key]), e.v)
     end
     return table.concat(parts, " > ")
 end

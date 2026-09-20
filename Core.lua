@@ -1964,7 +1964,7 @@ local function CreateRow(index)
         self.haste:SetText(ColorStat(data.haste))
         self.iskus:SetText(ColorStat(data.iskus))
         self.vers:SetText(ColorStat(data.vers))
-        self.source:SetText(data.source or "")
+        self.source:SetText(data.source and ns.L(data.source) or "")
         -- Золото - цвет подземелий в Обзоре приключений, и рарникам оно не идёт:
         -- источник там не подземелье, а точка в открытом мире. Делим по тому же
         -- признаку, по которому ставится галочка «уже был», - так две пометки
@@ -2013,9 +2013,9 @@ local function CreateRow(index)
             self:SetAlpha(st == "bis" and 0.45 or (st and 0.7 or 1))
         end
 
-        self.fullSource = data.source
+        self.fullSource = data.source and ns.L(data.source) or nil
         self.sourceType = data.sourceType
-        self.fullNote = data.sourceboss
+        self.fullNote = data.sourceboss and ns.L(data.sourceboss) or nil
         self.hyperlink = data.hyperlink
         self.itemID = data.itemID
         self.twink = data.twink
