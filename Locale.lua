@@ -198,6 +198,11 @@ local enUS = {
     ["|cFFFFD100[TGF]|r Сначала поставь метку на карте (Ctrl+щелчок по карте), потом Ctrl+щелчок по источнику."] =
         "|cFFFFD100[TGF]|r Put a marker on the map first (Ctrl-click the map), then Ctrl-click the source.",
 
+    ["|cFFFFD100[TGF]|r Путешествие во времени: вход только через поиск подземелий, в неделю события."] =
+        "|cFFFFD100[TGF]|r Timewalking: entered through the dungeon finder only, during the event week.",
+    ["|cFFFFD100[TGF]|r На этой карте игра не разрешает ставить метку."] =
+        "|cFFFFD100[TGF]|r The game does not allow markers on this map.",
+
     -- Параметры
     ["Язык"]               = "Language",
     ["Как в игре"]         = "Same as game client",

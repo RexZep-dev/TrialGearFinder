@@ -1568,6 +1568,10 @@ end
 -- У рарников источник называет материк ("Кул-Тирас (рарники...)"), а не точку:
 -- метка на источник была бы там бесполезна - каждая вещь падает со своего моба
 -- в своём месте. Поэтому они ключуются по вещи - "item:158583".
+-- Признак подземелий Путешествия во времени: в базе они записаны как
+-- «Путешествие во времени: Катаклизм» и подобное.
+local TIMEWALKING_MARK = "Путешествие во времени"
+
 local function PinKey(sourceType, itemID, source)
     if sourceType == "World" and itemID then return "item:" .. itemID end
     return source
@@ -1581,13 +1585,20 @@ local function SetSourceWaypoint(sourceName, sourceType, itemID)
     local saved = TrialGearFinderDB and TrialGearFinderDB.pins
     local pin = (saved and saved[key]) or SOURCE_PINS[key]
     if not pin then
-        print(string.format(ns.L"|cFFFFD100[TGF]|r Координаты для «%s» ещё не заданы.", ns.L(sourceName)))
+        -- В подземелья Путешествия во времени со входа не зайти: они открыты
+        -- только в неделю события и собираются через поиск подземелий. Метка
+        -- на карте им не нужна, и «координаты не заданы» тут сбивало бы с толку.
+        if sourceName:find(TIMEWALKING_MARK, 1, true) then
+            print(ns.L"|cFFFFD100[TGF]|r Путешествие во времени: вход только через поиск подземелий, в неделю события.")
+        else
+            print(string.format(ns.L"|cFFFFD100[TGF]|r Координаты для «%s» ещё не заданы.", ns.L(sourceName)))
+        end
         return
     end
 
     local uiMapID, x, y = pin[1], pin[2], pin[3]
     if not C_Map.CanSetUserWaypointOnMap(uiMapID) then
-        print("|cFFFFD100[TGF]|r На этой карте игра не разрешает ставить метку.")
+        print(ns.L"|cFFFFD100[TGF]|r На этой карте игра не разрешает ставить метку.")
         return
     end
 
