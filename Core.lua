@@ -1581,7 +1581,7 @@ local function SetSourceWaypoint(sourceName, sourceType, itemID)
     local saved = TrialGearFinderDB and TrialGearFinderDB.pins
     local pin = (saved and saved[key]) or SOURCE_PINS[key]
     if not pin then
-        print(string.format("|cFFFFD100[TGF]|r Координаты для «%s» ещё не заданы.", sourceName))
+        print(string.format(ns.L"|cFFFFD100[TGF]|r Координаты для «%s» ещё не заданы.", ns.L(sourceName)))
         return
     end
 
@@ -1620,7 +1620,7 @@ local function SaveSourceWaypoint(sourceName, sourceType, itemID)
 
     local point = C_Map.GetUserWaypoint()
     if not point then
-        print("|cFFFFD100[TGF]|r Сначала поставь метку на карте (Ctrl+щелчок по карте), потом Ctrl+щелчок по источнику.")
+        print(ns.L"|cFFFFD100[TGF]|r Сначала поставь метку на карте (Ctrl+щелчок по карте), потом Ctrl+щелчок по источнику.")
         return
     end
 
@@ -1766,8 +1766,8 @@ local function CreateRow(index)
             GameTooltip:AddLine(self.fullNote, 1, 1, 1, true)
         end
         GameTooltip:AddLine(" ")
-        GameTooltip:AddLine("Щелчок - поставить метку на карте", 0.6, 0.6, 0.6)
-        GameTooltip:AddLine("Ctrl+щелчок - запомнить текущую метку для этого источника", 0.6, 0.6, 0.6)
+        GameTooltip:AddLine(ns.L"Щелчок - поставить метку на карте", 0.6, 0.6, 0.6)
+        GameTooltip:AddLine(ns.L"Ctrl+щелчок - запомнить текущую метку для этого источника", 0.6, 0.6, 0.6)
         GameTooltip:Show()
     end
 
@@ -1922,14 +1922,14 @@ local function CreateRow(index)
             GameTooltip:AddLine(self.fullNote, 1, 1, 1, true)
         end
         GameTooltip:AddLine(" ")
-        GameTooltip:AddLine("Щелчок - поставить метку на карте", 0.6, 0.6, 0.6)
+        GameTooltip:AddLine(ns.L"Щелчок - поставить метку на карте", 0.6, 0.6, 0.6)
         GameTooltip:Show()
     end
     row.sourceHitbox:SetScript("OnMouseUp", function()
         if IsControlKeyDown() then
-            SaveSourceWaypoint(row.fullSource, row.sourceType, row.itemID)
+            SaveSourceWaypoint(row.sourceKey, row.sourceType, row.itemID)
         else
-            SetSourceWaypoint(row.fullSource, row.sourceType, row.itemID)
+            SetSourceWaypoint(row.sourceKey, row.sourceType, row.itemID)
         end
     end)
     row.sourceHitbox:SetScript("OnEnter", function() row:ShowSourceTooltip() end)
@@ -2013,6 +2013,9 @@ local function CreateRow(index)
             self:SetAlpha(st == "bis" and 0.45 or (st and 0.7 or 1))
         end
 
+        -- sourceKey - русское название, оно же ключ точки на карте и в базе.
+        -- fullSource - то же самое для показа, уже переведённое.
+        self.sourceKey = data.source
         self.fullSource = data.source and ns.L(data.source) or nil
         self.sourceType = data.sourceType
         self.fullNote = data.sourceboss and ns.L(data.sourceboss) or nil
@@ -2923,8 +2926,8 @@ end)
 minimapButton:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_LEFT")
     GameTooltip:AddLine("Trial Gear Finder")
-    GameTooltip:AddLine("Щелчок - открыть окно", 0.6, 0.6, 0.6)
-    GameTooltip:AddLine("Перетаскивание - двигать по краю карты", 0.6, 0.6, 0.6)
+    GameTooltip:AddLine(ns.L"Щелчок - открыть окно", 0.6, 0.6, 0.6)
+    GameTooltip:AddLine(ns.L"Перетаскивание - двигать по краю карты", 0.6, 0.6, 0.6)
     GameTooltip:Show()
 end)
 minimapButton:SetScript("OnLeave", function() GameTooltip:Hide() end)

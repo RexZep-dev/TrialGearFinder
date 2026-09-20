@@ -1285,7 +1285,7 @@ local function UpdatePriorityText(specID)
         panel.priorityFS:SetText(ns.L"Статы (наш замер): " .. WeightsToText(w))
     else
         local prio = ns.BiSPriority and ns.BiSPriority[specID]
-        panel.priorityFS:SetText(prio and (ns.L"Статы: " .. prio) or "")
+        panel.priorityFS:SetText(prio and (ns.L"Статы: " .. ns.TranslateStatLine(prio)) or "")
     end
 end
 

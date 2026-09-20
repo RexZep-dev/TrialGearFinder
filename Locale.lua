@@ -28,6 +28,7 @@ local enUS = {
 
     -- Характеристики: длинные и краткие подписи
     ["Сила"]               = "Strength",
+    ["Броня"]              = "Armor",
     ["Ловкость"]           = "Agility",
     ["Интеллект"]          = "Intellect",
     ["Выносливость"]       = "Stamina",
@@ -187,6 +188,16 @@ local enUS = {
     ["Крафт (аукцион)"] = "Crafted (auction house)",
     ["уточнить"] = "to be confirmed",
 
+    ["Щелчок - открыть окно"]     = "Click to open the window",
+    ["Перетаскивание - двигать по краю карты"] = "Drag to move around the minimap",
+    ["Щелчок - поставить метку на карте"] = "Click to put a marker on the map",
+    ["Ctrl+щелчок - запомнить текущую метку для этого источника"] =
+        "Ctrl-click to remember the current marker for this source",
+    ["|cFFFFD100[TGF]|r Координаты для «%s» ещё не заданы."] =
+        "|cFFFFD100[TGF]|r No coordinates set for "%s" yet.",
+    ["|cFFFFD100[TGF]|r Сначала поставь метку на карте (Ctrl+щелчок по карте), потом Ctrl+щелчок по источнику."] =
+        "|cFFFFD100[TGF]|r Put a marker on the map first (Ctrl-click the map), then Ctrl-click the source.",
+
     -- Параметры
     ["Язык"]               = "Language",
     ["Как в игре"]         = "Same as game client",
@@ -262,6 +273,24 @@ end
 -- Русский ли сейчас интерфейс. Нужно там, где текст разбирается, а не пишется.
 function ns.IsRussian()
     return Resolve() == "ruRU"
+end
+
+-- Строка приоритета из гайда: «Сила > Искусность >> Скорость». Разделители
+-- значимы (>> значит «намного важнее»), поэтому переводим только названия
+-- характеристик, а саму строку не разбираем. Длинные названия идут первыми,
+-- иначе «Сила» съела бы кусок другого слова.
+local STAT_WORDS = {
+    "Критический удар", "Универсальность", "Выносливость", "Интеллект",
+    "Искусность", "Ловкость", "Скорость", "Броня", "Сила",
+}
+
+function ns.TranslateStatLine(text)
+    if Resolve() == "ruRU" then return text end
+    for _, word in ipairs(STAT_WORDS) do
+        local translated = enUS[word]
+        if translated then text = text:gsub(word, translated) end
+    end
+    return text
 end
 
 -- Подписи, созданные при загрузке файлов, приходится переставлять заново:
