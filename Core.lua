@@ -29,41 +29,27 @@ local TWINK_LEVEL = 20
 -- Флаг НЕ отключает сверку в списке и /tgf scan - они работают всегда.
 local ENABLE_COMPARISON = false
 
--- Slot names come from the CLIENT (_G.INVTYPE_*), so on an English client the
--- whole addon showed "Cloth (Head)" instead of "Ткань (Голова)". These are ours,
--- so the window reads the same whatever language the game is installed in.
-local INVTYPE_RU = {
-    INVTYPE_HEAD = "Голова",           INVTYPE_NECK = "Шея",
-    INVTYPE_SHOULDER = "Плечи",        INVTYPE_CLOAK = "Спина",
-    INVTYPE_CHEST = "Грудь",           INVTYPE_ROBE = "Грудь",
-    INVTYPE_WRIST = "Запястья",        INVTYPE_HAND = "Кисти рук",
-    INVTYPE_WAIST = "Пояс",            INVTYPE_LEGS = "Ноги",
-    INVTYPE_FEET = "Ступни",           INVTYPE_FINGER = "Палец",
-    INVTYPE_TRINKET = "Аксессуар",     INVTYPE_SHIELD = "Щит",
-    INVTYPE_WEAPON = "Одноручное",     INVTYPE_2HWEAPON = "Двуручное",
-    INVTYPE_WEAPONMAINHAND = "Правая рука",
-    INVTYPE_WEAPONOFFHAND = "Левая рука",
-    INVTYPE_HOLDABLE = "Левая рука",
-    INVTYPE_RANGED = "Дальнобойное",   INVTYPE_RANGEDRIGHT = "Дальнобойное",
-}
-
+-- Slot names live in Locale.lua: on a Russian client they come from our own
+-- table, on any other client from the game itself (_G.INVTYPE_*). The label is
+-- resolved when the row is drawn, because the saved language choice is not
+-- loaded yet while this file runs.
 local SLOT_DEFS = {
-    { key = "HEAD",     label = INVTYPE_RU.INVTYPE_HEAD,     invTypes = { INVTYPE_HEAD = true } },
-    { key = "NECK",     label = INVTYPE_RU.INVTYPE_NECK,     invTypes = { INVTYPE_NECK = true } },
-    { key = "SHOULDER", label = INVTYPE_RU.INVTYPE_SHOULDER, invTypes = { INVTYPE_SHOULDER = true } },
-    { key = "BACK",     label = INVTYPE_RU.INVTYPE_CLOAK,    invTypes = { INVTYPE_CLOAK = true } },
-    { key = "CHEST",    label = INVTYPE_RU.INVTYPE_CHEST,    invTypes = { INVTYPE_CHEST = true, INVTYPE_ROBE = true } },
-    { key = "WRIST",    label = INVTYPE_RU.INVTYPE_WRIST,    invTypes = { INVTYPE_WRIST = true } },
-    { key = "HANDS",    label = INVTYPE_RU.INVTYPE_HAND,     invTypes = { INVTYPE_HAND = true } },
-    { key = "WAIST",    label = INVTYPE_RU.INVTYPE_WAIST,    invTypes = { INVTYPE_WAIST = true } },
-    { key = "LEGS",     label = INVTYPE_RU.INVTYPE_LEGS,     invTypes = { INVTYPE_LEGS = true } },
-    { key = "FEET",     label = INVTYPE_RU.INVTYPE_FEET,     invTypes = { INVTYPE_FEET = true } },
-    { key = "FINGER",   label = INVTYPE_RU.INVTYPE_FINGER,   invTypes = { INVTYPE_FINGER = true } },
-    { key = "TRINKET",  label = INVTYPE_RU.INVTYPE_TRINKET,  invTypes = { INVTYPE_TRINKET = true } },
-    { key = "MAINHAND", label = INVTYPE_RU.INVTYPE_WEAPONMAINHAND, invTypes = { INVTYPE_WEAPONMAINHAND = true, INVTYPE_WEAPON = true } },
-    { key = "OFFHAND",  label = INVTYPE_RU.INVTYPE_WEAPONOFFHAND,  invTypes = { INVTYPE_WEAPONOFFHAND = true, INVTYPE_HOLDABLE = true, INVTYPE_SHIELD = true } },
-    { key = "TWOHAND",  label = INVTYPE_RU.INVTYPE_2HWEAPON,       invTypes = { INVTYPE_2HWEAPON = true } },
-    { key = "RANGED",   label = INVTYPE_RU.INVTYPE_RANGED,         invTypes = { INVTYPE_RANGED = true, INVTYPE_RANGEDRIGHT = true } },
+    { key = "HEAD",     slotType = "INVTYPE_HEAD",     invTypes = { INVTYPE_HEAD = true } },
+    { key = "NECK",     slotType = "INVTYPE_NECK",     invTypes = { INVTYPE_NECK = true } },
+    { key = "SHOULDER", slotType = "INVTYPE_SHOULDER", invTypes = { INVTYPE_SHOULDER = true } },
+    { key = "BACK",     slotType = "INVTYPE_CLOAK",    invTypes = { INVTYPE_CLOAK = true } },
+    { key = "CHEST",    slotType = "INVTYPE_CHEST",    invTypes = { INVTYPE_CHEST = true, INVTYPE_ROBE = true } },
+    { key = "WRIST",    slotType = "INVTYPE_WRIST",    invTypes = { INVTYPE_WRIST = true } },
+    { key = "HANDS",    slotType = "INVTYPE_HAND",     invTypes = { INVTYPE_HAND = true } },
+    { key = "WAIST",    slotType = "INVTYPE_WAIST",    invTypes = { INVTYPE_WAIST = true } },
+    { key = "LEGS",     slotType = "INVTYPE_LEGS",     invTypes = { INVTYPE_LEGS = true } },
+    { key = "FEET",     slotType = "INVTYPE_FEET",     invTypes = { INVTYPE_FEET = true } },
+    { key = "FINGER",   slotType = "INVTYPE_FINGER",   invTypes = { INVTYPE_FINGER = true } },
+    { key = "TRINKET",  slotType = "INVTYPE_TRINKET",  invTypes = { INVTYPE_TRINKET = true } },
+    { key = "MAINHAND", slotType = "INVTYPE_WEAPONMAINHAND", invTypes = { INVTYPE_WEAPONMAINHAND = true, INVTYPE_WEAPON = true } },
+    { key = "OFFHAND",  slotType = "INVTYPE_WEAPONOFFHAND",  invTypes = { INVTYPE_WEAPONOFFHAND = true, INVTYPE_HOLDABLE = true, INVTYPE_SHIELD = true } },
+    { key = "TWOHAND",  slotType = "INVTYPE_2HWEAPON",       invTypes = { INVTYPE_2HWEAPON = true } },
+    { key = "RANGED",   slotType = "INVTYPE_RANGED",         invTypes = { INVTYPE_RANGED = true, INVTYPE_RANGEDRIGHT = true } },
 }
 
 -- Slots marked hidden are still ranked and sorted below (SlotRank walks the full
@@ -122,17 +108,7 @@ local ARMOR_SUBCLASSES = {
     { id = 3, label = "Кольчуга" },
     { id = 4, label = "Латы" },
 }
--- Same reason as INVTYPE_RU: LOCALIZED_CLASS_NAMES_MALE is whatever language the
--- client is installed in. Keys match the class tokens used in Data.lua.
-local CLASS_RU = {
-    WARRIOR = "Воин",             PALADIN = "Паладин",
-    HUNTER = "Охотник",           ROGUE = "Разбойник",
-    PRIEST = "Жрец",              DEATHKNIGHT = "Рыцарь смерти",
-    SHAMAN = "Шаман",             MAGE = "Маг",
-    WARLOCK = "Чернокнижник",     MONK = "Монах",
-    DRUID = "Друид",              DEMONHUNTER = "Охотник на демонов",
-    EVOKER = "Пробудитель",
-}
+-- Class names live in Locale.lua, same as slot names.
 
 -- key stays in English - it's compared against item.sourceType from Data.lua.
 -- Список должен покрывать ВСЕ значения sourceType из Data.lua. Не покрывал:
@@ -475,7 +451,8 @@ RoundedPanel(frame.titleBg, C.block, C.border)
 -- отрисовки задаётся не слоем, и подложка могла бы закрыть текст.
 frame.title = frame.titleBg:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 frame.title:SetPoint("TOP", frame.titleBg, "TOP", 0, -18)
-frame.title:SetText("ПОИСК ШМОТА ДЛЯ ТРИАЛА")
+frame.title:SetText(ns.L"ПОИСК ШМОТА ДЛЯ ТРИАЛА")
+ns.OnLocaleReady(function() frame.title:SetText(ns.L"ПОИСК ШМОТА ДЛЯ ТРИАЛА") end)
 frame.title:SetTextColor(C.text[1], C.text[2], C.text[3])
 
 ------------------------------------------------------------
@@ -584,7 +561,11 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
     end
     RoundedPanel(button, C.block2, C.borderSoft)
 
-    button.label = label
+    -- Подпись хранится по-русски: перевод берётся заново после загрузки настроек,
+    -- иначе выбранный в Параметрах язык не доехал бы до фильтров, собранных
+    -- при загрузке файла.
+    button.labelRU = label
+    button.label = ns.L(label)
     button.selectedKey = "ALL"
 
     button.text = button:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -592,7 +573,11 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
     button.text:SetPoint("RIGHT", button, "RIGHT", -22, 0)
     button.text:SetJustifyH("LEFT")
     button.text:SetTextColor(C.text2[1], C.text2[2], C.text2[3])
-    button.text:SetText(label .. ": Все")
+    button.text:SetText(button.label .. ns.L": Все")
+    ns.OnLocaleReady(function()
+        button.label = ns.L(button.labelRU)
+        if button.selectedKey == "ALL" then button.text:SetText(button.label .. ns.L": Все") end
+    end)
 
     button.arrow = button:CreateTexture(nil, "OVERLAY")
     button.arrow:SetTexture(ARROW_TEXTURE)
@@ -618,7 +603,7 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
 
     -- Пункты. Строятся один раз: наборы у нас фиксированные, слотов и классов
     -- в игре не прибавится.
-    local entries = { { key = "ALL", label = "Все" } }
+    local entries = { { key = "ALL", label = ns.L"Все" } }
     for _, option in ipairs(options) do
         table.insert(entries, { key = getKey(option), label = getLabel(option) })
     end
@@ -653,7 +638,7 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
         row:SetScript("OnLeave", function() highlight:Hide() end)
         row:SetScript("OnClick", function()
             button.selectedKey = entry.key
-            button.text:SetText(label .. ": " .. entry.label)
+            button.text:SetText(button.label .. ": " .. entry.label)
             CloseFilterMenu()
             onSelect(entry.key)
         end)
@@ -696,7 +681,7 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
     -- когда прячем колонки статов.
     function button:SetSelected(key)
         self.selectedKey = key or "ALL"
-        local caption = "Все"
+        local caption = ns.L"Все"
         for _, row in ipairs(menu.rows) do
             if row.entryKey == self.selectedKey then
                 caption = row.text:GetText()
@@ -717,12 +702,12 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
 end
 
 local slotDrop = CreateSelect("TrialGearFinderSlotDrop", nil, "Слот", VISIBLE_SLOT_DEFS,
-    function(o) return o.key end, function(o) return o.label end,
+    function(o) return o.key end, function(o) return ns.SlotName(o.slotType) end,
     function(key) filters.slot = key; RefreshResults() end)
 
 local classDrop = CreateSelect("TrialGearFinderClassDrop", slotDrop, "Класс", CLASS_SORT_ORDER,
     function(c) return c end,
-    function(c) return CLASS_RU[c] or (LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[c]) or c end,
+    function(c) return ns.ClassName(c) end,
     function(key) filters.class = key; RefreshResults() end)
 
 local armorDrop = CreateSelect("TrialGearFinderArmorDrop", classDrop, "Броня", ARMOR_SUBCLASSES,
@@ -2262,7 +2247,7 @@ local function BuildRowData(item)
     local qR, qG, qB, qualityHex = C_Item.GetItemQualityColor(quality)
     -- Armor material by numeric subclassID, slot by our own table: itemSubType and
     -- _G[equipLoc] are both client-localized and came out English on an EN client.
-    local slotLabel = INVTYPE_RU[equipLoc] or _G[equipLoc] or equipLoc
+    local slotLabel = ns.SlotName(equipLoc)
     local materialLabel
     if classID == ARMOR_CLASS_ID then
         for _, sub in ipairs(ARMOR_SUBCLASSES) do

@@ -11,6 +11,7 @@
 ## SavedVariables: TrialGearFinderDB, TwinkGearFinderDB
 ## SavedVariablesPerCharacter: TrialGearFinderCharDB
 
+Locale.lua
 Data.lua
 BiS_Community.lua
 Gems.lua
