@@ -194,7 +194,7 @@ local enUS = {
     ["Ctrl+щелчок - запомнить текущую метку для этого источника"] =
         "Ctrl-click to remember the current marker for this source",
     ["|cFFFFD100[TGF]|r Координаты для «%s» ещё не заданы."] =
-        "|cFFFFD100[TGF]|r No coordinates set for "%s" yet.",
+        "|cFFFFD100[TGF]|r No coordinates set for %s yet.",
     ["|cFFFFD100[TGF]|r Сначала поставь метку на карте (Ctrl+щелчок по карте), потом Ctrl+щелчок по источнику."] =
         "|cFFFFD100[TGF]|r Put a marker on the map first (Ctrl-click the map), then Ctrl-click the source.",
 
@@ -210,6 +210,8 @@ local enUS = {
     ["Английский"]         = "English",
     ["Язык окна и сообщений аддона. Смена языка применится после /reload."] =
         "Language of the addon window and messages. Takes effect after /reload.",
+    ["|cFFFFD100[TGF]|r Язык сохранён. Чтобы окно переключилось, сделай /reload."] =
+        "|cFFFFD100[TGF]|r Language saved. /reload to switch the window.",
 }
 
 -- Названия слотов на русском. На других языках берём их у самой игры
@@ -321,7 +323,9 @@ local function BuildOptions()
     if not (Settings and Settings.RegisterVerticalLayoutCategory) then return end
     local L = ns.L
 
-    local category = Settings.RegisterVerticalLayoutCategory("Trial Gear Finder")
+    -- Цвет имени во вкладке Параметры → Модификации. Это не Title из .toc:
+    -- список там строится из категории настроек. Cap20 красит так же.
+    local category = Settings.RegisterVerticalLayoutCategory("|cffc0c0c0Trial Gear Finder|r")
 
     -- Значение хранится строкой, а выпадающий список отдаёт номер: держим
     -- переходник, иначе в сохранённых настройках окажется «2» без смысла.
@@ -334,6 +338,7 @@ local function BuildOptions()
     local function SetValue(index)
         TrialGearFinderDB = TrialGearFinderDB or {}
         TrialGearFinderDB.locale = CHOICES[index] or "auto"
+        print(L"|cFFFFD100[TGF]|r Язык сохранён. Чтобы окно переключилось, сделай /reload.")
     end
 
     local setting = Settings.RegisterProxySetting(category, "TRIALGEARFINDER_LOCALE",

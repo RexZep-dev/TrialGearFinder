@@ -1,5 +1,5 @@
 ## Interface: 120007, 120100
-## Title: |cFF86C7BDTrial Gear Finder|r
+## Title: |cffc0c0c0Trial|r |cffc0c0c0Gear|r |cffc0c0c0Finder|r
 ## Notes: BiS gear finder for level 20 trial accounts - dungeon bosses, mobs, quests, world drops.
 ## Notes-ruRU: Поиск лучшего снаряжения для триалов 20 уровня.
 ## Author: RexZep

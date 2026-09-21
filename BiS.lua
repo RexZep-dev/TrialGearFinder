@@ -729,7 +729,9 @@ end
 --   [ДД]  → DAMAGER   [Танк] → TANK   [Хил] → HEALER
 -- Строки роли — как у GetSpecializationRoleByID, чтобы сравнивать напрямую.
 -- Пометка есть только у аксессуаров, у остальных вещей её нет и не нужно.
-local NOTE_ROLE = { [ns.L"[Танк]"] = "TANK", [ns.L"[ДД]"] = "DAMAGER", [ns.L"[Хил]"] = "HEALER" }
+-- Пометки в базе всегда русские: ключ не переводим, иначе на английском
+-- [Танк] в заметке не совпадёт с [Tank].
+local NOTE_ROLE = { ["[Танк]"] = "TANK", ["[ДД]"] = "DAMAGER", ["[Хил]"] = "HEALER" }
 local function NoteRole(item)
     local n = item.note or ""
     for tag, role in pairs(NOTE_ROLE) do
