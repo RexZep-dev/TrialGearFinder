@@ -88,14 +88,12 @@ local PRIO_NAMES = {
 -- Перечисление классов и спеков берётся у игры, а не пишется таблицей:
 -- список и порядок Blizzard меняет, а specID стабилен.
 -- ---------------------------------------------------------------------------
-local classNameCache = {}
 local function ClassName(classID)
-    if not classNameCache[classID] then
-        local info = C_CreatureInfo and C_CreatureInfo.GetClassInfo
-            and C_CreatureInfo.GetClassInfo(classID)
-        classNameCache[classID] = info and info.className or ("class " .. classID)
-    end
-    return classNameCache[classID]
+    local info = C_CreatureInfo and C_CreatureInfo.GetClassInfo
+        and C_CreatureInfo.GetClassInfo(classID)
+    local token = info and info.classFile
+    if token and ns.ClassName then return ns.ClassName(token) end
+    return info and info.className or ("class " .. classID)
 end
 
 local function AllClasses()
@@ -118,7 +116,9 @@ local function SpecsForClass(classID)
     end
     for i = 1, (GetNumSpecializationsForClassID(classID) or 0) do
         local id, name, _, icon = GetSpecializationInfoForClassID(classID, i)
-        if id then out[#out + 1] = { specID = id, name = name, icon = icon } end
+        if id then
+            out[#out + 1] = { specID = id, name = ns.SpecName and ns.SpecName(id) or name, icon = icon }
+        end
     end
     return out
 end
@@ -962,7 +962,7 @@ local function MakeSlotRow(parent, index, y)
                 GameTooltip:AddLine(ns.L"Источник: " .. ns.L(self.entry.source), 0.55, 0.78, 1, true)
             end
             if self.entry.note then
-                GameTooltip:AddLine(self.entry.note, 0.7, 0.7, 0.7, true)
+                GameTooltip:AddLine(ns.L(self.entry.note), 0.7, 0.7, 0.7, true)
             end
             -- Рекомендованные шестерёнки для Дракончика показывать отдельной
             -- строкой больше не нужно: они теперь вставлены в саму ссылку
@@ -1041,23 +1041,6 @@ local function RenderRow(row, slot, item, mark, gems, ench)
     mixin:ContinueOnItemLoad(function()
         if row.itemID ~= id then return end
         local label = mixin:GetItemName() or ("item:" .. id)
-        -- Предмет от сообщества, не из гайда главы гильдии. Разделяем два
-        -- случая: гайд слот не закрывает вовсе - или закрывает, но эта вещь
-        -- посчиталась лучше. Второе и есть ответ «что даёт комьюнити».
-        if communityId[id] then
-            if mark == "beat" then
-                label = label .. ns.L"  |cff5fd35fвыше гайда|r"
-            elseif mark == "gap" then
-                label = label .. ns.L"  |cff9a9a9aнет в гайде|r"
-            else
-                label = label .. ns.L"  |cff9a9a9aпред-BiS|r"
-            end
-        end
-        -- Тайм Волк: вещь только из недели Путешествий во времени. Отдельной
-        -- меткой, потому что это про доступность, а не про источник данных.
-        if ns.IsTimewalk(item) then
-            label = label .. ns.L"  |cff3fc7ebТайм Волк|r"
-        end
         row.valueFS:SetText(label)
         local q = mixin:GetItemQualityColor()
         if q then row.valueFS:SetTextColor(q.r, q.g, q.b) end

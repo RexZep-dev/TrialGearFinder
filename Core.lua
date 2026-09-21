@@ -29,10 +29,10 @@ local TWINK_LEVEL = 20
 -- Флаг НЕ отключает сверку в списке и /tgf scan - они работают всегда.
 local ENABLE_COMPARISON = false
 
--- Slot names live in Locale.lua: on a Russian client they come from our own
--- table, on any other client from the game itself (_G.INVTYPE_*). The label is
--- resolved when the row is drawn, because the saved language choice is not
--- loaded yet while this file runs.
+-- Slot names live in Locale.lua. They follow the addon language setting,
+-- not the client: otherwise English-on-Russian-client kept showing «Голова».
+-- The label is resolved when the row is drawn, because the saved language
+-- choice is not loaded yet while this file runs.
 local SLOT_DEFS = {
     { key = "HEAD",     slotType = "INVTYPE_HEAD",     invTypes = { INVTYPE_HEAD = true } },
     { key = "NECK",     slotType = "INVTYPE_NECK",     invTypes = { INVTYPE_NECK = true } },
@@ -575,10 +575,6 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
     button.text:SetJustifyH("LEFT")
     button.text:SetTextColor(C.text2[1], C.text2[2], C.text2[3])
     button.text:SetText(button.label .. ns.L": Все")
-    ns.OnLocaleReady(function()
-        button.label = ns.L(button.labelRU)
-        if button.selectedKey == "ALL" then button.text:SetText(button.label .. ns.L": Все") end
-    end)
 
     button.arrow = button:CreateTexture(nil, "OVERLAY")
     button.arrow:SetTexture(ARROW_TEXTURE)
@@ -639,7 +635,7 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
         row:SetScript("OnLeave", function() highlight:Hide() end)
         row:SetScript("OnClick", function()
             button.selectedKey = entry.key
-            button.text:SetText(button.label .. ": " .. entry.label)
+            button.text:SetText(button.label .. ": " .. row.text:GetText())
             CloseFilterMenu()
             onSelect(entry.key)
         end)
@@ -692,6 +688,16 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
         self.text:SetText(self.label .. ": " .. caption)
     end
 
+    ns.OnLocaleReady(function()
+        button.label = ns.L(button.labelRU)
+        if menu.rows[1] then menu.rows[1].text:SetText(ns.L"Все") end
+        for i, option in ipairs(options) do
+            local row = menu.rows[i + 1]
+            if row then row.text:SetText(getLabel(option)) end
+        end
+        button:SetSelected(button.selectedKey)
+    end)
+
     button:SetScript("OnEnter", function()
         button.arrow:SetVertexColor(C.warm[1], C.warm[2], C.warm[3])
     end)
@@ -734,6 +740,7 @@ header:SetHeight(20)
 local sortState = { key = nil, dir = "DESC" }
 local statFilter = {} -- statKey -> true; предмет должен иметь ВСЕ отмеченные статы
 local headerLabels = {} -- sortKey -> { fs = fontstring, text = base label text }
+local headerFontStrings = {} -- все подписи шапки, в том числе без сортировки
 -- Цвет невыбранной подписи колонки. Держим одним именем: раньше он стоял только
 -- внутри UpdateHeaderSortIndicators, а рождались подписи белыми от шрифта - и
 -- после первого же клика колонка сереет навсегда, вернуть белый неоткуда.
@@ -783,13 +790,17 @@ local function UpdateHeaderSortIndicators()
     end
 end
 
-local function AddHeaderLabel(x, width, text, justify, sortKey, fullName)
+local function AddHeaderLabel(x, width, ru, justify, sortKey, fullRU)
+    local text = ns.L(ru)
     local fs = header:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     fs:SetPoint("TOPLEFT", header, "TOPLEFT", x, 0)
     fs:SetWidth(width)
     fs:SetJustifyH(justify or "LEFT")
     fs:SetText(text)
     fs:SetTextColor(HEADER_COLOR[1], HEADER_COLOR[2], HEADER_COLOR[3])
+    fs._tgfRU = ru
+    fs._tgfFullRU = fullRU
+    headerFontStrings[#headerFontStrings + 1] = fs
 
     if sortKey then
         local arrow = header:CreateTexture(nil, "OVERLAY")
@@ -831,11 +842,11 @@ local function AddHeaderLabel(x, width, text, justify, sortKey, fullName)
         headerLabels[sortKey] = { fs = fs, text = text, arrow = arrow, justify = justify or "LEFT" }
     end
 
-    if fullName then
+    if fullRU then
         fs:EnableMouse(true)
         fs:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_TOP")
-            GameTooltip:AddLine(fullName)
+            GameTooltip:AddLine(ns.L(self._tgfFullRU or self._tgfRU))
             GameTooltip:Show()
         end)
         fs:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -861,16 +872,25 @@ local COL_VERS_X = COL_ISKUS_X + COL_STAT_W + COL_STAT_GAP
 local COL_SOURCE_X = COL_VERS_X + COL_STAT_W + 16
 local COL_SOURCE_W = ROW_WIDTH - COL_SOURCE_X - 10
 
-AddHeaderLabel(COL_NAME_X, COL_NAME_W, ns.L"Предмет", "LEFT")
-AddHeaderLabel(COL_STR_X, COL_STAT_W, ns.L"Сила", "CENTER", "str", ns.L"Сила")
-AddHeaderLabel(COL_AGI_X, COL_STAT_W, ns.L"Лов", "CENTER", "agi", ns.L"Ловкость")
-AddHeaderLabel(COL_INT_X, COL_STAT_W, ns.L"Инт", "CENTER", "int", ns.L"Интеллект")
-AddHeaderLabel(COL_STAM_X, COL_STAT_W, ns.L"Вын", "CENTER", "stam", ns.L"Выносливость")
-AddHeaderLabel(COL_CRIT_X, COL_STAT_W, ns.L"Крит", "CENTER", "crit", ns.L"Критический удар")
-AddHeaderLabel(COL_HASTE_X, COL_STAT_W, ns.L"Скор", "CENTER", "haste", ns.L"Скорость")
-AddHeaderLabel(COL_ISKUS_X, COL_STAT_W, ns.L"Иск", "CENTER", "iskus", ns.L"Искусность")
-AddHeaderLabel(COL_VERS_X, COL_STAT_W, ns.L"Уни", "CENTER", "vers", ns.L"Универсальность")
-AddHeaderLabel(COL_SOURCE_X, COL_SOURCE_W, ns.L"Источник", "CENTER", "source")
+AddHeaderLabel(COL_NAME_X, COL_NAME_W, "Предмет", "LEFT")
+AddHeaderLabel(COL_STR_X, COL_STAT_W, "Сила", "CENTER", "str", "Сила")
+AddHeaderLabel(COL_AGI_X, COL_STAT_W, "Лов", "CENTER", "agi", "Ловкость")
+AddHeaderLabel(COL_INT_X, COL_STAT_W, "Инт", "CENTER", "int", "Интеллект")
+AddHeaderLabel(COL_STAM_X, COL_STAT_W, "Вын", "CENTER", "stam", "Выносливость")
+AddHeaderLabel(COL_CRIT_X, COL_STAT_W, "Крит", "CENTER", "crit", "Критический удар")
+AddHeaderLabel(COL_HASTE_X, COL_STAT_W, "Скор", "CENTER", "haste", "Скорость")
+AddHeaderLabel(COL_ISKUS_X, COL_STAT_W, "Иск", "CENTER", "iskus", "Искусность")
+AddHeaderLabel(COL_VERS_X, COL_STAT_W, "Уни", "CENTER", "vers", "Универсальность")
+AddHeaderLabel(COL_SOURCE_X, COL_SOURCE_W, "Источник", "CENTER", "source")
+ns.OnLocaleReady(function()
+    for _, fs in ipairs(headerFontStrings) do
+        local text = ns.L(fs._tgfRU)
+        fs:SetText(text)
+        for _, entry in pairs(headerLabels) do
+            if entry.fs == fs then entry.text = text end
+        end
+    end
+end)
 
 ------------------------------------------------------------
 -- Scroll area + rows
@@ -1505,6 +1525,7 @@ local SOURCE_PINS = {
     ["Нексус"]                 = { 114, 28.7, 27.9 },  -- Борейская тундра, Нексус
     ["Окулус"]                 = { 114, 26.7, 27.5 },
     ["Азжол-Неруб"]            = { 115, 25.9, 50.9 },  -- Драконий Погост
+    ["Крепость Утгард"]        = { 117, 57.9, 49.7 },  -- Ревущий фьорд
     ["Кузня Душ"]              = { 118, 54.9, 89.8 },  -- Ледяная Корона
     ["Яма Сарона"]             = { 118, 54.6, 91.9 },
     -- Дренор
@@ -1520,9 +1541,19 @@ local SOURCE_PINS = {
     ["Логово Нелтариона"]      = { 650, 49.7, 68.6 },  -- Крутогорье
     -- Кул-Тирас
     ["Усадьба Уэйкрестов"]     = { 896, 33.9, 12.6 },  -- Друствар
+    -- ЗОЛОТАЯ ЖИЛА!!!: два входа, оба сняты в игре 21 сентября на карте 862
+    -- (Зулдазар). Щелчок ставит точку своей фракции.
+    -- /tgf pin жила альянс  и  /tgf pin жила орда — с любого персонажа.
+    ["ЗОЛОТАЯ ЖИЛА!!!"]        = {
+        Alliance = { 862, 39.3, 71.6 },
+        Horde    = { 862, 56.1, 59.9 },
+    },
+    -- Зандалар
+    ["Храм Сетралисс"]         = { 864, 52.0, 25.5 },  -- Вол'дун
     -- Тёмные земли
     ["Чумные каскады"]         = { 1536, 59.5, 65.0 }, -- Малдраксус
     ["Мгла Тирна Скитта"]      = { 1565, 35.6, 54.2 }, -- Арденвельд
+    ["Смертельная тризна"]     = { 1533, 40.1, 55.3 }, -- Бастион
     -- Драконьи острова
     ["Лазурные Врата"]         = { 1978, 47.5, 82.8 },
     ["Наступление Нохуда"]     = { 2023, 60.8, 39.3 }, -- Равнины Охн'арана
@@ -1560,6 +1591,7 @@ local SOURCE_PINS = {
     ["item:160958"] = { 862, 65.2, 10.2 }, -- Темноуст Джола, Зулдазар
     ["item:160978"] = { 862, 42.2, 36.1 }, -- Хакби Восставший, Зулдазар
     ["item:160984"] = { 862, 68.7, 48.8 }, -- Кандак, Зулдазар
+    ["item:161113"] = { 863, 67.7, 29.6 }, -- Древний зуболом, Назмир
 }
 
 -- The same clickable link the game itself posts for a map pin: clicking it sets
@@ -1581,19 +1613,60 @@ local function PinKey(sourceType, itemID, source)
     return source
 end
 
+-- У Золотой жилы два входа на разных материках. Ключ один, внутри — сторона
+-- персонажа, как её отдаёт UnitFactionGroup: "Alliance" / "Horde".
+local function PinIsFactionSplit(source)
+    return source == "ЗОЛОТАЯ ЖИЛА!!!"
+end
+
+local function LookupPin(key)
+    local saved = TrialGearFinderDB and TrialGearFinderDB.pins and TrialGearFinderDB.pins[key]
+    local baked = SOURCE_PINS[key]
+    if PinIsFactionSplit(key) then
+        local side = playerFaction
+        if not side then return nil end
+        if saved and type(saved[1]) ~= "number" and saved[side] then return saved[side] end
+        if baked and baked[side] then return baked[side] end
+        -- Старый плоский снимок, пока обе стороны не сняты по отдельности.
+        if saved and type(saved[1]) == "number" then return saved end
+        return nil
+    end
+    return saved or baked
+end
+
+local function StoreCapturedPin(key, mapID, x, y, side)
+    TrialGearFinderDB = TrialGearFinderDB or {}
+    TrialGearFinderDB.pins = TrialGearFinderDB.pins or {}
+    local saved = TrialGearFinderDB.pins
+    if PinIsFactionSplit(key) then
+        side = side or playerFaction
+        if not side then return false end
+        local bucket = saved[key]
+        if type(bucket) ~= "table" or type(bucket[1]) == "number" then
+            bucket = {}
+        end
+        bucket[side] = { mapID, x, y }
+        saved[key] = bucket
+        return true
+    end
+    saved[key] = { mapID, x, y }
+    return true
+end
+
 local function SetSourceWaypoint(sourceName, sourceType, itemID)
     if not sourceName or sourceName == "" then return end
     local key = PinKey(sourceType, itemID, sourceName)
 
     -- Pins captured in game (Ctrl-click) win over the ones baked into this file.
-    local saved = TrialGearFinderDB and TrialGearFinderDB.pins
-    local pin = (saved and saved[key]) or SOURCE_PINS[key]
+    local pin = LookupPin(key)
     if not pin then
         -- В подземелья Путешествия во времени со входа не зайти: они открыты
         -- только в неделю события и собираются через поиск подземелий. Метка
         -- на карте им не нужна, и «координаты не заданы» тут сбивало бы с толку.
         if sourceName:find(TIMEWALKING_MARK, 1, true) then
             print(ns.L"|cFFFFD100[TGF]|r Путешествие во времени: вход только через поиск подземелий, в неделю события.")
+        elseif PinIsFactionSplit(key) then
+            print(string.format(ns.L"|cFFFFD100[TGF]|r Для «%s» вход вашей фракции ещё не снят. Метка на входе, потом /tgf pin жила орда  или  /tgf pin жила альянс.", ns.L(sourceName)))
         else
             print(string.format(ns.L"|cFFFFD100[TGF]|r Координаты для «%s» ещё не заданы.", ns.L(sourceName)))
         end
@@ -1639,13 +1712,18 @@ local function SaveSourceWaypoint(sourceName, sourceType, itemID)
         return
     end
 
-    TrialGearFinderDB = TrialGearFinderDB or {}
-    TrialGearFinderDB.pins = TrialGearFinderDB.pins or {}
-    TrialGearFinderDB.pins[key] = { point.uiMapID, point.position.x * 100, point.position.y * 100 }
-    print(string.format(ns.L"|cFFFFD100[TGF]|r Запомнено: %s = %s", ns.L(sourceName),
-        WaypointLink(point.uiMapID, point.position.x * 100, point.position.y * 100,
-            string.format(ns.L"карта %d: %.1f, %.1f", point.uiMapID,
-                point.position.x * 100, point.position.y * 100))))
+    local mapID = point.uiMapID
+    local x, y = point.position.x * 100, point.position.y * 100
+    if not StoreCapturedPin(key, mapID, x, y) then return end
+    local label = ns.L(sourceName)
+    if PinIsFactionSplit(key) and playerFaction == "Alliance" then
+        label = label .. " (" .. ns.L"Альянс" .. ")"
+    elseif PinIsFactionSplit(key) and playerFaction == "Horde" then
+        label = label .. " (" .. ns.L"Орда" .. ")"
+    end
+    print(string.format(ns.L"|cFFFFD100[TGF]|r Запомнено: %s = %s", label,
+        WaypointLink(mapID, x, y,
+            string.format(ns.L"карта %d: %.1f, %.1f", mapID, x, y))))
 end
 
 local function CreateRow(index)
@@ -1987,7 +2065,7 @@ local function CreateRow(index)
         local srcColor = (data.sourceType == "World") and C.silver or C.gold
         self.source:SetTextColor(srcColor[1], srcColor[2], srcColor[3], 1)
         self.srcColor = srcColor -- тем же цветом источник пишется и в подсказке
-        self.sourceboss:SetText(data.sourceboss or "")
+        self.sourceboss:SetText(data.sourceboss and ns.L(data.sourceboss) or "")
         -- Галочка только у рарников и сокровищ (sourceType == "World"): они берутся
         -- раз в день или раз на персонажа, и есть смысл помнить, где уже был.
         -- Подземелья ходятся сколько угодно, там отмечать нечего.
@@ -2465,9 +2543,7 @@ local function BuildRowData(item)
 
     return {
         icon = icon,
-        name = string.format("|c%s%s|r", qualityHex, name)
-            .. (ns_CommunityID[item.itemID] and "  |cff9a9a9aпред-BiS|r" or "")
-            .. (ns.IsTimewalk(item) and "  |cff3fc7ebТайм Волк|r" or ""),
+        name = string.format("|c%s%s|r", qualityHex, name),
         rawName = name,
         community = ns_CommunityID[item.itemID] or nil,
         qualityColor = { qR or 1, qG or 1, qB or 1 },
@@ -2489,8 +2565,7 @@ local function BuildRowData(item)
         -- Номер карты из метки: по нему рарники группируются по зонам.
         mapID = (function()
             local key = PinKey(item.sourceType, item.itemID, item.source)
-            local saved = TrialGearFinderDB and TrialGearFinderDB.pins
-            local pin = (saved and saved[key]) or SOURCE_PINS[key]
+            local pin = LookupPin(key)
             return pin and pin[1] or 9999
         end)(),
         str = stats.str,
@@ -3072,6 +3147,7 @@ SLASH_TRIALGEARFINDER1 = "/tgf"
 --
 -- scan и gems наружу оставлены намеренно: по ним пользователи присылают
 -- отчёты о расхождениях, а это главный источник исправлений базы.
+-- /tgf pin тоже снаружи: метки собирает человек в игре, это не отладка.
 local DEV_ONLY = { debug = true, ui = true, names = true, pins = true }
 
 SlashCmdList["TRIALGEARFINDER"] = function(msg)
@@ -3083,8 +3159,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         return
     end
     if not (TrialGearFinderDB and TrialGearFinderDB.dev) then
-        -- pin с именем подземелья тоже сюда: /tgf pin, /tgf pin сетекк.
-        if DEV_ONLY[msg] or msg:match("^pin") then
+        if DEV_ONLY[msg] then
             print("|cFFFFD100[TGF]|r Неизвестная команда.")
             return
         end
@@ -3273,20 +3348,34 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         local names = {}
         for name in pairs(saved) do table.insert(names, name) end
         table.sort(names)
+        local function NoteForItemKey(id)
+            local function from(list)
+                for _, item in ipairs(list or {}) do
+                    if tostring(item.itemID) == id and item.note then return item.note end
+                end
+            end
+            return from(ns.Items) or from(ns.CommunityItems) or ""
+        end
         for _, name in ipairs(names) do
             local p = saved[name]
-            -- item: keys mean nothing on their own, so name the mob next to them
             local comment = ""
             local id = name:match("^item:(%d+)$")
             if id then
-                for _, item in ipairs(ns.Items) do
-                    if tostring(item.itemID) == id and item.note then
-                        comment = " -- " .. item.note
-                        break
-                    end
-                end
+                local note = NoteForItemKey(id)
+                if note ~= "" then comment = " -- " .. note end
             end
-            print(string.format([[    ["%s"] = { %d, %.1f, %.1f },%s]], name, p[1], p[2], p[3], comment))
+            if p.Alliance or p.Horde then
+                print(string.format([[    ["%s"] = {]], name))
+                if p.Alliance then
+                    print(string.format([[        Alliance = { %d, %.1f, %.1f },]], p.Alliance[1], p.Alliance[2], p.Alliance[3]))
+                end
+                if p.Horde then
+                    print(string.format([[        Horde    = { %d, %.1f, %.1f },]], p.Horde[1], p.Horde[2], p.Horde[3]))
+                end
+                print("    },")
+            else
+                print(string.format([[    ["%s"] = { %d, %.1f, %.1f },%s]], name, p[1], p[2], p[3], comment))
+            end
         end
         return
     end
@@ -3306,19 +3395,35 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         if pinName == "" then
             print(string.format(ns.L"|cFFFFD100[TGF]|r Текущая метка: карта %d, %.1f, %.1f", mapID, x, y))
             print(ns.L"|cFFFFD100[TGF]|r Привязать: /tgf pin <часть названия подземелья>")
+            print(ns.L"|cFFFFD100[TGF]|r Два входа Жилы: /tgf pin жила орда  или  /tgf pin жила альянс")
             return
         end
 
         -- Partial match, so "/tgf pin сетекк" is enough. But "стратхольм" matches
         -- three different dungeons, and silently taking the first one wrote the
         -- wrong coordinates once already - so ask instead of guessing.
+        -- Хвост «орда» / «альянс» задаёт сторону входа у Жилы, без смены персонажа.
         local needle = FoldCase(pinName)
+        local forcedSide
+        if needle:match("%sорда$") or needle:match("%shorde$") then
+            forcedSide = "Horde"
+            needle = needle:gsub("%s+орда$", ""):gsub("%s+horde$", "")
+        elseif needle:match("%sальянс$") or needle:match("%salliance$") then
+            forcedSide = "Alliance"
+            needle = needle:gsub("%s+альянс$", ""):gsub("%s+alliance$", "")
+        end
+        if needle == "" then
+            print(ns.L"|cFFFFD100[TGF]|r Укажи сторону: /tgf pin жила орда  или  /tgf pin жила альянс")
+            return
+        end
         local matches, seen = {}, {}
 
         -- Dungeons match on the source name. Rare mobs have no source of their own
         -- (all share one category string), so they match on the note instead -
         -- "/tgf pin дикобраз" finds "падает с Дикобраз-матриарх в Друстваре".
-        for _, item in ipairs(ns.Items) do
+        -- Community items live in a second table; without it /tgf pin silently
+        -- missed every dungeon that is only in BiS_Community.lua.
+        local function consider(item)
             local src, isDungeon = item.source, item.sourceType == "Dungeon"
             -- Dungeons are named by their source; everything else (rares, treasures,
             -- quest drops) is recognised by its note, which is where the actual
@@ -3332,6 +3437,8 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
                 table.insert(matches, { key = key, label = label })
             end
         end
+        for _, item in ipairs(ns.Items) do consider(item) end
+        for _, item in ipairs(ns.CommunityItems or {}) do consider(item) end
 
         -- An exact name always wins over the ones merely containing it.
         for _, m in ipairs(matches) do
@@ -3351,11 +3458,20 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
             return
         end
         local matched = matches[1]
+        if PinIsFactionSplit(matched.key) and not forcedSide and not playerFaction then
+            print(ns.L"|cFFFFD100[TGF]|r Укажи сторону: /tgf pin жила орда  или  /tgf pin жила альянс")
+            return
+        end
 
-        TrialGearFinderDB = TrialGearFinderDB or {}
-        TrialGearFinderDB.pins = TrialGearFinderDB.pins or {}
-        TrialGearFinderDB.pins[matched.key] = { mapID, x, y }
-        print(string.format(ns.L"|cFFFFD100[TGF]|r Запомнено: %s = карта %d, %.1f, %.1f", ns.L(matched.label), mapID, x, y))
+        if not StoreCapturedPin(matched.key, mapID, x, y, forcedSide) then return end
+        local storedSide = forcedSide or playerFaction
+        local label = ns.L(matched.label)
+        if PinIsFactionSplit(matched.key) and storedSide == "Alliance" then
+            label = label .. " (" .. ns.L"Альянс" .. ")"
+        elseif PinIsFactionSplit(matched.key) and storedSide == "Horde" then
+            label = label .. " (" .. ns.L"Орда" .. ")"
+        end
+        print(string.format(ns.L"|cFFFFD100[TGF]|r Запомнено: %s = карта %d, %.1f, %.1f", label, mapID, x, y))
         return
     end
 

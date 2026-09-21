@@ -178,11 +178,13 @@ local enUS = {
     ["Путешествие во времени: Катаклизм"] = "Timewalking: Cataclysm",
     ["Путешествие во времени: Пандария"] = "Timewalking: Pandaria",
     ["Равнины Он'ары"] = "Ohn'ahran Plains",
-    ["Смертельная тризна"] = "De Other Side",
+    ["Смертельная тризна"] = "The Necrotic Wake",
     ["Танаанские джунгли"] = "Tanaan Jungle",
     ["Театр Боли"] = "Theater of Pain",
     ["Ульдаман: наследие Тира"] = "Uldaman: Legacy of Tyr",
     ["Чертоги Покаяния"] = "Halls of Atonement",
+    ["ЗОЛОТАЯ ЖИЛА!!!"] = "The MOTHERLODE!!",
+    ["Храм Сетралисс"] = "Temple of Sethraliss",
     ["Зул'Драк — задание «Чемпион Амфитеатра Страданий»"] = "Zul'Drak - quest 'Champion of the Amphitheater'",
     ["Задание «Битва за Расколотый берег» — только Альянс"] = "Quest 'Battle for the Broken Shore' - Alliance only",
     ["Крафт (аукцион)"] = "Crafted (auction house)",
@@ -195,6 +197,10 @@ local enUS = {
         "Ctrl-click to remember the current marker for this source",
     ["|cFFFFD100[TGF]|r Координаты для «%s» ещё не заданы."] =
         "|cFFFFD100[TGF]|r No coordinates set for %s yet.",
+    ["|cFFFFD100[TGF]|r Для «%s» вход вашей фракции ещё не снят. Метка на входе, потом /tgf pin жила орда  или  /tgf pin жила альянс."] =
+        "|cFFFFD100[TGF]|r No entrance for your faction on %s yet. Pin the entrance, then /tgf pin жила орда or /tgf pin жила альянс.",
+    ["Альянс"] = "Alliance",
+    ["Орда"] = "Horde",
     ["|cFFFFD100[TGF]|r Сначала поставь метку на карте (Ctrl+щелчок по карте), потом Ctrl+щелчок по источнику."] =
         "|cFFFFD100[TGF]|r Put a marker on the map first (Ctrl-click the map), then Ctrl-click the source.",
 
@@ -316,6 +322,10 @@ local enUS = {
         "|cFFFFD100[TGF]|r Current pin: map %d, %.1f, %.1f",
     ["|cFFFFD100[TGF]|r Привязать: /tgf pin <часть названия подземелья>"] =
         "|cFFFFD100[TGF]|r Bind it: /tgf pin <part of the dungeon name>",
+    ["|cFFFFD100[TGF]|r Два входа Жилы: /tgf pin жила орда  или  /tgf pin жила альянс"] =
+        "|cFFFFD100[TGF]|r Motherlode has two entrances: /tgf pin жила орда or /tgf pin жила альянс",
+    ["|cFFFFD100[TGF]|r Укажи сторону: /tgf pin жила орда  или  /tgf pin жила альянс"] =
+        "|cFFFFD100[TGF]|r Say which side: /tgf pin жила орда or /tgf pin жила альянс",
     ["|cFFFFD100[TGF]|r Источник со словом «%s» в базе не найден."] =
         "|cFFFFD100[TGF]|r No source containing %s in the database.",
     ["|cFFFFD100[TGF]|r Подходит несколько, уточни (%d):"] =
@@ -370,11 +380,244 @@ local enUS = {
         "# written for max level. On some specs at 20 it barely presses",
     ["# приёмы, у других работает — цифре верить с оглядкой."] =
         "# abilities, on others it works — treat the number with caution.",
+
+    -- Классы и спеки. Игра отдаёт их на языке клиента, а настройка аддона
+    -- может быть другой: на русском клиенте с «Английский» клиентские имена
+    -- остаются русскими. Свои таблицы — чтобы выбор в Параметрах работал.
+    ["Воин"] = "Warrior",
+    ["Паладин"] = "Paladin",
+    ["Охотник"] = "Hunter",
+    ["Разбойник"] = "Rogue",
+    ["Жрец"] = "Priest",
+    ["Рыцарь смерти"] = "Death Knight",
+    ["Шаман"] = "Shaman",
+    ["Маг"] = "Mage",
+    ["Чернокнижник"] = "Warlock",
+    ["Монах"] = "Monk",
+    ["Друид"] = "Druid",
+    ["Охотник на демонов"] = "Demon Hunter",
+    ["Пробудитель"] = "Evoker",
+    ["Оружие"] = "Arms",
+    ["Неистовство"] = "Fury",
+    ["Защита"] = "Protection",
+    ["Повелитель зверей"] = "Beast Mastery",
+    ["Стрельба"] = "Marksmanship",
+    ["Выживание"] = "Survival",
+    ["Воздаяние"] = "Retribution",
+    ["Свет"] = "Holy",
+    ["Ликвидация"] = "Assassination",
+    ["Головорез"] = "Outlaw",
+    ["Скрытность"] = "Subtlety",
+    ["Послушание"] = "Discipline",
+    ["Тьма"] = "Shadow",
+    ["Нечестивость"] = "Unholy",
+    ["Лёд"] = "Frost",
+    ["Лед"] = "Frost",
+    ["Кровь"] = "Blood",
+    ["Колдовство"] = "Affliction",
+    ["Демонология"] = "Demonology",
+    ["Разрушение"] = "Destruction",
+    ["Танцующий с ветром"] = "Windwalker",
+    ["Ткач туманов"] = "Mistweaver",
+    ["Хмелевар"] = "Brewmaster",
+    ["Баланс"] = "Balance",
+    ["Сила зверя"] = "Feral",
+    ["Страж"] = "Guardian",
+    ["Исцеление"] = "Restoration",
+    ["Истребление"] = "Havoc",
+    ["Месть"] = "Vengeance",
+    ["Пожиратель"] = "Devourer",
+    ["Опустошитель"] = "Devastation",
+    ["Хранитель"] = "Preservation",
+    ["Насыщатель"] = "Augmentation",
+    ["Огонь"] = "Fire",
+    ["Тайная магия"] = "Arcane",
+    ["Стихии"] = "Elemental",
+    ["Совершенствование"] = "Enhancement",
+
+    -- Заметки предметов из гайда. Ключ — как в базе, русская строка.
+    ["[ДД] падает с Древний зуболом в Назмире; Беспрерывно тикающие часы: аксессуар со всеми основными статами разом (в рейтинге ×8)"] = "[DPS] drops from Ancient Jawbreaker in Nazmir; Incessantly Ticking Clock: trinket with all primary stats at once (ranked logs ×8)",
+    ["[ДД] Карта Таро Пророчества: три вторички разом - крит, универсальность, искусность. Уникальная использующаяся"] = "[DPS] Prophetic Tarot: three secondaries at once - crit, vers, mastery. Unique-equipped on-use",
+    ["[ДД] Клык Расте: три вторички разом - крит, скорость, искусность. Падает с рарника, раз в день"] = "[DPS] Fang of Tast: three secondaries at once - crit, haste, mastery. Daily rare",
+    ["[ДД] Обузданный огонь: три вторички разом - крит, универсальность, искусность. Падает с рарника, раз в день"] = "[DPS] Tamed Flame: three secondaries at once - crit, vers, mastery. Daily rare",
+    ["[ДД] аналог Рога талбука, с квеста"] = "[DPS] quest version of Talbuk Horn",
+    ["[ДД] падает с Сиамата (Затерянный город Тол'вир); Благоволение Тиа (Tia's Grace): атаки дают +1 ловкости на 15 сек., до 10 раз. Тир 32"] = "[DPS] drops from Siamat (Lost City of the Tol'vir); Tia's Grace: attacks grant +1 Agility for 15 sec, stacks to 10. Tier 32",
+    ["[ДД] падает с Эрудакса, Повелителя Глубин; Буря теней: интеллект копится от урона периодикой, до 20 стаков"] = "[DPS] drops from Erudax, the Duke of Below; Storm of Shadows: Intellect stacks from DoT damage, up to 20",
+    ["[ДД] последовательное накопление основной характеристики"] = "[DPS] stacks primary stat over time",
+    ["[ДД] хорошая прожимка на интеллект"] = "[DPS] strong on-use Intellect",
+    ["[ДД] хорошая прожимка на силу заклинаний"] = "[DPS] strong on-use spell power",
+    ["[ДД] хороший прок ловкости; рарник, убивать В РЕЖИМЕ ИСТОРИИ"] = "[DPS] strong Agility proc; rare, kill in STORY MODE",
+    ["[ДД] хороший прок силы, с сокровища"] = "[DPS] strong Strength proc, from a treasure",
+    ["[Танк] нишевая смесь Квинтэссенции и Скаломола"] = "[Tank] niche mix of Quintessence and Rumbling Mountain",
+    ["[Танк] пассивно снижает получаемый урон, очень хороша на аое запулах"] = "[Tank] passively reduces damage taken, excellent on AoE pulls",
+    ["[Танк] прожимка, снижающая получаемый урон"] = "[Tank] on-use that reduces damage taken",
+    ["[Танк] сильно увеличивает запас здоровья; нужно засумониться в данж 30 уровня"] = "[Tank] large health bump; need a summon into a level-30 dungeon",
+    ["[Танк] спасает от критического урона"] = "[Tank] saves you from burst damage",
+    ["[Хил] падает с Эрудакса, Повелителя Глубин; Оскверненная яичная скорлупа: по использованию щит на союзника 2809 + возврат маны"] = "[Healer] drops from Erudax, the Duke of Below; Corrupted Egg Shell: on-use shield on an ally 2809 + mana return",
+    ["[Хил] реген маны"] = "[Healer] mana regen",
+    ["Бадья: кольцо на универсальность/искусность. Тир 32"] = "Bucket: ring, vers/mastery. Tier 32",
+    ["Бусы предков Укхел: шея на скорость/искусность (слепок, ×4; была удалена)"] = "Ukhel Ancestry Beads: neck, haste/mastery (snapshot ×4; was removed)",
+    ["Двойной клинок мастерства: кинжал разбойника, обе руки (от сообщества)"] = "Twinblade of Mastery: rogue dagger, both hands (community)",
+    ["Драгоценная петля из кровошипа: кольцо со всеми статами и универсальностью, с Горума (слепок, ×17)"] = "Bloodthorn Loop: ring with all stats and vers, from Goruk (snapshot ×17)",
+    ["Кинжал штормградского бойца авангарда: награда за задание, только Альянс, с 10 ур. (от сообщества)"] = "Stormwind Vanguard Fighter's Dagger: quest reward, Alliance only, from level 10 (community)",
+    ["Кольцо антии (Anthia's Ring): на крит/искусность. Тир 32"] = "Anthia's Ring: crit/mastery. Tier 32",
+    ["Кольцо великого кита: на универсальность. Тир 32"] = "Great Whale Ring: vers. Tier 32",
+    ["Кольцо наутилуса (Nautilus Ring): на крит/скорость. Тир 32"] = "Nautilus Ring: crit/haste. Tier 32",
+    ["падает с Платного разгонятеля толпы; Кольцо чемпиона по футбомбометанию: на скорость/искусность (в рейтинге ×19)"] = "drops from Coin-Operated Crowd Pummeler; Footbomb Championship Ring: haste/mastery (ranked logs ×19)",
+    ["Кольцо череподробителя (Skullcracker Ring): на крит/искусность. Тир 32"] = "Skullcracker Ring: crit/mastery. Tier 32",
+    ["Комендантский медальон наваждения: шея на универсальность/искусность (слепок, ×7; была удалена)"] = "Haunting Commander's Medallion: neck, vers/mastery (snapshot ×7; was removed)",
+    ["Магнит на кристальной цепи (Crystal-Chained Lodestone): шея на крит/скорость. Тир 32"] = "Crystal-Chained Lodestone: neck, crit/haste. Tier 32",
+    ["падает с Полководца Калитреша; Наплечники Лунной поляны: кожаные плечи на версу, два гнезда (в рейтинге ×8)"] = "drops from Warlord Kalithresh; Moonglade Shoulders: leather shoulders, vers, two sockets (ranked logs ×8)",
+    ["падает с Гюрзиса и Аспидиса; Обоюдоострое копье: двуручное на ловкость, Путешествие во времени, ilvl 26 (логи, x98)"] = "drops from Adderis and Aspix; Twin-Strike Polearm: Agility two-hander, Timewalking, ilvl 26 (logs, x98)",
+    ["Окованная железом подвеска (Ironshell Pendant): шея на скорость. Тир 32"] = "Ironshell Pendant: neck, haste. Tier 32",
+    ["Перстень из розового кварца (Rose Quartz Band): на крит. Тир 32"] = "Rose Quartz Band: crit. Tier 32",
+    ["Перстень перевоплощения: на скорость/искусность. Тир 32"] = "Transmogrification Band: haste/mastery. Tier 32",
+    ["Подвеска из ракушечника (Barnacle Pendant): шея на крит/скорость. Тир 32"] = "Barnacle Pendant: neck, crit/haste. Tier 32",
+    ["Подвеска из рыбы-иглы (Pipefish Cord): шея на скорость/искусность. Тир 32"] = "Pipefish Cord: neck, haste/mastery. Tier 32",
+    ["Подвеска несущего волны (Carrier Wave Pendant): шея на скорость/искусность. Тир 32"] = "Carrier Wave Pendant: neck, haste/mastery. Tier 32",
+    ["Подвеска погруженного во тьму грота (Pendant of the Lightless Grotto): шея на искусность. Тир 32"] = "Pendant of the Lightless Grotto: neck, mastery. Tier 32",
+    ["Почерневшее костяное ожерелье (Blackened Bone Necklace): шея на крит. Тир 32"] = "Blackened Bone Necklace: neck, crit. Tier 32",
+    ["Почти лучшая заточка Водина: кинжал, награда за задание, обе фракции, с 20 ур. (от сообщества)"] = "Near-best Wodin's Dagger: quest reward, both factions, from level 20 (community)",
+    ["Разорванное ожерелье из земляного камня (Fractured Earthstone Necklace): шея на универсальность. Тир 32"] = "Fractured Earthstone Necklace: neck, vers. Tier 32",
+    ["падает с Налтора Криоманта; Ритуальный перстень командира: кольцо на крит/универсальность (в рейтинге ×16)"] = "drops from Nalthor the Rimebinder; Ritual Commander's Ring: crit/vers (ranked logs ×16)",
+    ["Ртутный амулет (Quicksilver Amulet): шея на скорость/универсальность. Тир 32; по Wowhead ловится удочкой в Пещерах Черной Горы — не проверено"] = "Quicksilver Amulet: neck, haste/vers. Tier 32; Wowhead says fished in Blackrock Caverns - not verified",
+    ["Сплетенные нереиды (Entwined Nereis): кольцо на универсальность. Тир 32"] = "Entwined Nereis: ring, vers. Tier 32",
+    ["Фамильная печать Сильверлейнов: кольцо на скорость/универсальность, без гнезда"] = "Silverlaine Family Seal: ring, haste/vers, no socket",
+    ["Фосфоресцирующее кольцо (Phosphorescent Ring): на универсальность. Тир 32"] = "Phosphorescent Ring: vers. Tier 32",
+    ["падает с Ингвара Расхителя; Шлем расхитителя: кольчужная голова на крит/скорость, два гнезда (в рейтинге ×8)"] = "drops from Ingvar the Plunderer; Plunderer's Helmet: mail head, crit/haste, two sockets (ranked logs ×8)",
+    ["Щедро изукрашенное кольцо (Lavishly Jeweled Ring): на крит/скорость. Тир 32; в гильдии носят и обычную копию 23-26 уровня"] = "Lavishly Jeweled Ring: crit/haste. Tier 32; guild also wears the regular 23-26 copy",
+    ["аналог бивня на прожим искусности"] = "tusk analog, on-use mastery",
+    ["бисовая кожаная голова для критовиков (1/2 сета Странника пустошей)"] = "BiS leather helm for crit builds (1/2 Wastelander set)",
+    ["бисовая тканевая грудь с выносливостью"] = "BiS cloth chest with Stamina",
+    ["бисовая тканевая грудь с интеллектом"] = "BiS cloth chest with Intellect",
+    ["бисовые кожаные наручи"] = "BiS leather bracers",
+    ["бисовые кожаные плечи"] = "BiS leather shoulders",
+    ["бисовые кожаные поножи"] = "BiS leather legs",
+    ["бисовые кольчужные наручи"] = "BiS mail bracers",
+    ["бисовые кольчужные плечи"] = "BiS mail shoulders",
+    ["бисовые кольчужные поножи"] = "BiS mail legs",
+    ["бисовые кольчужные руки"] = "BiS mail gloves",
+    ["бисовые латные наручи"] = "BiS plate bracers",
+    ["бисовые латные плечи"] = "BiS plate shoulders",
+    ["бисовые латные поножи"] = "BiS plate legs",
+    ["бисовые латные руки"] = "BiS plate gloves",
+    ["бисовые латные сапоги"] = "BiS plate boots",
+    ["бисовые тканевые наручи на скорость"] = "BiS cloth bracers, haste",
+    ["бисовые тканевые наручи на универсальность"] = "BiS cloth bracers, vers",
+    ["бисовые тканевые ноги с силой заклинаний"] = "BiS cloth legs with spell power",
+    ["бисовые тканевые плечи"] = "BiS cloth shoulders",
+    ["бисовые тканевые поножи с выносливостью"] = "BiS cloth legs with Stamina",
+    ["бисовые тканевые ступни"] = "BiS cloth boots",
+    ["бисовый кожаный нагрудник"] = "BiS leather chest",
+    ["бисовый кожаный пояс"] = "BiS leather belt",
+    ["бисовый кольчужный нагрудник"] = "BiS mail chest",
+    ["бисовый кольчужный пояс"] = "BiS mail belt",
+    ["бисовый кольчужный шлем"] = "BiS mail helm",
+    ["бисовый латный нагрудник"] = "BiS plate chest",
+    ["бисовый латный ремень"] = "BiS plate belt",
+    ["бисовый латный шлем с особым гнездом"] = "BiS plate helm with a meta socket",
+    ["бисовый лук за цепочку Хеминга Эрнестуэя, вторичек вдвое больше, чем у других пушек"] = "BiS bow from Hemet Nesingwary's questline, twice the secondaries of other guns",
+    ["бисовый тканевый шлем"] = "BiS cloth helm",
+    ["вторая часть \"манасета\", нужен хилам для регена маны"] = "second piece of the \"mana set\", healers need it for mana regen",
+    ["за квест здесь дают начальный грудак для латников Защитник наместника"] = "quest here gives plate starters the Exarch's Protector chest",
+    ["забавный латный шлем для контроля противника в PvP"] = "fun plate helm for PvP crowd control",
+    ["здесь за квест дают бисовые сапоги на кольчугу Аукенайские сапоги и временные латы Скованные Ша'тар наголенники"] = "quest here gives BiS mail Auchenai Boots and temporary plate Sha'tari Bound Greaves",
+    ["из ящика Тажаня Чжу (Монастырь Шадо-Пан); Ка'эн, дыхание тьмы (Ka'eng, Breath of the Shadow): кистевое оружие на крит/скорость. Тир 32"] = "from Taran Zhu's chest (Shado-Pan Monastery); Ka'eng, Breath of the Shadow: fist weapon, crit/haste. Tier 32",
+    ["кистевое, статов нет - только прок: +61 к скорости на 10 сек. при ударе (КД 45с)"] = "fist weapon, no stats - only a proc: +61 Haste for 10 sec on hit (45s CD)",
+    ["кожаные плечи с универсальностью для монаха-ткача (от сообщества)"] = "leather shoulders with vers for Mistweaver (community)",
+    ["кольчужный ремень за сопровождение Тралла (парная награда к Касанию бури)"] = "mail belt from escorting Thrall (paired with Touch of Storm)",
+    ["крафт (инженерия), статы зависят от изготовления - самая популярная триальная тринька"] = "crafted (engineering), stats depend on the craft - the most popular trial trinket",
+    ["лучшая прожимка на скорость"] = "best haste on-use",
+    ["лучшая прожимка на универсальность"] = "best vers on-use",
+    ["лучшая тринька для фарма подземелий"] = "best trinket for dungeon farming",
+    ["лучшие латные плечи на скорость"] = "best plate shoulders for haste",
+    ["лучшие тканевые руки на версу"] = "best cloth gloves for vers",
+    ["лучший посох на кастеров"] = "best staff for casters",
+    ["лучший тканевый ремень на версу"] = "best cloth belt for vers",
+    ["очень сильная двуручка для силовиков и сурв-хантов"] = "very strong two-hander for Strength specs and Survival hunters",
+    ["очень сильная одноручка для ловкачей и силовиков"] = "very strong one-hander for Agility and Strength specs",
+    ["падает в Каменных Недрах; Тяжелая жеодовая палица (Heavy Geode Mace): булава на ловкость, крит/скорость. Тир 32"] = "drops in the Stonecore; Heavy Geode Mace: Agility mace, crit/haste. Tier 32",
+    ["падает в Конце Времен; Зазубренное лезвие времени (Jagged Edge of Time): кинжал на крит/скорость. Тир 32"] = "drops in End Time; Jagged Edge of Time: dagger, crit/haste. Tier 32",
+    ["падает интовикам с Хранитель рощи Йал в Горгронде"] = "drops for Intellect specs from Grove Warden Yal in Gorgrond",
+    ["падает ловкачам с Гиблет Трусливый на Хребте Ледяного Огня"] = "drops for Agility specs from Gibblette the Cowardly on Frostfire Ridge",
+    ["падает с Ануб-арака; Кольцо короля-предателя: на крит/скорость. Путешествие во времени, ilvl 32 (слепок, x2)"] = "drops from Anub'arak; Traitor King's Ring: crit/haste. Timewalking, ilvl 32 (snapshot, x2)",
+    ["падает с Бармагрыз на Хребте Ледяного Огня"] = "drops from Barmagash on Frostfire Ridge",
+    ["падает с Бармен Билл на Тирагардском поморье"] = "drops from Bartender Bill in Tiragarde Sound",
+    ["падает с Бромача; Выкопанный медальон Бромача: шея на скорость/искусность (слепок, ×6)"] = "drops from Bromach; Bromach's Unearthed Medallion: neck, haste/mastery (snapshot ×6)",
+    ["падает с Броньяма; Узник любви: шея на скорость/универсальность. Путешествие во времени, ilvl 32 (слепок, x3)"] = "drops from Bronjahm; Love's Prisoner: neck, haste/vers. Timewalking, ilvl 32 (snapshot, x3)",
+    ["падает с Вексалиуса; Сапоги оживления: кожаные ступни на универсальность, со скоростью бега (от сообщества)"] = "drops from Vexallus; Boots of Resuscitation: leather boots, vers, with run speed (community)",
+    ["падает с Геккана (Дворец Могу'шан); Когти Геккана: кистевое оружие на крит/скорость. Тир 32"] = "drops from Gekkan (Mogu'shan Palace); Gekkan's Claws: fist weapon, crit/haste. Tier 32",
+    ["падает с Глубтока (Мертвые копи); Шип-клинок (Buzzer Blade): кинжал на крит. Тир 32"] = "drops from Glubtok (Deadmines); Buzzer Blade: dagger, crit. Tier 32",
+    ["падает с Дикобраз-матриарх в Друстваре"] = "drops from Quillrat Matriarch in Drustvar",
+    ["падает с Длинноклык и Генри Брейкуотер в Долине Штормов"] = "drops from Longfang and Henry Breakwater in Stormsong Valley",
+    ["падает с Зубохлопа (Затерянный город Тол'вир); Кинжал Барима (Barim's Main Gauche): на крит/искусность. Тир 32"] = "drops from Lockmaw (Lost City of the Tol'vir); Barim's Main Gauche: crit/mastery. Tier 32",
+    ["падает с Ингвара Расхителя; Кольцо Аннгильды: на крит/скорость. Путешествие во времени, ilvl 32 (слепок, x6)"] = "drops from Ingvar the Plunderer; Annhylde's Ring: crit/haste. Timewalking, ilvl 32 (snapshot, x6)",
+    ["падает с Ингвара Расхителя; Несокрушимое тяжёлое кольцо: на скорость/универсальность. Путешествие во времени, ilvl 32 (слепок, x7)"] = "drops from Ingvar the Plunderer; Unbreakable Band: haste/vers. Timewalking, ilvl 32 (snapshot, x7)",
+    ["падает с Камнешкура (Каменные Недра); Ртутный клинок (Quicksilver Blade): кинжал на скорость/искусность. Тир 32"] = "drops from Slabhide (The Stonecore); Quicksilver Blade: dagger, haste/mastery. Tier 32",
+    ["падает с Кандак в Зулдазаре"] = "drops from Kandak in Zuldazar",
+    ["падает с Карша Гнущего Сталь (Пещеры Черной горы); Шедевр Гнущего Сталь (Steelbender's Masterpiece): кинжал на крит/искусность. Тир 32"] = "drops from Karsh Steelbender (Blackrock Caverns); Steelbender's Masterpiece: dagger, crit/mastery. Tier 32",
+    ["падает с Кель'таса Солнечного Скитальца; Наголенники кающегося рыцаря: латные ступни на универсальность (слепок, ×7)"] = "drops from Kael'thas Sunstrider; Penitent Knight's Greaves: plate boots, vers (snapshot ×7)",
+    ["падает с Кинжалозуб в Зулдазаре"] = "drops from Daggerjaw in Zuldazar",
+    ["падает с Командира Ри'мока (Врата Заходящего Солнца); Вертлуг богомола: кинжал на крит/скорость. Тир 32"] = "drops from Commander Ri'mok (Gate of the Setting Sun); Mantid Joint: dagger, crit/haste. Tier 32",
+    ["падает с Королева шипожалов в Друстваре"] = "drops from Quillrat Queen in Drustvar",
+    ["падает с Кроворуба; Усиленный плотью ободок: кольцо на крит/искусность (слепок, ×9)"] = "drops from Gorechop; Flesh-Reinforced Loop: ring, crit/mastery (snapshot ×9)",
+    ["падает с Кул'тарока; Ритуальное костяное кольцо: на универсальность/искусность (слепок, ×15)"] = "drops from Kul'tharok; Ritual Bone Ring: vers/mastery (snapshot ×15)",
+    ["падает с Кулетт Вспыльчивый на Тирагардском поморье"] = "drops from Kul'ett the Irritable in Tiragarde Sound",
+    ["падает с Лорда-камергера; Печатка лживого обвинения: кольцо на искусность (слепок, ×36 — самое ходовое)"] = "drops from Lord Chamberlain; Seal of the False Accusation: ring, mastery (snapshot ×36 - most worn)",
+    ["падает с Мак в Друстваре"] = "drops from Mack in Drustvar",
+    ["падает с Мастера; Рукавицы Железного лезвия: латные кисти на крит (слепок, ×6)"] = "drops from the Master; Ironblade Gauntlets: plate gloves, crit (snapshot ×6)",
+    ["падает с Могамаго в Горгронде"] = "drops from Mogamago in Gorgrond",
+    ["падает с Мрачноморд Безмозглый в Долине Штормов (В РЕЖИМЕ ИСТОРИИ)"] = "drops from Grimmaw the Brainless in Stormsong Valley (IN STORY MODE)",
+    ["падает с Оскорбления претендентов; Печатка клятвы на крови: кольцо на крит/скорость (слепок, ×10)"] = "drops from An Affront of Challengers; Bloodoath Signet: ring, crit/haste (snapshot ×10)",
+    ["падает с Пилозуб в Боралусе"] = "drops from Sawtooth in Boralus",
+    ["падает с Пожирателя Душ; Ожерелье из пропавших камней: шея на крит/скорость. Путешествие во времени, ilvl 32 (слепок, x8)"] = "drops from Devourer of Souls; Necklace of Lost Stones: neck, crit/haste. Timewalking, ilvl 32 (snapshot, x8)",
+    ["падает с Пожирателя Душ; Перстень злорадства: на крит/универсальность. Путешествие во времени, ilvl 32 (слепок, x3)"] = "drops from Devourer of Souls; Band of Spite: crit/vers. Timewalking, ilvl 32 (snapshot, x3)",
+    ["падает с Пожирателя Душ; Хребет разлагающегося трупа: агиловый посох, у друида-кота (слепок, ×4)"] = "drops from Devourer of Souls; Spine of the Decaying Corpse: Agility staff, for Feral (snapshot ×4)",
+    ["падает с Пожирателя Душ; Чародейский кулон злости: шея на крит/универсальность. Путешествие во времени, ilvl 32 (слепок, x3)"] = "drops from Devourer of Souls; Arcane Pendant of Spite: neck, crit/vers. Timewalking, ilvl 32 (snapshot, x3)",
+    ["падает с Сестра Абсинтия в Долине Штормов (В РЕЖИМЕ ИСТОРИИ)"] = "drops from Sister Absinthe in Stormsong Valley (IN STORY MODE)",
+    ["падает с Сестра Марта в Друстваре"] = "drops from Sister Martha in Drustvar",
+    ["падает с Сиамата (Затерянный город Тол'вир); Молот Искр (Hammer of Sparks): булава на ловкость, крит/скорость. Тир 32"] = "drops from Siamat (Lost City of the Tol'vir); Hammer of Sparks: Agility mace, crit/haste. Tier 32",
+    ["падает с Сквиргл-из-Глубин на Тирагардском поморье"] = "drops from Squacks of the Depths in Tiragarde Sound",
+    ["падает с Сын Горамала на Хребте Ледяного Огня"] = "drops from Son of Goramal on Frostfire Ridge",
+    ["падает с Темноуст Джо'ла в Зулдазаре"] = "drops from Darkspeaker Jo'la in Zuldazar",
+    ["падает с Хакби Восставший в Зулдазаре"] = "drops from Hakbi the Risen in Zuldazar",
+    ["падает с Халкиаса; Запятнанная грехом подвеска: шея на скорость/искусность (слепок, ×16)"] = "drops from Halkias; Sin-Stained Pendant: neck, haste/mastery (snapshot ×16)",
+    ["падает с Чешуетряс Ядовитый на Тирагардском поморье"] = "drops from Venomscale in Tiragarde Sound",
+    ["падает с Чумокоста; Потерянная печатка Трупошва: кольцо на скорость/универсальность (слепок, ×9)"] = "drops from Plaguebone; Lost Stitchflesh Signet: ring, haste/vers (snapshot ×9)",
+    ["падает с Ша Жестокости (Монастырь Шадо-Пан); Гнойный полумесяц: одноручный топор на скорость/искусность. Тир 32"] = "drops from Sha of Violence (Shado-Pan Monastery); Festering Crescent: one-hand axe, haste/mastery. Tier 32",
+    ["падает с Эмили Мэйвилл в Друстваре"] = "drops from Emily Mayville in Drustvar",
+    ["падает с верховного адъюдикатора Ализы; тринька на чистую скорость, годится любой роли (слепок, ×5)"] = "drops from High Adjudicator Aleez; pure haste trinket, any role (snapshot ×5)",
+    ["падает с рарника Forgotten Creation; Амнезия: шея на скорость/универсальность (слепок, ×45 — самая ходовая)"] = "drops from rare Forgotten Creation; Amnesia: neck, haste/vers (snapshot ×45 - most worn)",
+    ["падает с рарника Liskheszaera; Кристаллизованная печать: шея на универсальность/искусность (слепок, ×12)"] = "drops from rare Liskheszaera; Crystallized Seal: neck, vers/mastery (snapshot ×12)",
+    ["падает с рарника Morchok; Окаменевшие споры грибов: шея на скорость/универсальность (слепок, ×8)"] = "drops from rare Morchok; Petrified Mushroom Spores: neck, haste/vers (snapshot ×8)",
+    ["падает с сундука за доставку рарника Страж источника к нпс Чалый Бертольд на Тирагардском поморье"] = "drops from the chest for turning in rare Springwarden to Dusky Berthold in Tiragarde Sound",
+    ["падает силовикам и ловкачам с Монстр арены в Награнде (В РЕЖИМЕ ИСТОРИИ)"] = "drops for Strength and Agility specs from Arena Beast in Nagrand (IN STORY MODE)",
+    ["падает силовикам с Слякоч-повелитель в Горгронде"] = "drops for Strength specs from Sludge-Lord in Gorgrond",
+    ["падает со Зыбуна; Полуночные набедренники: кожаные ноги на крит/скорость, 3 гнезда (слепок, ×5)"] = "drops from Quicksand; Midnight Legguards: leather legs, crit/haste, 3 sockets (snapshot ×5)",
+    ["прожимка на искусность (сама вещь на универсальность), с сокровища"] = "on-use mastery (the item itself is vers), from a treasure",
+    ["сильная двуручка для силовиков"] = "strong two-hander for Strength specs",
+    ["тканевые руки за сопровождение Тралла (парная награда к Кушаку поборника)"] = "cloth gloves from escorting Thrall (paired with Champion's Belt)",
+    ["фамильная тринька для PvP"] = "heirloom trinket for PvP",
+    ["хорошая кожаная голова"] = "good leather helm",
+    ["хорошая кожаная голова с особым гнездом"] = "good leather helm with a meta socket",
+    ["хорошая латная голова на крит"] = "good plate helm, crit",
+    ["хорошая латная голова на универсальность"] = "good plate helm, vers",
+    ["хорошие кожаные ноги для критовиков (1/2 сета Странника пустошей)"] = "good leather legs for crit builds (1/2 Wastelander set)",
+    ["хорошие кожаные руки для критовиков (1/2 сета Странника пустошей)"] = "good leather gloves for crit builds (1/2 Wastelander set)",
+    ["хорошие кожаные руки на кастеров"] = "good leather gloves for casters",
+    ["хорошие кожаные руки на ловкачей"] = "good leather gloves for Agility specs",
+    ["хорошие кожаные сапоги"] = "good leather boots",
+    ["хорошие кольчужные сапоги"] = "good mail boots",
+    ["хорошие тканевые руки для DPS"] = "good cloth gloves for DPS",
+    ["хороший кинжал для интовиков"] = "good dagger for Intellect specs",
+    ["хороший кольчужный шлем, но даёт меньше стат"] = "good mail helm, but lower stats",
+    ["хороший офф-хенд на интовиков"] = "good off-hand for Intellect specs",
+    ["хороший тканевый пояс"] = "good cloth belt",
+    ["хороший тканевый шлем для хиллеров, первая часть \"манасета\""] = "good cloth helm for healers, first piece of the \"mana set\"",
 }
 
--- Названия слотов на русском. На других языках берём их у самой игры
--- (_G.INVTYPE_*), поэтому здесь только русская таблица: до появления этого
--- файла она была зашита в Core.lua и перебивала английский клиент.
+-- Названия слотов на русском. Английские — из словаря выше, не из клиента:
+-- принудительный английский на русском клиенте иначе оставляет «Голова».
 local INVTYPE_RU = {
     INVTYPE_HEAD = "Голова",           INVTYPE_NECK = "Шея",
     INVTYPE_SHOULDER = "Плечи",        INVTYPE_CLOAK = "Спина",
@@ -390,8 +633,8 @@ local INVTYPE_RU = {
     INVTYPE_RANGED = "Дальнобойное",   INVTYPE_RANGEDRIGHT = "Дальнобойное",
 }
 
--- Названия классов на русском. На других языках берём у игры
--- (LOCALIZED_CLASS_NAMES_MALE). Ключи - те же, что в Data.lua.
+-- Названия классов на русском. Английские — из словаря, не из клиента.
+-- Ключи - те же, что в Data.lua.
 local CLASS_RU = {
     WARRIOR = "Воин",             PALADIN = "Паладин",
     HUNTER = "Охотник",           ROGUE = "Разбойник",
@@ -402,15 +645,18 @@ local CLASS_RU = {
     EVOKER = "Пробудитель",
 }
 
--- Выбранный язык. Считается лениво: в момент выполнения этого файла
--- сохранённые настройки ещё не подгружены.
+-- Выбранный язык. Пока ADDON_LOADED не пришёл, сохранённых настроек нет —
+-- не запоминаем ruRU с загрузки файлов, иначе английский выбор потом
+-- не перебьёт кэш.
 local resolved
+local loaded
 
 local function Resolve()
-    if resolved then return resolved end
+    if loaded and resolved then return resolved end
     local saved = TrialGearFinderDB and TrialGearFinderDB.locale or "auto"
-    resolved = (saved == "auto") and GetLocale() or saved
-    return resolved
+    local value = (saved == "auto") and GetLocale() or saved
+    if loaded then resolved = value end
+    return value
 end
 
 -- Перевод строки. Вызывается и как L("текст"), и как L"текст".
@@ -419,25 +665,50 @@ function ns.L(text)
     return enUS[text] or text
 end
 
--- Название слота: на русском - наше, на остальных языках - клиентское.
+-- Название слота по настройке аддона, не по языку клиента.
 function ns.SlotName(invType)
-    if Resolve() == "ruRU" then
-        return INVTYPE_RU[invType] or _G[invType] or invType
-    end
-    return _G[invType] or INVTYPE_RU[invType] or invType
+    local ru = INVTYPE_RU[invType]
+    if ru then return ns.L(ru) end
+    return _G[invType] or invType
 end
 
--- Название класса: на русском - наше, на остальных языках - клиентское.
+-- Название класса по настройке аддона, не по языку клиента.
 function ns.ClassName(token)
-    if Resolve() == "ruRU" then
-        return CLASS_RU[token] or (LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[token]) or token
-    end
-    return (LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[token]) or CLASS_RU[token] or token
+    local ru = CLASS_RU[token]
+    if ru then return ns.L(ru) end
+    return (LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[token]) or token
 end
 
--- Русский ли сейчас интерфейс. Нужно там, где текст разбирается, а не пишется.
+-- Название спека по настройке аддона. Номера — те же, что у игры и в Talents.lua.
+local SPEC_RU = {
+    [71] = "Оружие", [72] = "Неистовство", [73] = "Защита",
+    [65] = "Свет", [66] = "Защита", [70] = "Воздаяние",
+    [253] = "Повелитель зверей", [254] = "Стрельба", [255] = "Выживание",
+    [259] = "Ликвидация", [260] = "Головорез", [261] = "Скрытность",
+    [256] = "Послушание", [257] = "Свет", [258] = "Тьма",
+    [250] = "Кровь", [251] = "Лёд", [252] = "Нечестивость",
+    [262] = "Стихии", [263] = "Совершенствование", [264] = "Исцеление",
+    [62] = "Тайная магия", [63] = "Огонь", [64] = "Лед",
+    [265] = "Колдовство", [266] = "Демонология", [267] = "Разрушение",
+    [268] = "Хмелевар", [269] = "Танцующий с ветром", [270] = "Ткач туманов",
+    [102] = "Баланс", [103] = "Сила зверя", [104] = "Страж", [105] = "Исцеление",
+    [577] = "Истребление", [581] = "Месть", [1480] = "Пожиратель",
+    [1467] = "Опустошитель", [1468] = "Хранитель", [1473] = "Насыщатель",
+}
+
+function ns.SpecName(specID)
+    local ru = SPEC_RU[specID]
+    if ru then return ns.L(ru) end
+    local name = specID and GetSpecializationInfoByID and select(2, GetSpecializationInfoByID(specID))
+    return name or tostring(specID or "?")
+end
+
+-- Язык КЛИЕНТА, не выбор в Параметрах. Нужно там, где разбирается тултип
+-- предмета: карточка рисуется игрой, и на русском клиенте с английским окном
+-- строки всё равно «+7 к ловкости». Если смотреть Resolve(), правка статов
+-- молча отключается, а сверка копии пишет «отличается от базы».
 function ns.IsRussian()
-    return Resolve() == "ruRU"
+    return GetLocale() == "ruRU"
 end
 
 -- Строка приоритета из гайда: «Сила > Искусность >> Скорость». Разделители
@@ -469,6 +740,7 @@ function ns.OnLocaleReady(fn)
 end
 
 local function LocaleReady()
+    loaded = true
     resolved = nil          -- перечитать выбор: настройки уже загружены
     Resolve()
     for _, fn in ipairs(pending) do fn() end
