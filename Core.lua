@@ -1143,7 +1143,11 @@ function ns.FixTooltipStats(base)
                 local key = val and StemToStatKey(rest)
                 local bv = key and base[key]
                 if bv and bv ~= tonumber(val) then
-                    fs:SetText("+" .. bv .. " к " .. rest)
+                    if ns.IsRussian() then
+                        fs:SetText("+" .. bv .. " к " .. rest)
+                    else
+                        fs:SetText("+" .. bv .. " " .. rest)
+                    end
                     touched = true
                 end
             end
@@ -1151,7 +1155,7 @@ function ns.FixTooltipStats(base)
     end
     if touched then
         GameTooltip:AddLine(" ")
-        GameTooltip:AddLine("Статы поправлены по базе — клиент масштабирует эту ссылку неточно.",
+        GameTooltip:AddLine(ns.L"Статы поправлены по базе — клиент масштабирует эту ссылку неточно.",
             0.85, 0.72, 0.42, true)
         GameTooltip:Show() -- пересчитать размер после правки строк
     end
@@ -1372,10 +1376,10 @@ local function FormatDiffLine(diff)
     if diff.isSocket then
         local iconPath = SOCKET_ICON_PATHS[diff.socketType]
         if iconPath then
-            return string.format("%s |T%s:16:16|t %s", number, iconPath, diff.label)
+            return string.format("%s |T%s:16:16|t %s", number, iconPath, ns.L(diff.label))
         end
     end
-    return string.format("%s %s", number, diff.label)
+    return string.format("%s %s", number, ns.L(diff.label))
 end
 
 -- Two side-by-side columns, same layout as the game's own "if you replace this
@@ -1619,7 +1623,7 @@ local function SetSourceWaypoint(sourceName, sourceType, itemID)
     elseif OpenWorldMap then
         OpenWorldMap(uiMapID)
     end
-    print("|cFFFFD100[TGF]|r " .. sourceName .. ": " .. WaypointLink(uiMapID, x, y, "метка на карте"))
+    print("|cFFFFD100[TGF]|r " .. sourceName .. ": " .. WaypointLink(uiMapID, x, y, ns.L"метка на карте"))
 end
 
 -- Ctrl-click on a source stores whatever user waypoint is currently on the map
@@ -1638,9 +1642,9 @@ local function SaveSourceWaypoint(sourceName, sourceType, itemID)
     TrialGearFinderDB = TrialGearFinderDB or {}
     TrialGearFinderDB.pins = TrialGearFinderDB.pins or {}
     TrialGearFinderDB.pins[key] = { point.uiMapID, point.position.x * 100, point.position.y * 100 }
-    print(string.format("|cFFFFD100[TGF]|r Запомнено: %s = %s", sourceName,
+    print(string.format(ns.L"|cFFFFD100[TGF]|r Запомнено: %s = %s", ns.L(sourceName),
         WaypointLink(point.uiMapID, point.position.x * 100, point.position.y * 100,
-            string.format("карта %d: %.1f, %.1f", point.uiMapID,
+            string.format(ns.L"карта %d: %.1f, %.1f", point.uiMapID,
                 point.position.x * 100, point.position.y * 100))))
 end
 
@@ -1761,7 +1765,7 @@ local function CreateRow(index)
         -- Расхождение уже посчитано в BuildRowData, тут только выводим.
         if type(self.ownedDiffs) == "table" then
             GameTooltip:AddLine(" ")
-            GameTooltip:AddLine("Твоя копия отличается от базы:", 0.85, 0.72, 0.42)
+            GameTooltip:AddLine(ns.L"Твоя копия отличается от базы:", 0.85, 0.72, 0.42)
             for _, d in ipairs(self.ownedDiffs) do
                 GameTooltip:AddLine("  " .. FormatDiffLine(d), 1, 1, 1)
             end
@@ -1882,38 +1886,38 @@ local function CreateRow(index)
         -- считается в BuildRowData от того, что случилось в этот заход к рарнику.
         local st = row.markState
         if st == "bis" then
-            GameTooltip:AddLine("BiS-версия на руках", 0.2, 1, 0.2)
-            GameTooltip:AddLine("Отметка залипла навсегда: к этому рарнику можно больше не ходить.",
+            GameTooltip:AddLine(ns.L"BiS-версия на руках", 0.2, 1, 0.2)
+            GameTooltip:AddLine(ns.L"Отметка залипла навсегда: к этому рарнику можно больше не ходить.",
                 1, 1, 1, true)
         elseif st == "worse" then
-            GameTooltip:AddLine("Выпала не BiS-версия", 1, 0.2, 0.2)
+            GameTooltip:AddLine(ns.L"Выпала не BiS-версия", 1, 0.2, 0.2)
             if type(row.ownedDiffs) == "table" then
                 for _, d in ipairs(row.ownedDiffs) do
                     GameTooltip:AddLine("  " .. FormatDiffLine(d), 1, 1, 1)
                 end
             elseif (row.ownedCount or 0) > 0 then
-                GameTooltip:AddLine("Копия где-то есть, но прочитать её не удалось - похоже, в закрытом банке или у другого персонажа.",
+                GameTooltip:AddLine(ns.L"Копия где-то есть, но прочитать её не удалось - похоже, в закрытом банке или у другого персонажа.",
                     0.7, 0.72, 0.75, true)
             end
             if row.daily then
-                GameTooltip:AddLine("Рарник ежедневный: на дневном сбросе кружок опустеет, можно прийти снова за BiS-версией.",
+                GameTooltip:AddLine(ns.L"Рарник ежедневный: на дневном сбросе кружок опустеет, можно прийти снова за BiS-версией.",
                     0.7, 0.72, 0.75, true)
             else
-                GameTooltip:AddLine("Рарник даётся раз на персонажа - BiS-версии уже не будет. Отметил по ошибке: Ctrl+щелчок.",
+                GameTooltip:AddLine(ns.L"Рарник даётся раз на персонажа - BiS-версии уже не будет. Отметил по ошибке: Ctrl+щелчок.",
                     0.7, 0.72, 0.75, true)
             end
         elseif st == "nodrop" then
-            GameTooltip:AddLine("Рарник убит, нужная вещь не выпала", 1, 0.82, 0)
+            GameTooltip:AddLine(ns.L"Рарник убит, нужная вещь не выпала", 1, 0.82, 0)
             if row.daily then
-                GameTooltip:AddLine("На дневном сбросе кружок опустеет - можно прийти снова.",
+                GameTooltip:AddLine(ns.L"На дневном сбросе кружок опустеет - можно прийти снова.",
                     1, 1, 1, true)
             else
-                GameTooltip:AddLine("Рарник даётся раз на персонажа, вещь не выпала - слот придётся закрывать другой. Отметил по ошибке: Ctrl+щелчок.",
+                GameTooltip:AddLine(ns.L"Рарник даётся раз на персонажа, вещь не выпала - слот придётся закрывать другой. Отметил по ошибке: Ctrl+щелчок.",
                     0.7, 0.72, 0.75, true)
             end
         else
-            GameTooltip:AddLine("Отметить: рарник убит, нужная вещь не выпала", 1, 0.82, 0)
-            GameTooltip:AddLine("Ставится сама при убийстве. Старые вещи в сумке на цвет не влияют - пока не сходишь к рарнику, кружок пуст.",
+            GameTooltip:AddLine(ns.L"Отметить: рарник убит, нужная вещь не выпала", 1, 0.82, 0)
+            GameTooltip:AddLine(ns.L"Ставится сама при убийстве. Старые вещи в сумке на цвет не влияют - пока не сходишь к рарнику, кружок пуст.",
                 0.7, 0.72, 0.75, true)
         end
         GameTooltip:Show()
@@ -2536,8 +2540,8 @@ RefreshResults = function()
         content:SetHeight(1)
         scrollBox:FullUpdate(ScrollBoxConstants.UpdateImmediately)
         emptyText:Show()
-        emptyText:SetText(pending and "|cFF888888Загрузка данных...|r"
-            or "|cFF888888Нет предметов под эти фильтры.|r")
+        emptyText:SetText(pending and ns.L"|cFF888888Загрузка данных...|r"
+            or ns.L"|cFF888888Нет предметов под эти фильтры.|r")
         return
     end
 
@@ -2685,7 +2689,7 @@ local function MarkKilledByName(name)
         end
     end
     if marked then
-        print(string.format("|cFFFFD100[TGF]|r Отмечен как убитый: %s", marked))
+        print(string.format(ns.L"|cFFFFD100[TGF]|r Отмечен как убитый: %s", marked))
         if frame:IsShown() then RefreshResults() end
     end
 end
@@ -2764,7 +2768,7 @@ frame:SetScript("OnEvent", function(self, event, addonName)
         -- дальше TrialGearFinderDB уже существует и старое не перетрёт новое.
         if TrialGearFinderDB == nil and TwinkGearFinderDB ~= nil then
             TrialGearFinderDB = TwinkGearFinderDB
-            print("|cFFFFD100[TGF]|r Настройки перенесены со старого имени аддона.")
+            print(ns.L"|cFFFFD100[TGF]|r Настройки перенесены со старого имени аддона.")
         end
         TrialGearFinderDB = TrialGearFinderDB or {}
         if TrialGearFinderDB.showStats == nil then TrialGearFinderDB.showStats = false end
@@ -2834,7 +2838,7 @@ local function ClearExpiredDailyMarks()
     end
     db.dailyResetAt = NextDailyReset()
     if cleared > 0 then
-        print(string.format("|cFFFFD100[TGF]|r Дневной сброс: снято отметок с ежедневных рарников - %d", cleared))
+        print(string.format(ns.L"|cFFFFD100[TGF]|r Дневной сброс: снято отметок с ежедневных рарников - %d", cleared))
     end
 end
 
@@ -3053,7 +3057,7 @@ local function ScanOwnedItems()
         end
     end
 
-    print(string.format("|cFFFFD100[TGF]|r Проверено %d предметов из базы (надето, сумки, банк если открыт), расхождений: %d", checked, mismatched))
+    print(string.format(ns.L"|cFFFFD100[TGF]|r Проверено %d предметов из базы (надето, сумки, банк если открыт), расхождений: %d", checked, mismatched))
 end
 
 ------------------------------------------------------------
@@ -3187,7 +3191,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     if msg == "gems" then
         if ns.CaptureStart then ns.CaptureStart("gems") end
         if UnitLevel("player") ~= 20 then
-            print("[TGF] ВНИМАНИЕ: не 20 уровня. Число гнёзд верно, статы и уровень — нет.")
+            print(ns.L"[TGF] ВНИМАНИЕ: не 20 уровня. Число гнёзд верно, статы и уровень — нет.")
         end
         local ok, err = pcall(function()
         for _, item in ipairs(ns.Items) do
@@ -3210,7 +3214,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         end)
         if ns.CaptureStop then ns.CaptureStop() end
         if not ok then error(err) end
-        print("|cFF86C7BD[TGF]|r Скопировать: /tgf copy")
+        print(ns.L"|cFF86C7BD[TGF]|r Скопировать: /tgf copy")
         return
     end
 
@@ -3220,7 +3224,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     if msg == "ref" then
         if ns.CaptureStart then ns.CaptureStart("ref") end
         if UnitLevel("player") ~= 20 then
-            print("[TGF] ВНИМАНИЕ: персонаж не 20 уровня — статы и уровни предметов неточны. Слепок годен только с двадцатки.")
+            print(ns.L"[TGF] ВНИМАНИЕ: персонаж не 20 уровня — статы и уровни предметов неточны. Слепок годен только с двадцатки.")
         end
         local ok, err = pcall(function()
             local ORD = { "int", "agi", "str", "stam", "crit", "haste", "iskus", "vers" }
@@ -3244,11 +3248,11 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
                     n = n + 1
                 end
             end
-            print(string.format("[TGF] ref: %d предметов из базы у персонажа", n))
+            print(string.format(ns.L"[TGF] ref: %d предметов из базы у персонажа", n))
         end)
         if ns.CaptureStop then ns.CaptureStop() end
         if not ok then error(err) end
-        print("|cFF86C7BD[TGF]|r Скопировать: /tgf copy")
+        print(ns.L"|cFF86C7BD[TGF]|r Скопировать: /tgf copy")
         return
     end
 
@@ -3263,7 +3267,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     if msg == "pins" then
         local saved = TrialGearFinderDB and TrialGearFinderDB.pins
         if not saved or not next(saved) then
-            print("|cFFFFD100[TGF]|r Меток пока не запомнено.")
+            print(ns.L"|cFFFFD100[TGF]|r Меток пока не запомнено.")
             return
         end
         local names = {}
@@ -3292,7 +3296,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     if pinName then
         local point = C_Map.GetUserWaypoint()
         if not point then
-            print("|cFFFFD100[TGF]|r Метки на карте нет. Поставь её Ctrl+щелчком по карте и повтори.")
+            print(ns.L"|cFFFFD100[TGF]|r Метки на карте нет. Поставь её Ctrl+щелчком по карте и повтори.")
             return
         end
 
@@ -3300,8 +3304,8 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         local x, y = point.position.x * 100, point.position.y * 100
 
         if pinName == "" then
-            print(string.format("|cFFFFD100[TGF]|r Текущая метка: карта %d, %.1f, %.1f", mapID, x, y))
-            print("|cFFFFD100[TGF]|r Привязать: /tgf pin <часть названия подземелья>")
+            print(string.format(ns.L"|cFFFFD100[TGF]|r Текущая метка: карта %d, %.1f, %.1f", mapID, x, y))
+            print(ns.L"|cFFFFD100[TGF]|r Привязать: /tgf pin <часть названия подземелья>")
             return
         end
 
@@ -3338,11 +3342,11 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         end
 
         if #matches == 0 then
-            print(string.format("|cFFFFD100[TGF]|r Источник со словом «%s» в базе не найден.", pinName))
+            print(string.format(ns.L"|cFFFFD100[TGF]|r Источник со словом «%s» в базе не найден.", pinName))
             return
         end
         if #matches > 1 then
-            print(string.format("|cFFFFD100[TGF]|r Подходит несколько, уточни (%d):", #matches))
+            print(string.format(ns.L"|cFFFFD100[TGF]|r Подходит несколько, уточни (%d):", #matches))
             for _, m in ipairs(matches) do print("    " .. m.label) end
             return
         end
@@ -3351,7 +3355,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         TrialGearFinderDB = TrialGearFinderDB or {}
         TrialGearFinderDB.pins = TrialGearFinderDB.pins or {}
         TrialGearFinderDB.pins[matched.key] = { mapID, x, y }
-        print(string.format("|cFFFFD100[TGF]|r Запомнено: %s = карта %d, %.1f, %.1f", matched.label, mapID, x, y))
+        print(string.format(ns.L"|cFFFFD100[TGF]|r Запомнено: %s = карта %d, %.1f, %.1f", ns.L(matched.label), mapID, x, y))
         return
     end
 
@@ -3376,7 +3380,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
             ["аксессуар"]  = "INVTYPE_TRINKET",
         }
         if SLOT_WORD[newArg] == nil then
-            print("|cFF86C7BD[TGF]|r /tgf new [шея|кольцо|аксессуар] — без слова покажет все вещи, которых нет в базе")
+            print(ns.L"|cFF86C7BD[TGF]|r /tgf new [шея|кольцо|аксессуар] — без слова покажет все вещи, которых нет в базе")
             return
         end
         local want = SLOT_WORD[newArg]
@@ -3403,7 +3407,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
                 (#sp > 0) and table.concat(sp, ", ") or "статов нет",
                 #live.socketTypes,
                 live.socketBonus and (" | бонус за цвет: " .. live.socketBonus.key .. " " .. live.socketBonus.value) or ""))
-            print("[TGF] ссылка: " .. (link:gsub("|", "!")))
+            print(ns.L"[TGF] ссылка: " .. (link:gsub("|", "!")))
         end
 
         for slot = INVSLOT_FIRST_EQUIPPED, INVSLOT_LAST_EQUIPPED do
@@ -3417,7 +3421,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         end
 
         if ns.CaptureStop then ns.CaptureStop() end
-        print(string.format("|cFFFFD100[TGF]|r Не из базы: %d %s (надето, сумки, банк если открыт). Скопировать: /tgf copy",
+        print(string.format(ns.L"|cFFFFD100[TGF]|r Не из базы: %d %s (надето, сумки, банк если открыт). Скопировать: /tgf copy",
             found, (newArg ~= "") and newArg or "вещей"))
         return
     end
@@ -3450,20 +3454,20 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         local dumpAll = (msg == "talents all")
         local configID = C_ClassTalents and C_ClassTalents.GetActiveConfigID and C_ClassTalents.GetActiveConfigID()
         if not configID then
-            print("|cFF86C7BD[TGF]|r Таланты не читаются: игра не отдала активную сборку.")
+            print(ns.L"|cFF86C7BD[TGF]|r Таланты не читаются: игра не отдала активную сборку.")
             return
         end
         if ns.CaptureStart then ns.CaptureStart("talents") end
         local specID = GetSpecializationInfo(GetSpecialization() or 0)
         local _, specName = GetSpecializationInfoByID(specID or 0)
-        print(string.format("# TrialGearFinder: таланты, %s %s (спек %s)",
+        print(string.format(ns.L"# TrialGearFinder: таланты, %s %s (спек %s)",
             UnitClass("player") or "?", specName or "?", tostring(specID)))
 
         local ok, code = pcall(function() return C_Traits.GenerateImportString(configID) end)
         if ok and code and code ~= "" then
             print(code)
         else
-            print("# код сборки игра не отдала — возьми его в окне талантов кнопкой «Экспорт»")
+            print(ns.L"# код сборки игра не отдала — возьми его в окне талантов кнопкой «Экспорт»")
         end
 
         local cfg = C_Traits.GetConfigInfo(configID)
@@ -3485,7 +3489,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
             end
         end
         if ns.CaptureStop then ns.CaptureStop() end
-        print(string.format("|cFFFFD100[TGF]|r %s: %d. Скопировать: /tgf copy",
+        print(string.format(ns.L"|cFFFFD100[TGF]|r %s: %d. Скопировать: /tgf copy",
             dumpAll and "Узлов в дереве" or "Взято талантов", taken))
         return
     end
@@ -3525,13 +3529,13 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
             end
         end
         if ns.CaptureStop then ns.CaptureStop() end
-        print(string.format("|cFFFFD100[TGF]|r Зачарованных вещей: %d. Наведи на них в сумке или на себе, чтобы увидеть текст чары. Скопировать: /tgf copy", found))
+        print(string.format(ns.L"|cFFFFD100[TGF]|r Зачарованных вещей: %d. Наведи на них в сумке или на себе, чтобы увидеть текст чары. Скопировать: /tgf copy", found))
         return
     end
 
     if msg == "simc" then
         if ns.ExportSimC then ns.ExportSimC() else
-            print("|cFF86C7BD[TGF]|r Окно BiS ещё не открывалось: /tgf bis")
+            print(ns.L"|cFF86C7BD[TGF]|r Окно BiS ещё не открывалось: /tgf bis")
         end
         return
     end
@@ -3539,12 +3543,12 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     if msg == "scan" then
         if ns.CaptureStart then ns.CaptureStart("scan") end
         if UnitLevel("player") ~= 20 then
-            print("[TGF] ВНИМАНИЕ: персонаж не 20 уровня — статы масштабируются по уровню, сверка неточна. Прогонять только двадцаткой.")
+            print(ns.L"[TGF] ВНИМАНИЕ: персонаж не 20 уровня — статы масштабируются по уровню, сверка неточна. Прогонять только двадцаткой.")
         end
         local ok, err = pcall(ScanOwnedItems)
         if ns.CaptureStop then ns.CaptureStop() end -- вернуть print даже при ошибке
         if not ok then error(err) end
-        print("|cFF86C7BD[TGF]|r Скопировать отчёт: /tgf copy")
+        print(ns.L"|cFF86C7BD[TGF]|r Скопировать отчёт: /tgf copy")
         return
     end
     if msg == "copy" then

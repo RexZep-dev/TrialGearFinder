@@ -129,15 +129,15 @@ function ns.SimCHeader(specID)
 
     local lines = {
         string.format("# %s - %s - %s - %s/%s", name, spec, date("%Y-%m-%d %H:%M"), Lower(region), realm),
-        string.format("# TrialGearFinder: сборка BiS, %s %s", className or "?", specName or ""),
-        "# Выгрузка TrialGearFinder, не аддона SimulationCraft: Raidbots пометит «Unverified Input».",
+        string.format(ns.L"# TrialGearFinder: сборка BiS, %s %s", className or "?", specName or ""),
+        ns.L"# Выгрузка TrialGearFinder, не аддона SimulationCraft: Raidbots пометит «Unverified Input».",
         -- Только Advanced Sim (решение пользователя, 16 сентября): Quick Sim
         -- комментирует строки ротации, и SimC бьёт одними автоатаками (200 вместо 1485).
-        "# Вставлять в Advanced Sim на Raidbots: Quick Sim выбрасывает строки ротации.",
+        ns.L"# Вставлять в Advanced Sim на Raidbots: Quick Sim выбрасывает строки ротации.",
         -- Advanced Sim печатает только урон сборки. Веса статов — отдельный
         -- инструмент, та же вставка; он же выдаёт строку для аддона Pawn.
         -- Проверено на жреце 16 сентября: веса сошлись с локальными до сотых.
-        "# Нужны веса статов — та же вставка в Stat Weights: raidbots.com/simbot/stats.",
+        ns.L"# Нужны веса статов — та же вставка в Stat Weights: raidbots.com/simbot/stats.",
         "",
         string.format('%s="%s"', Lower(classFile), name),
         "level=20",
@@ -150,7 +150,7 @@ function ns.SimCHeader(specID)
         -- SimC по умолчанию выдаёт флягу, еду, зелье и руну максимального уровня:
         -- у жреца Тьмы это 1892 против 1578 (+20 %), а двадцатке они недоступны
         -- (у Фляги алхимического хаоса требование 71 уровень). 16 сентября.
-        "# Расходники максимального уровня двадцатке недоступны — выключены.",
+        ns.L"# Расходники максимального уровня двадцатке недоступны — выключены.",
         "potion=disabled",
         "flask=disabled",
         "food=disabled",
@@ -181,22 +181,22 @@ function ns.SimCHeader(specID)
     -- 88 % по 31, а с 33 и выше все заклинания мимо и урон ноль.
     if role == "spell" or HEALERS[specID] or gameRole == "HEALER" then
         lines[#lines + 1] = ""
-        lines[#lines + 1] = "# Цель — болванка 23 уровня: по высокой цели заклинания мажут все до одного."
+        lines[#lines + 1] = ns.L"# Цель — болванка 23 уровня: по высокой цели заклинания мажут все до одного."
         lines[#lines + 1] = "target_level=23"
     else
         lines[#lines + 1] = ""
-        lines[#lines + 1] = "# Цель — моб 45 уровня: сборка BiS считается по самым сложным подземельям."
+        lines[#lines + 1] = ns.L"# Цель — моб 45 уровня: сборка BiS считается по самым сложным подземельям."
         lines[#lines + 1] = "target_level=45"
-        lines[#lines + 1] = "# Другое подземелье: старые героики — 30, Пандария — 38, Каз Алгар — 73."
+        lines[#lines + 1] = ns.L"# Другое подземелье: старые героики — 30, Пандария — 38, Каз Алгар — 73."
     end
     local code, fromGame = TalentCode(specID)
     if code then
         if not fromGame then
-            lines[#lines + 1] = "# Таланты взяты из аддона, не с этого персонажа: код снят не на двадцатке."
+            lines[#lines + 1] = ns.L"# Таланты взяты из аддона, не с этого персонажа: код снят не на двадцатке."
         end
         lines[#lines + 1] = "talents=" .. code
     else
-        lines[#lines + 1] = "# Талантов нет: зайди этим спеком — выгрузка возьмёт их из игры."
+        lines[#lines + 1] = ns.L"# Талантов нет: зайди этим спеком — выгрузка возьмёт их из игры."
     end
     lines[#lines + 1] = ""
     return lines
@@ -503,21 +503,21 @@ end
 function ns.SimCActions(specID)
     local lines = {
         "",
-        "# Пачка из трёх целей: убери решётку в начале следующей строки.",
+        ns.L"# Пачка из трёх целей: убери решётку в начале следующей строки.",
         "# desired_targets=3",
         "",
     }
     local list = ACTIONS[specID]
     if list then
-        lines[#lines + 1] = "# Ротация двадцатки из TrialGearFinder, сверена с логами рейтинга."
+        lines[#lines + 1] = ns.L"# Ротация двадцатки из TrialGearFinder, сверена с логами рейтинга."
         for _, l in ipairs(list) do lines[#lines + 1] = l end
     else
         -- Не «занижен в разы» у всех: у воинов и Хмелевара штатная ротация на двадцатке
         -- почти не жмёт приёмы, у жреца Тьмы работает как надо, а у Танцующего с ветром
         -- жала, но слабо — своя дала +12,5 % (16 сентября), теперь она здесь же.
-        lines[#lines + 1] = "# Ротации двадцатки для этого спека в аддоне нет: SimC возьмёт свою,"
-        lines[#lines + 1] = "# под максимальный уровень. У одних спеков она на двадцатке почти не жмёт"
-        lines[#lines + 1] = "# приёмы, у других работает — цифре верить с оглядкой."
+        lines[#lines + 1] = ns.L"# Ротации двадцатки для этого спека в аддоне нет: SimC возьмёт свою,"
+        lines[#lines + 1] = ns.L"# под максимальный уровень. У одних спеков она на двадцатке почти не жмёт"
+        lines[#lines + 1] = ns.L"# приёмы, у других работает — цифре верить с оглядкой."
     end
     return lines
 end

@@ -959,7 +959,7 @@ local function MakeSlotRow(parent, index, y)
                 GameTooltip:AddLine(ns.L"Пред-BiS от сообщества — не из гайда гильдии, но выбить может любой.", 0.85, 0.72, 0.42, true)
             end
             if self.entry.source then
-                GameTooltip:AddLine(ns.L"Источник: " .. self.entry.source, 0.55, 0.78, 1, true)
+                GameTooltip:AddLine(ns.L"Источник: " .. ns.L(self.entry.source), 0.55, 0.78, 1, true)
             end
             if self.entry.note then
                 GameTooltip:AddLine(self.entry.note, 0.7, 0.7, 0.7, true)
@@ -1419,7 +1419,7 @@ end
 function ns.ExportSimC()
     local b = ns.LastBuild
     if not (b and b.slots and #b.slots > 0) then
-        print("|cFF86C7BD[TGF]|r Сначала открой окно BiS и выбери спек: /tgf bis")
+        print(ns.L"|cFF86C7BD[TGF]|r Сначала открой окно BiS и выбери спек: /tgf bis")
         return
     end
     local SIMC = {
@@ -1473,7 +1473,7 @@ function ns.ExportSimC()
         -- он значит «или». Удваиваем для показа: в буфер обмена уходит одинарный.
         -- Так же делает аддон SimulationCraft (комментарий у его Checksum).
         ns.ShowCopyText((table.concat(out, "\n"):gsub("|", "||")), #out)
-        print("|cFF86C7BD[TGF]|r Профиль SimC — в окне копирования: Ctrl+C и вставить в Advanced Sim на Raidbots.")
+        print(ns.L"|cFF86C7BD[TGF]|r Профиль SimC — в окне копирования: Ctrl+C и вставить в Advanced Sim на Raidbots.")
     else
         for _, line in ipairs(out) do print(line) end
     end
@@ -1684,8 +1684,8 @@ local function BuildPanel()
         end)
         simc:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-            GameTooltip:AddLine("Выгрузить сборку для SimulationCraft")
-            GameTooltip:AddLine("Готовый профиль для Advanced Sim на Raidbots: персонаж, вещи, чары и ротация двадцатки.", 0.8, 0.8, 0.8, true)
+            GameTooltip:AddLine(ns.L"Выгрузить сборку для SimulationCraft")
+            GameTooltip:AddLine(ns.L"Готовый профиль для Advanced Sim на Raidbots: персонаж, вещи, чары и ротация двадцатки.", 0.8, 0.8, 0.8, true)
             GameTooltip:Show()
         end)
         simc:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -1701,7 +1701,7 @@ local function BuildPanel()
         tal:SetScript("OnClick", function()
             local t = ns.TalentCodes and ns.TalentCodes[state.specID]
             if not t then
-                print("|cFF86C7BD[TGF]|r Кода талантов для этого спека пока нет. Пришлите свой: окно талантов, кнопка «Экспорт».")
+                print(ns.L"|cFF86C7BD[TGF]|r Кода талантов для этого спека пока нет. Пришлите свой: окно талантов, кнопка «Экспорт».")
                 return
             end
             -- В окне — только сам код. Раньше туда шли черта-заголовок журнала
@@ -1712,9 +1712,9 @@ local function BuildPanel()
         tal:SetScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_LEFT")
             local t = ns.TalentCodes and ns.TalentCodes[state.specID]
-            GameTooltip:AddLine("Код талантов")
-            GameTooltip:AddLine(t and (t.note or "") or "Для этого спека кода пока нет.", 0.8, 0.8, 0.8, true)
-            GameTooltip:AddLine("Вставляется в игре: окно талантов — Загрузить сборку.", 0.6, 0.6, 0.6, true)
+            GameTooltip:AddLine(ns.L"Код талантов")
+            GameTooltip:AddLine(t and (t.note or "") or ns.L"Для этого спека кода пока нет.", 0.8, 0.8, 0.8, true)
+            GameTooltip:AddLine(ns.L"Вставляется в игре: окно талантов — Загрузить сборку.", 0.6, 0.6, 0.6, true)
             GameTooltip:Show()
         end)
         tal:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -1807,7 +1807,7 @@ local function MakeArrow()
     arrow:SetScript("OnClick", Toggle)
     arrow:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:AddLine(IsCollapsed() and "Открыть BiS-сборки" or "Свернуть BiS-сборки")
+        GameTooltip:AddLine(IsCollapsed() and ns.L"Открыть BiS-сборки" or ns.L"Свернуть BiS-сборки")
         GameTooltip:Show()
     end)
     arrow:SetScript("OnLeave", function() GameTooltip:Hide() end)

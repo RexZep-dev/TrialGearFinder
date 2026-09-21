@@ -58,7 +58,7 @@ end
 
 function ns.CaptureStart(what)
     captureAll = true
-    Push("───────── [TGF] /tgf " .. (what or "прогон") .. " ─────────")
+    Push("───────── [TGF] /tgf " .. (what or ns.L"прогон") .. " ─────────")
 end
 
 function ns.CaptureStop()
@@ -111,7 +111,7 @@ local function Build()
 
     local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     title:SetPoint("TOP", 0, -8)
-    title:SetText("Копировать из чата — Ctrl+A, Ctrl+C")
+    title:SetText(ns.L"Копировать из чата — Ctrl+A, Ctrl+C")
     if C.text then title:SetTextColor(C.text[1], C.text[2], C.text[3]) end
 
     local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
@@ -134,8 +134,8 @@ local function Build()
             ns.ShowCopyWindow(true)
         end
     end
-    frame.scanBtn = bar("Сверить (/tgf scan)", 12, 155, run("scan"))
-    frame.refBtn = bar("Слепок надетого (/tgf ref)", 171, 175, run("ref"))
+    frame.scanBtn = bar(ns.L"Сверить (/tgf scan)", 12, 155, run("scan"))
+    frame.refBtn = bar(ns.L"Слепок надетого (/tgf ref)", 171, 175, run("ref"))
     frame.modeBtn = bar("", 350, 150, function()
         frame.showAll = not frame.showAll
         ns.ShowCopyWindow(true)
@@ -167,7 +167,7 @@ local function Build()
     selectAll:SetSize(150, 20)
     selectAll:SetPoint("BOTTOMLEFT", 12, 12)
     selectAll:SetFrameLevel(frame:GetFrameLevel() + 5)
-    selectAll:SetText("Выделить всё")
+    selectAll:SetText(ns.L"Выделить всё")
     selectAll:SetScript("OnClick", function()
         editBox:SetFocus()
         editBox:HighlightText()
@@ -212,17 +212,17 @@ function ns.ShowCopyWindow(keepMode)
     local lines
     if frame.showAll then
         lines = GatherChat()
-        frame.modeBtn:SetText("Показать: весь чат")
+        frame.modeBtn:SetText(ns.L"Показать: весь чат")
     else
         lines = log
-        frame.modeBtn:SetText("Показать: только TGF")
+        frame.modeBtn:SetText(ns.L"Показать: только TGF")
     end
 
     local text = table.concat(lines, "\n")
     if text == "" then
         text = frame.showAll
-            and "Чат пуст."
-            or "Строк [TGF] пока нет.\n\nНажми кнопку сверху — «Сверить» или «Слепок надетого» — вывод появится здесь.\nЛибо переключи на «весь чат»."
+            and ns.L"Чат пуст."
+            or ns.L"Строк [TGF] пока нет.\n\nНажми кнопку сверху — «Сверить» или «Слепок надетого» — вывод появится здесь.\nЛибо переключи на «весь чат»."
     end
     Display(text, #lines)
 end
@@ -234,7 +234,7 @@ end
 function ns.ShowCopyText(text, nLines)
     Build()
     frame.showAll = true
-    frame.modeBtn:SetText("Показать: только код")
+    frame.modeBtn:SetText(ns.L"Показать: только код")
     Display(text or "", nLines or 1)
 end
 
@@ -265,8 +265,8 @@ function ns.MakeChatCopyButton()
     chatBtn:SetScript("OnEnter", function(self)
         self:SetAlpha(1)
         GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-        GameTooltip:AddLine("Копировать из чата (TGF)")
-        GameTooltip:AddLine("После /tgf scan или /tgf gems — здесь их вывод", 1, 0.82, 0, true)
+        GameTooltip:AddLine(ns.L"Копировать из чата (TGF)")
+        GameTooltip:AddLine(ns.L"После /tgf scan или /tgf gems — здесь их вывод", 1, 0.82, 0, true)
         GameTooltip:Show()
     end)
     chatBtn:SetScript("OnLeave", function(self)
