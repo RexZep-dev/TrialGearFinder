@@ -19,6 +19,8 @@
 --         meta — только шлемы. В шестерёнку и мету основную характеристику
 --         не положить, туда идут вторички (см. вики «Камни»).
 -- unique: «Уникальный использующийся» — двух таких на персонаже не будет.
+-- expensive: алгарийские +5 и прочие TWW — триалу не достать (нужна подписка).
+--   Пока только пометка; фильтр «только с подпиской» — отдельно.
 
 local addonName, ns = ...
 
@@ -111,38 +113,40 @@ ns.Gems = {
     { itemID = 25899, socket = "meta", stats = {  }, unique = false, expansion = "TBC", effect = " +0 Melee Damage and Chance to Stun Target for 1s" }, -- Грубый алмаз земной бури
     { itemID = 25893, socket = "meta", stats = {  }, unique = false, expansion = "TBC", effect = "Increases Haste by 167 for 4s (23 ilvl)" }, -- Мистический алмаз небесного огня
     { itemID = 32410, socket = "meta", stats = {  }, unique = false, expansion = "TBC", effect = "Increases melee and ranged haste by 50(52) for 6s (23 ilvl)" }, -- Громовой алмаз небесного огня
-    { itemID = 213516, socket = "prismatic", stats = { stam = 7 }, unique = false, expansion = "TWW" }, -- Янтарь твердости
-    { itemID = 213517, socket = "prismatic", stats = { stam = 7 }, unique = false, expansion = "TWW" }, -- Янтарь твердости
-    { itemID = 213505, socket = "prismatic", stats = { stam = 5, haste = 1 }, unique = false, expansion = "TWW" }, -- Янтарь скорости
-    { itemID = 213506, socket = "prismatic", stats = { stam = 5, haste = 1 }, unique = false, expansion = "TWW" }, -- Янтарь скорости
-    { itemID = 213511, socket = "prismatic", stats = { stam = 5, vers = 1 }, unique = false, expansion = "TWW" }, -- Янтарь универсальности
-    { itemID = 213512, socket = "prismatic", stats = { stam = 5, vers = 1 }, unique = false, expansion = "TWW" }, -- Янтарь универсальности
-    { itemID = 213508, socket = "prismatic", stats = { stam = 5, iskus = 1 }, unique = false, expansion = "TWW" }, -- Янтарь искусности
-    { itemID = 213509, socket = "prismatic", stats = { stam = 5, iskus = 1 }, unique = false, expansion = "TWW" }, -- Янтарь искусности
-    { itemID = 213502, socket = "prismatic", stats = { stam = 5, crit = 1 }, unique = false, expansion = "TWW" }, -- Янтарь смерти
-    { itemID = 213503, socket = "prismatic", stats = { stam = 5, crit = 1 }, unique = false, expansion = "TWW" }, -- Янтарь смерти
-    { itemID = 213748, socket = "prismatic", stats = { main = 5 }, unique = true, pvp = true, expansion = "TWW", effect = "opponent's failed interrupt attempts grant Precognition" }, -- Кровавый камень разума
-    { itemID = 213743, socket = "prismatic", stats = { main = 5 }, unique = true, expansion = "TWW", effect = "0.15% Critical Effect per unique Algari gem color" }, -- Профанит апогея
-    { itemID = 213749, socket = "prismatic", stats = { main = 5 }, unique = true, pvp = true, expansion = "TWW", effect = "Getting snared increases damage of your next attack by 23(38) per stack(max 20)" }, -- Кровавый камень решительности
-    { itemID = 213746, socket = "prismatic", stats = { main = 5 }, unique = true, expansion = "TWW", effect = "2% Movement Speed per unique Algari gem color" }, -- Профанит неуловимости
-    { itemID = 213747, socket = "prismatic", stats = { main = 5 }, unique = true, pvp = true, expansion = "TWW", effect = "5% Damage Reduction when affected by Crowd Control" }, -- Кровавый камень выносливости
-    { itemID = 213740, socket = "prismatic", stats = { main = 5 }, unique = true, expansion = "TWW", effect = "1% Maximum Mana per unique Algari gem color" }, -- Профанит проницательности
-    { itemID = 213488, socket = "prismatic", stats = { haste = 5 }, unique = false, expansion = "TWW" }, -- Изумруд скорости
-    { itemID = 213485, socket = "prismatic", stats = { haste = 4, vers = 1 }, unique = false, expansion = "TWW" }, -- Изумруд универсальности
-    { itemID = 213482, socket = "prismatic", stats = { haste = 4, iskus = 1 }, unique = false, expansion = "TWW" }, -- Изумруд искусности
-    { itemID = 213479, socket = "prismatic", stats = { crit = 1, haste = 4 }, unique = false, expansion = "TWW" }, -- Изумруд смерти
-    { itemID = 213470, socket = "prismatic", stats = { haste = 1, vers = 4 }, unique = false, expansion = "TWW" }, -- Сапфир скорости
-    { itemID = 213494, socket = "prismatic", stats = { haste = 1, iskus = 4 }, unique = false, expansion = "TWW" }, -- Оникс скорости
-    { itemID = 213455, socket = "prismatic", stats = { crit = 4, haste = 1 }, unique = false, expansion = "TWW" }, -- Рубин скорости
-    { itemID = 213476, socket = "prismatic", stats = { vers = 5 }, unique = false, expansion = "TWW" }, -- Сапфир универсальности
-    { itemID = 213473, socket = "prismatic", stats = { iskus = 1, vers = 4 }, unique = false, expansion = "TWW" }, -- Сапфир искусности
-    { itemID = 213467, socket = "prismatic", stats = { crit = 1, vers = 4 }, unique = false, expansion = "TWW" }, -- Сапфир смерти
-    { itemID = 213497, socket = "prismatic", stats = { iskus = 4, vers = 1 }, unique = false, expansion = "TWW" }, -- Оникс универсальности
-    { itemID = 213461, socket = "prismatic", stats = { crit = 4, vers = 1 }, unique = false, expansion = "TWW" }, -- Рубин универсальности
-    { itemID = 213500, socket = "prismatic", stats = { iskus = 5 }, unique = false, expansion = "TWW" }, -- Оникс искусности
-    { itemID = 213491, socket = "prismatic", stats = { crit = 1, iskus = 4 }, unique = false, expansion = "TWW" }, -- Оникс смерти
-    { itemID = 213458, socket = "prismatic", stats = { crit = 4, iskus = 1 }, unique = false, expansion = "TWW" }, -- Рубин искусности
-    { itemID = 213464, socket = "prismatic", stats = { crit = 5 }, unique = false, expansion = "TWW" }, -- Рубин смерти
+    { itemID = 213516, socket = "prismatic", stats = { stam = 7 }, unique = false, expansion = "TWW", expensive = true }, -- Янтарь твердости
+    { itemID = 213517, socket = "prismatic", stats = { stam = 7 }, unique = false, expansion = "TWW", expensive = true }, -- Янтарь твердости
+    { itemID = 213505, socket = "prismatic", stats = { stam = 5, haste = 1 }, unique = false, expansion = "TWW", expensive = true }, -- Янтарь скорости
+    { itemID = 213506, socket = "prismatic", stats = { stam = 5, haste = 1 }, unique = false, expansion = "TWW", expensive = true }, -- Янтарь скорости
+    { itemID = 213511, socket = "prismatic", stats = { stam = 5, vers = 1 }, unique = false, expansion = "TWW", expensive = true }, -- Янтарь универсальности
+    { itemID = 213512, socket = "prismatic", stats = { stam = 5, vers = 1 }, unique = false, expansion = "TWW", expensive = true }, -- Янтарь универсальности
+    { itemID = 213508, socket = "prismatic", stats = { stam = 5, iskus = 1 }, unique = false, expansion = "TWW", expensive = true }, -- Янтарь искусности
+    { itemID = 213509, socket = "prismatic", stats = { stam = 5, iskus = 1 }, unique = false, expansion = "TWW", expensive = true }, -- Янтарь искусности
+    { itemID = 213502, socket = "prismatic", stats = { stam = 5, crit = 1 }, unique = false, expansion = "TWW", expensive = true }, -- Янтарь смерти
+    { itemID = 213503, socket = "prismatic", stats = { stam = 5, crit = 1 }, unique = false, expansion = "TWW", expensive = true }, -- Янтарь смерти
+    { itemID = 213748, socket = "prismatic", stats = { main = 5 }, unique = true, pvp = true, expansion = "TWW", expensive = true, effect = "opponent's failed interrupt attempts grant Precognition" }, -- Кровавый камень разума
+    { itemID = 213743, socket = "prismatic", stats = { main = 5 }, unique = true, expansion = "TWW", expensive = true, effect = "0.15% Critical Effect per unique Algari gem color" }, -- Профанит апогея
+    { itemID = 213749, socket = "prismatic", stats = { main = 5 }, unique = true, pvp = true, expansion = "TWW", expensive = true, effect = "Getting snared increases damage of your next attack by 23(38) per stack(max 20)" }, -- Кровавый камень решительности
+    { itemID = 213746, socket = "prismatic", stats = { main = 5 }, unique = true, expansion = "TWW", expensive = true, effect = "2% Movement Speed per unique Algari gem color" }, -- Профанит неуловимости
+    -- pvp=true — пометка на камне и источник; эффект работает в данжах
+    -- (проверено 21 сентября). +5 на двадцатке, не +12 с тултипа.
+    { itemID = 213747, socket = "prismatic", stats = { main = 5 }, unique = true, pvp = true, expansion = "TWW", expensive = true, effect = "5% Damage Reduction when affected by Crowd Control" }, -- Кровавый камень выносливости
+    { itemID = 213740, socket = "prismatic", stats = { main = 5 }, unique = true, expansion = "TWW", expensive = true, effect = "1% Maximum Mana per unique Algari gem color" }, -- Профанит проницательности
+    { itemID = 213488, socket = "prismatic", stats = { haste = 5 }, unique = false, expansion = "TWW", expensive = true }, -- Изумруд скорости
+    { itemID = 213485, socket = "prismatic", stats = { haste = 4, vers = 1 }, unique = false, expansion = "TWW", expensive = true }, -- Изумруд универсальности
+    { itemID = 213482, socket = "prismatic", stats = { haste = 4, iskus = 1 }, unique = false, expansion = "TWW", expensive = true }, -- Изумруд искусности
+    { itemID = 213479, socket = "prismatic", stats = { crit = 1, haste = 4 }, unique = false, expansion = "TWW", expensive = true }, -- Изумруд смерти
+    { itemID = 213470, socket = "prismatic", stats = { haste = 1, vers = 4 }, unique = false, expansion = "TWW", expensive = true }, -- Сапфир скорости
+    { itemID = 213494, socket = "prismatic", stats = { haste = 1, iskus = 4 }, unique = false, expansion = "TWW", expensive = true }, -- Оникс скорости
+    { itemID = 213455, socket = "prismatic", stats = { crit = 4, haste = 1 }, unique = false, expansion = "TWW", expensive = true }, -- Рубин скорости
+    { itemID = 213476, socket = "prismatic", stats = { vers = 5 }, unique = false, expansion = "TWW", expensive = true }, -- Сапфир универсальности
+    { itemID = 213473, socket = "prismatic", stats = { iskus = 1, vers = 4 }, unique = false, expansion = "TWW", expensive = true }, -- Сапфир искусности
+    { itemID = 213467, socket = "prismatic", stats = { crit = 1, vers = 4 }, unique = false, expansion = "TWW", expensive = true }, -- Сапфир смерти
+    { itemID = 213497, socket = "prismatic", stats = { iskus = 4, vers = 1 }, unique = false, expansion = "TWW", expensive = true }, -- Оникс универсальности
+    { itemID = 213461, socket = "prismatic", stats = { crit = 4, vers = 1 }, unique = false, expansion = "TWW", expensive = true }, -- Рубин универсальности
+    { itemID = 213500, socket = "prismatic", stats = { iskus = 5 }, unique = false, expansion = "TWW", expensive = true }, -- Оникс искусности
+    { itemID = 213491, socket = "prismatic", stats = { crit = 1, iskus = 4 }, unique = false, expansion = "TWW", expensive = true }, -- Оникс смерти
+    { itemID = 213458, socket = "prismatic", stats = { crit = 4, iskus = 1 }, unique = false, expansion = "TWW", expensive = true }, -- Рубин искусности
+    { itemID = 213464, socket = "prismatic", stats = { crit = 5 }, unique = false, expansion = "TWW", expensive = true }, -- Рубин смерти
     { itemID = 77143, socket = "prismatic", stats = { main = 2, armor = 2 }, unique = false, expansion = "Cataclysm" }, -- Насыщенный эльфийский хризолит
     { itemID = 71848, socket = "prismatic", stats = { agi = 2, haste = 2 }, unique = false, expansion = "Cataclysm" }, -- Лавовый коралл проворства
     { itemID = 71852, socket = "prismatic", stats = { agi = 2, iskus = 2 }, unique = false, expansion = "Cataclysm" }, -- Лавовый коралл адепта

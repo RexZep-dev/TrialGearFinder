@@ -328,6 +328,14 @@ local enUS = {
         "|cFFFFD100[TGF]|r Say which side: /tgf pin жила орда or /tgf pin жила альянс",
     ["|cFFFFD100[TGF]|r Источник со словом «%s» в базе не найден."] =
         "|cFFFFD100[TGF]|r No source containing %s in the database.",
+    ["|cFFFFD100[TGF]|r Источник со словом «%s» в базе и в журнале не найден."] =
+        "|cFFFFD100[TGF]|r No source containing %s in the database or the journal.",
+    ["|cFFFFD100[TGF]|r Журнал подземелий недоступен."] =
+        "|cFFFFD100[TGF]|r Encounter Journal is not available.",
+    ["|cFFFFD100[TGF]|r В журнале %d подземелий: с меткой %d, без метки %d."] =
+        "|cFFFFD100[TGF]|r Journal has %d dungeons: %d pinned, %d without a pin.",
+    ["|cFFFFD100[TGF]|r Без метки из журнала: /tgf pin список"] =
+        "|cFFFFD100[TGF]|r Unpinned from the journal: /tgf pin список",
     ["|cFFFFD100[TGF]|r Подходит несколько, уточни (%d):"] =
         "|cFFFFD100[TGF]|r Several matches, be more specific (%d):",
     ["|cFFFFD100[TGF]|r Запомнено: %s = карта %d, %.1f, %.1f"] =
@@ -370,6 +378,10 @@ local enUS = {
         "# Talents come from the addon, not this character: the code was not taken at level 20.",
     ["# Талантов нет: зайди этим спеком — выгрузка возьмёт их из игры."] =
         "# No talents: log in on this spec — the export will take them from the game.",
+    ["# Острые рефлексы: в данных сима с 23 уровня, на двадцатке талант есть."] =
+        "# Sharp Reflexes: spell data says level 23, but a level-20 can take it.",
+    ["# Боевые инстинкты и Эффективная тренировка на 20 уровне нет."] =
+        "# Martial Instincts and Efficient Training do not exist at level 20.",
     ["# Пачка из трёх целей: убери решётку в начале следующей строки."] =
         "# Three-target pack: remove the hash at the start of the next line.",
     ["# Ротация двадцатки из TrialGearFinder, сверена с логами рейтинга."] =
@@ -438,8 +450,8 @@ local enUS = {
     -- Заметки предметов из гайда. Ключ — как в базе, русская строка.
     ["[ДД] падает с Древний зуболом в Назмире; Беспрерывно тикающие часы: аксессуар со всеми основными статами разом (в рейтинге ×8)"] = "[DPS] drops from Ancient Jawbreaker in Nazmir; Incessantly Ticking Clock: trinket with all primary stats at once (ranked logs ×8)",
     ["[ДД] Карта Таро Пророчества: три вторички разом - крит, универсальность, искусность. Уникальная использующаяся"] = "[DPS] Prophetic Tarot: three secondaries at once - crit, vers, mastery. Unique-equipped on-use",
-    ["[ДД] Клык Расте: три вторички разом - крит, скорость, искусность. Падает с рарника, раз в день"] = "[DPS] Fang of Tast: three secondaries at once - crit, haste, mastery. Daily rare",
-    ["[ДД] Обузданный огонь: три вторички разом - крит, универсальность, искусность. Падает с рарника, раз в день"] = "[DPS] Tamed Flame: three secondaries at once - crit, vers, mastery. Daily rare",
+    ["[ДД] Клык Расте: три вторички разом - крит, скорость, искусность. Падает с Расте, раз в день"] = "[DPS] Fang of Rasthe: three secondaries at once - crit, haste, mastery. Drops from Rasthe, daily rare",
+    ["[ДД] Обузданный огонь: три вторички разом - крит, универсальность, искусность. Падает с Обуглень Дикий Огонь, раз в день"] = "[DPS] Contained Flame: three secondaries at once - crit, vers, mastery. Drops from Cindral the Wildfire, daily rare",
     ["[ДД] аналог Рога талбука, с квеста"] = "[DPS] quest version of Talbuk Horn",
     ["[ДД] падает с Сиамата (Затерянный город Тол'вир); Благоволение Тиа (Tia's Grace): атаки дают +1 ловкости на 15 сек., до 10 раз. Тир 32"] = "[DPS] drops from Siamat (Lost City of the Tol'vir); Tia's Grace: attacks grant +1 Agility for 15 sec, stacks to 10. Tier 32",
     ["[ДД] падает с Эрудакса, Повелителя Глубин; Буря теней: интеллект копится от урона периодикой, до 20 стаков"] = "[DPS] drops from Erudax, the Duke of Below; Storm of Shadows: Intellect stacks from DoT damage, up to 20",
@@ -455,6 +467,8 @@ local enUS = {
     ["[Танк] спасает от критического урона"] = "[Tank] saves you from burst damage",
     ["[Хил] падает с Эрудакса, Повелителя Глубин; Оскверненная яичная скорлупа: по использованию щит на союзника 2809 + возврат маны"] = "[Healer] drops from Erudax, the Duke of Below; Corrupted Egg Shell: on-use shield on an ally 2809 + mana return",
     ["[Хил] реген маны"] = "[Healer] mana regen",
+    ["[Хил] падает с Рухрана; Перо Рухрана: скорость и универсальность, синий, уникальный (Keotore, 30 из 50 заходов; статы и уровень с тултипа 21 сентября)"] = "[Healer] drops from Rukhran; Rukhran's Quill: haste and vers, rare, unique-equipped (Keotore, 30 of 50 runs; stats and ilvl from tooltip 21 Sep)",
+    ["редкий: Рука Эдварда Странного, уникальная одноручка, мировой дроп. В сборку не ставим (Keotore, армори ilvl 27)"] = "rare: Hand of Edward the Odd, unique one-hander, world drop. Not in the set (Keotore, armory ilvl 27)",
     ["Бадья: кольцо на универсальность/искусность. Тир 32"] = "Bucket: ring, vers/mastery. Tier 32",
     ["Бусы предков Укхел: шея на скорость/искусность (слепок, ×4; была удалена)"] = "Ukhel Ancestry Beads: neck, haste/mastery (snapshot ×4; was removed)",
     ["Двойной клинок мастерства: кинжал разбойника, обе руки (от сообщества)"] = "Twinblade of Mastery: rogue dagger, both hands (community)",

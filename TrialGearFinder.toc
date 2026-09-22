@@ -18,6 +18,7 @@ Gems.lua
 Enchants.lua
 Talents.lua
 SimC.lua
+Pins.lua
 Core.lua
 Copy.lua
 BiS_Data.lua

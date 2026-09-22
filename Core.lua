@@ -152,6 +152,18 @@ local function FoldCase(s)
     return (s:gsub("[\1-\127\194-\244][\128-\191]*", function(c) return CYRILLIC_UPPER_TO_LOWER[c] or c end))
 end
 
+-- Имена журнала и базы расходятся: ё/е, тире, кавычки, хвост в скобках
+-- («Чертоги Доблести (бонусбосс Один, мифик)»).
+local function PinFold(s)
+    s = FoldCase(s)
+    s = s:gsub("ё", "е")
+    s = s:gsub('"', ""):gsub("«", ""):gsub("»", "")
+    s = s:gsub("–", "-"):gsub("—", "-")
+    s = s:gsub("%s*%b()", "")
+    s = s:gsub("%s+", " ")
+    return (s:match("^%s*(.-)%s*$") or s)
+end
+
 -- Item string with bonus IDs baked in, forced to twink level - used only for the
 -- hover tooltip's item icon/binding/set info, chat links, and dressup. These old
 -- items scale via a level curve the live client applies unpredictably, so this
@@ -1498,11 +1510,16 @@ local SOURCE_PINS = {
     -- ПОДЗЕМЕЛЬЯ. Ключ - поле source из Data.lua.
     -- Восточные королевства
     ["Ульдаман"]               = { 15, 42.2, 11.7 },   -- Бесплодные земли
+    ["Ульдаман: наследие Тира"] = { 15, 41.1, 10.2 }, -- тот же материк, другой вход
     ["Залы Алого ордена"]      = { 18, 85.3, 32.5 },   -- Тирисфальские леса
+    ["Крепость Темного Клыка"] = { 21, 45.0, 68.0 },  -- Серебряный бор
     ["Некроситет"]             = { 22, 69.9, 73.8 },   -- Западные Чумные земли
     ["Стратхольм"]             = { 23, 27.1, 11.5 },   -- Восточные Чумные земли
     ["Стратхольм - Чёрный ход"] = { 23, 43.2, 17.5 },
+    ["Стратхольм – главные врата"] = { 23, 27.1, 11.5 }, -- имя из журнала; точка та же
+    ["Стратхольм – черный ход"] = { 23, 43.2, 17.5 }, -- то же, что «Чёрный ход»
     ["Глубины Черной горы"]    = { 36, 21.0, 38.6 },   -- Пылающие степи
+    ["Грим Батол"]             = { 241, 19.2, 54.2 }, -- Сумеречное нагорье
     -- Калимдор
     ["Мародон"]                = { 66, 29.3, 62.7 },   -- Пустоши
     ["Очищение Стратхольма"]   = { 71, 65.1, 50.0 },   -- Танарис, Пещеры Времени
@@ -1510,6 +1527,7 @@ local SOURCE_PINS = {
     ["Вершина Смерча"]         = { 249, 76.7, 84.6 },  -- Ульдум
     -- Запределье
     ["Кузня Крови"]            = { 100, 46.1, 51.6 },  -- Цитадель Адского Пламени
+    ["Бастионы Адского Пламени"] = { 100, 46.1, 51.6 }, -- тот же двор, другой портал
     ["Разрушенные залы"]       = { 100, 48.2, 51.8 },
     ["Аукенайские гробницы"]   = { 101, 44.6, 79.0 },  -- Терокар, Аукиндон
     ["Гробницы маны"]          = { 101, 46.1, 76.6 },
@@ -1535,8 +1553,11 @@ local SOURCE_PINS = {
     ["Штурм Аметистовой крепости"] = { 619, 46.7, 65.5 }, -- Даларан
     ["Око Азшары"]             = { 630, 61.0, 41.1 },  -- Азсуна
     ["Чертоги Доблести (бонусбосс Один, мифик)"] = { 634, 72.7, 70.8 }, -- Штормхейм
+    ["Чертоги Доблести"]       = { 634, 72.7, 70.8 }, -- имя из журнала, та же дверь
     ["Крепость Чёрной Ладьи"]  = { 641, 37.3, 50.2 },  -- Вальшара
+    ["Крепость Черной Ладьи"]  = { 641, 37.3, 50.2 },
     ["Чаща Тёмного Сердца"]    = { 641, 59.2, 31.4 },
+    ["Чаща Темного Сердца"]    = { 641, 59.2, 31.4 },
     ["Собор Вечной Ночи"]      = { 646, 64.9, 16.8 },  -- Расколотый берег
     ["Логово Нелтариона"]      = { 650, 49.7, 68.6 },  -- Крутогорье
     -- Кул-Тирас
@@ -1551,12 +1572,88 @@ local SOURCE_PINS = {
     -- Зандалар
     ["Храм Сетралисс"]         = { 864, 52.0, 25.5 },  -- Вол'дун
     -- Тёмные земли
+    ["Чертоги Покаяния"]       = { 1525, 78.5, 49.2 }, -- Ревендрет
     ["Чумные каскады"]         = { 1536, 59.5, 65.0 }, -- Малдраксус
-    ["Мгла Тирна Скитта"]      = { 1565, 35.6, 54.2 }, -- Арденвельд
+    ["Театр Боли"]             = { 1536, 53.1, 53.0 }, -- тот же материк, другой вход
+    ["Мгла Тирна Скитта"]      = { 1565, 35.6, 54.2 }, -- Арденвельд; в журнале «Туманы Тирна Скитта»
     ["Смертельная тризна"]     = { 1533, 40.1, 55.3 }, -- Бастион
     -- Драконьи острова
     ["Лазурные Врата"]         = { 1978, 47.5, 82.8 },
+    ["Лазурное хранилище"]     = { 1978, 47.5, 82.8 }, -- имя из журнала
     ["Наступление Нохуда"]     = { 2023, 60.8, 39.3 }, -- Равнины Охн'арана
+    ["Наступление клана Нокхуд"] = { 2023, 60.8, 39.3 },
+
+    -- Снято обходом карт 21 сентября (имена из журнала)
+    ["Пещеры Стенаний"]             = { 10, 40.6, 68.9 },
+    ["Монастырь Алого ордена"]      = { 18, 84.8, 30.4 },
+    ["Гномреган"]                   = { 27, 31.5, 38.1 },
+    ["Верхняя часть пика Черной горы"] = { 36, 21.1, 38.4 },
+    ["Нижняя часть пика Черной горы"] = { 36, 21.1, 38.4 },
+    ["Пещеры Черной горы"]          = { 36, 21.1, 38.4 },
+    ["Мертвые копи"]                = { 52, 42.6, 71.7 },
+    ["Непроглядная Пучина"]         = { 62, 32.7, 94.6 },
+    ["Курганы Иглошкурых"]          = { 64, 46.8, 23.4 },
+    ["Время Сумерек"]               = { 71, 64.9, 49.9 },
+    ["Зул'Фаррак"]                  = { 71, 39.6, 22.2 },
+    ["Источник Вечности"]           = { 71, 64.9, 49.9 },
+    ["Конец Времен"]                = { 71, 65.1, 50.0 },
+    ["Черные топи"]                 = { 71, 64.9, 50.0 },
+    ["Тюрьма"]                      = { 84, 51.2, 67.9 },
+    ["Огненная Пропасть"]           = { 85, 51.8, 58.7 },
+    ["Зул'Аман"]                    = { 95, 82.1, 64.6 },
+    ["Аркатрац"]                    = { 109, 74.4, 57.9 },
+    ["Ан'кахет: Старое Королевство"] = { 115, 28.5, 51.9 },
+    ["Вершина Утгард"]              = { 117, 57.3, 46.8 },
+    ["Залы Отражений"]              = { 118, 55.4, 90.8 },
+    ["Испытание чемпиона"]          = { 118, 74.2, 20.5 },
+    ["Чертоги Камня"]               = { 120, 39.7, 27.1 },
+    ["Чертоги Молний"]              = { 120, 45.4, 21.5 },
+    ["Гундрак"]                     = { 121, 76.5, 21.6 },
+    ["Крепость Драк'Тарон"]         = { 121, 28.7, 86.8 },
+    ["Аметистовая крепость"]        = { 127, 34.6, 44.7 },
+    ["Лабиринты Иглошкурых"]        = { 199, 40.8, 94.7 },
+    ["Трон Приливов"]               = { 204, 69.2, 25.5 },
+    ["Зул'Гуруб"]                   = { 224, 64.0, 21.8 },
+    ["Затерянный город Тол'вир"]    = { 249, 60.6, 64.2 },
+    ["Чертоги Созидания"]           = { 249, 69.1, 53.1 },
+    ["Храм Нефритовой Змеи"]        = { 371, 56.1, 57.9 },
+    ["Хмелеварня Буйных Портеров"]  = { 376, 36.2, 69.1 },
+    ["Монастырь Шадо-Пан"]          = { 379, 36.8, 47.5 },
+    ["Осада храма Нюцзао"]          = { 388, 34.8, 81.6 },
+    ["Врата Заходящего Солнца"]     = { 390, 15.9, 74.5 },
+    ["Дворец Могу'шан"]             = { 390, 80.5, 33.2 },
+    ["Шлаковые шахты Кровавого Молота"] = { 525, 50.0, 24.8 },
+    ["Аукиндон"]                    = { 535, 46.3, 74.0 },
+    ["Некрополь Призрачной Луны"]   = { 539, 31.9, 42.8 },
+    ["Небесный Путь"]               = { 542, 35.7, 33.7 },
+    ["Вечное Цветение"]             = { 543, 59.6, 45.8 },
+    ["Депо Мрачных Путей"]          = { 543, 55.2, 31.8 },
+    ["Казематы Стражей"]            = { 630, 48.1, 82.3 },
+    ["Утроба Душ"]                  = { 634, 52.5, 45.6 },
+    ["Катакомбы Сурамара"]          = { 680, 41.2, 61.8 },
+    ["Квартал Звезд"]               = { 680, 50.8, 65.7 },
+    ["Тол Дагор"]                   = { 876, 77.7, 62.4 },
+    ["Престол Триумвирата"]         = { 882, 22.2, 56.6 },
+    ["Вольная Гавань"]              = { 895, 84.6, 78.8 },
+    ["Осада Боралуса"]              = { 895, 88.3, 51.1 },
+    ["Святилище Штормов"]           = { 942, 78.6, 26.7 },
+    ["Атал'Дазар"]                  = { 862, 43.5, 39.6 },
+    ["Гробница королей"]            = { 862, 37.6, 39.6 },
+    ["Подгнилье"]                   = { 863, 51.3, 64.7 },
+    ["Каменные Недра"]              = { 207, 47.5, 52.1 },
+    ["Операция \"Мехагон\""]        = { 1462, 72.9, 36.6 },
+    ["Туманы Тирна Скитта"]         = { 1565, 35.6, 54.2 },
+    ["Та Сторона"]                  = { 1565, 68.7, 66.7 },
+    ["Кровавые катакомбы"]          = { 1525, 51.1, 30.2 },
+    ["Шпили Перерождения"]          = { 1533, 58.6, 28.6 },
+    ["Лощина Бурошкуров"]           = { 2024, 11.5, 48.8 },
+    ["Рубиновые Омуты Жизни"]       = { 2022, 60.2, 75.8 },
+    ["Нелтарий"]                    = { 2022, 25.7, 56.3 },
+    ["Академия Алгет'ар"]           = { 2025, 58.3, 42.4 },
+    ["Чертоги Насыщения"]           = { 2025, 59.2, 60.6 },
+    ["Рассвет Бесконечности"]       = { 2025, 61.1, 84.5 },
+    ["Храм Атал'Хаккар"]            = { 51, 69.7, 53.8 },
+    ["Забытый город – квартал Криводревов"] = { 69, 59.4, 40.2 }, -- Фералас; одна точка на все три крыла
 
     -- РАРНИКИ И СОКРОВИЩА. Ключ по предмету: source у них общий на категорию,
     -- а место у каждого своё. Комментарий - из note в Data.lua.
@@ -1631,7 +1728,40 @@ local function LookupPin(key)
         if saved and type(saved[1]) == "number" then return saved end
         return nil
     end
-    return saved or baked
+    local pin = saved or baked
+    if pin then return pin end
+    local folded = PinFold(key)
+    if folded ~= "" then
+        local savedPins = TrialGearFinderDB and TrialGearFinderDB.pins
+        if savedPins then
+            for name, other in pairs(savedPins) do
+                if name ~= key and type(other) == "table" and type(other[1]) == "number" and PinFold(name) == folded then
+                    return other
+                end
+            end
+        end
+        for name, other in pairs(SOURCE_PINS) do
+            if name ~= key and type(other) == "table" and type(other[1]) == "number" and PinFold(name) == folded then
+                return other
+            end
+        end
+    end
+    if ns.IsDireMaulName and ns.IsDireMaulName(key) then
+        local savedPins = TrialGearFinderDB and TrialGearFinderDB.pins
+        if savedPins then
+            for name, other in pairs(savedPins) do
+                if ns.IsDireMaulName(name) and type(other) == "table" and type(other[1]) == "number" then
+                    return other
+                end
+            end
+        end
+        for name, other in pairs(SOURCE_PINS) do
+            if ns.IsDireMaulName(name) and type(other) == "table" and type(other[1]) == "number" then
+                return other
+            end
+        end
+    end
+    return nil
 end
 
 local function StoreCapturedPin(key, mapID, x, y, side)
@@ -3381,8 +3511,46 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     end
     -- /tgf pin            - what waypoint does the addon actually see right now
     -- /tgf pin сетекк     - bind that waypoint to the source matching "сетекк"
+    -- /tgf pin список     - journal 5-mans that still have no pin
     local pinName = msg:match("^pin%s*(.*)$")
     if pinName then
+        local listWord = FoldCase((pinName:match("^%s*(.-)%s*$") or ""))
+        if listWord == "список" or listWord == "нет" or listWord == "list" then
+            if not ns.ForEachJournalDungeon then
+                print(ns.L"|cFFFFD100[TGF]|r Журнал подземелий недоступен.")
+                return
+            end
+            local have, missing, byTier = 0, 0, {}
+            local ok = ns.ForEachJournalDungeon(function(name, _, tier)
+                if LookupPin(name) then
+                    have = have + 1
+                else
+                    missing = missing + 1
+                    local bucket = byTier[tier]
+                    if not bucket then
+                        bucket = {}
+                        byTier[tier] = bucket
+                        byTier[#byTier + 1] = tier
+                    end
+                    bucket[#bucket + 1] = name
+                end
+            end)
+            if not ok then
+                print(ns.L"|cFFFFD100[TGF]|r Журнал подземелий недоступен.")
+                return
+            end
+            print(string.format(ns.L"|cFFFFD100[TGF]|r В журнале %d подземелий: с меткой %d, без метки %d.",
+                have + missing, have, missing))
+            for _, tier in ipairs(byTier) do
+                local bucket = byTier[tier]
+                print(string.format("|cFFFFD100[TGF]|r %s (%d)", tier, #bucket))
+                for _, name in ipairs(bucket) do
+                    print("    " .. name)
+                end
+            end
+            return
+        end
+
         local point = C_Map.GetUserWaypoint()
         if not point then
             print(ns.L"|cFFFFD100[TGF]|r Метки на карте нет. Поставь её Ctrl+щелчком по карте и повтори.")
@@ -3396,6 +3564,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
             print(string.format(ns.L"|cFFFFD100[TGF]|r Текущая метка: карта %d, %.1f, %.1f", mapID, x, y))
             print(ns.L"|cFFFFD100[TGF]|r Привязать: /tgf pin <часть названия подземелья>")
             print(ns.L"|cFFFFD100[TGF]|r Два входа Жилы: /tgf pin жила орда  или  /tgf pin жила альянс")
+            print(ns.L"|cFFFFD100[TGF]|r Без метки из журнала: /tgf pin список")
             return
         end
 
@@ -3439,6 +3608,14 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         end
         for _, item in ipairs(ns.Items) do consider(item) end
         for _, item in ipairs(ns.CommunityItems or {}) do consider(item) end
+        if ns.ForEachJournalDungeon then
+            ns.ForEachJournalDungeon(function(name)
+                if name and not seen[name] and FoldCase(name):find(needle, 1, true) then
+                    seen[name] = true
+                    table.insert(matches, { key = name, label = name })
+                end
+            end)
+        end
 
         -- An exact name always wins over the ones merely containing it.
         for _, m in ipairs(matches) do
@@ -3447,9 +3624,13 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
                 break
             end
         end
+        -- Забытый Город: три крыла, один вход. Не спрашивать уточнение.
+        if #matches > 1 and ns.PinFamilySharesAll and ns.PinFamilySharesAll(matches) then
+            matches = { matches[1] }
+        end
 
         if #matches == 0 then
-            print(string.format(ns.L"|cFFFFD100[TGF]|r Источник со словом «%s» в базе не найден.", pinName))
+            print(string.format(ns.L"|cFFFFD100[TGF]|r Источник со словом «%s» в базе и в журнале не найден.", pinName))
             return
         end
         if #matches > 1 then
