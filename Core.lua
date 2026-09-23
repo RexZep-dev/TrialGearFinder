@@ -3050,7 +3050,20 @@ frame:SetScript("OnEvent", function(self, event, addonName)
     -- client caches any item at all (passing players, auction house, bags), so
     -- without this the addon rebuilt all 121 rows hundreds of times a second in
     -- a busy city - top CPU consumer among addons and 199 MB of garbage.
-    if frame:IsShown() then RefreshResults() end
+    --
+    -- И одного «только при открытом окне» мало. С тумблером «Комьюнити» в списке
+    -- сотни вещей, игра подгружает их по одной, и событие приходило на каждую:
+    -- замер 23 сентября - 70 полных перестроек подряд по 200-350 мс, игра
+    -- висела 15-20 секунд, а каждое следующее перестроение шло дольше
+    -- предыдущего из-за копившегося мусора. Теперь пачка событий за 0,3 секунды
+    -- даёт одно перестроение: пока оно ждёт своей очереди, новые не ставятся.
+    if frame:IsShown() and not frame.refreshQueued then
+        frame.refreshQueued = true
+        C_Timer.After(0.3, function()
+            frame.refreshQueued = nil
+            if frame:IsShown() then RefreshResults() end
+        end)
+    end
 end)
 
 ------------------------------------------------------------
