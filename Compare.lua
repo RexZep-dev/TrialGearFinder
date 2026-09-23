@@ -20,7 +20,8 @@ local ICON = 32
 local MID = W / 2
 local GAP = 22        -- от середины до иконки: в щели стоят камни обеих сторон
 local GEM = 10        -- иконка камня
-local MODEL_W = 300
+-- Модель у края окна и уже строк: фигура не уходит под длинные названия.
+local MODEL_W = 240
 local BOTTOM = TOP - 16 * ROW_H - 12 -- верх нижнего блока: плашки и диаграмма
 
 -- Порядок строк как у Чонки: голова..запястья, оружие, кисти..аксессуары.
@@ -108,22 +109,6 @@ end
 -- ── Одна сторона строки: иконка, полоска-метка и три строки текста ─────────
 local function MakeSide(parent, y, left)
     local side = {}
-    -- Затемнение под строкой: от иконки к краю сходит на нет. Модель стоит
-    -- позади текста, и без подложки буквы тонули бы в её пикселях.
-    side.bg = parent:CreateTexture(nil, "BACKGROUND")
-    side.bg:SetHeight(ROW_H - 2)
-    side.bg:SetColorTexture(1, 1, 1, 1)
-    local dark, clear = CreateColor(0, 0, 0, 0.72), CreateColor(0, 0, 0, 0)
-    if left then
-        side.bg:SetPoint("TOPLEFT", parent, "TOPLEFT", 60, y + 2)
-        side.bg:SetPoint("TOPRIGHT", parent, "TOPLEFT", MID - 2, y + 2)
-        side.bg:SetGradient("HORIZONTAL", clear, dark)
-    else
-        side.bg:SetPoint("TOPLEFT", parent, "TOPLEFT", MID + 2, y + 2)
-        side.bg:SetPoint("TOPRIGHT", parent, "TOPRIGHT", -60, y + 2)
-        side.bg:SetGradient("HORIZONTAL", dark, clear)
-    end
-
     side.icon = parent:CreateTexture(nil, "ARTWORK")
     side.icon:SetSize(ICON, ICON)
     side.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
@@ -133,7 +118,7 @@ local function MakeSide(parent, y, left)
     side.lvl = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     side.ench = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     for _, fs in ipairs({ side.name, side.lvl, side.ench }) do
-        fs:SetWidth(270)
+        fs:SetWidth(240)
         fs:SetWordWrap(false)
         fs:SetJustifyH(left and "RIGHT" or "LEFT")
     end
@@ -452,8 +437,8 @@ local function Build()
 
     -- Модели - нижний слой, всё остальное на слое над ними: как у Чонки,
     -- фигура стоит позади строк и не наезжает на предметы.
-    frame.lModel = MakeModel(frame, "TOPLEFT", 10, 0.61)
-    frame.rModel = MakeModel(frame, "TOPRIGHT", -10, -0.61)
+    frame.lModel = MakeModel(frame, "TOPLEFT", 4, 0.61)
+    frame.rModel = MakeModel(frame, "TOPRIGHT", -4, -0.61)
     local content = CreateFrame("Frame", nil, frame)
     content:SetAllPoints()
     content:SetFrameLevel(frame.lModel:GetFrameLevel() + 5)
