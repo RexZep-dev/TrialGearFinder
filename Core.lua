@@ -1031,6 +1031,12 @@ for _, it in ipairs(ns.CommunityItems or {}) do
     ns_ItemsByID[it.itemID] = it
     ns_CommunityID[it.itemID] = true
 end
+-- Добыча журнала Путешествия во времени (Timewalk.lua): сверка и дамп
+-- видят её как обычную базу. В список и в окно BiS — по тому же тумблеру
+-- «Комьюнити», что уже открывает тир 32.
+for _, it in ipairs(ns.TimewalkItems or {}) do
+    ns_ItemsByID[it.itemID] = it
+end
 
 -- Вещь из тира «Искажение временем» (Путешествие во времени, ilvl 32).
 -- Узнаём по scale-config 13828 в связке - тот же приём, что «эпик по 6712».
@@ -1211,9 +1217,15 @@ local function CountGemsInLink(link)
 end
 
 local function ScanItemLink(link)
-    ScanTooltip:ClearLines()
-    ScanTooltip:SetHyperlink(link)
-
+    -- Журнал и чат с 12.0 красят ссылку «|cnIQ3:|Hitem:…|h[имя]|h|r».
+    -- TSM и AllTheThings такую строку сначала чистят: SetHyperlink и
+    -- GetDetailedItemLevelInfo с цветным префиксом часто молчат.
+    if type(link) == "string" then
+        local payload = link:match("|H(item:[^|]+)|h")
+        if payload then
+            link = "|H" .. payload .. "|h|r"
+        end
+    end
     local result = { ilvl = C_Item.GetDetailedItemLevelInfo(link), stats = {}, socketTypes = {} }
     local inSocketBonusZone = false
 
@@ -1223,38 +1235,69 @@ local function ScanItemLink(link)
     -- tooltip text itself, the same way the empty-socket lines are.
     local filledGems = CountGemsInLink(link)
 
-    for i = 1, ScanTooltip:NumLines() do
-        local fs = _G["TrialGearFinderScanTooltipTextLeft" .. i]
-        local text = fs and fs:GetText()
-        if text then
-            if IsSocketBonusLine(text) then inSocketBonusZone = true end
+    local function EatLine(text)
+        if not text or text == "" then return end
+        if IsSocketBonusLine(text) then inSocketBonusZone = true end
 
-            do
-                local value, rest = MatchStatLine(text)
-                if value then
-                    local key = StemToStatKey(rest)
-                    if key then
-                        if inSocketBonusZone then
-                            result.socketBonus = { key = key, value = tonumber(value) }
-                        else
-                            result.stats[key] = tonumber(value)
-                        end
-                    end
+        local value, rest = MatchStatLine(text)
+        if value then
+            local key = StemToStatKey(rest)
+            if key then
+                if inSocketBonusZone then
+                    result.socketBonus = { key = key, value = tonumber(value) }
+                else
+                    result.stats[key] = tonumber(value)
                 end
             end
+        end
 
-            -- Строка пустого гнезда: ищем слово «гнездо» где угодно в строке, а тип
-            -- определяем по ключевому слову рядом. Раньше требовалось строгое
-            -- «<тип> гнездо», и гнёзда-шестерёнки (инженерные) не находились вовсе -
-            -- в игре они подписаны иначе.
-            local lowered = text:lower()
-            if lowered:find(SocketWord(), 1, true) then
-                local socketType = "prismatic"
-                for word, key in pairs(REVERSE_SOCKET_LABELS) do
-                    if lowered:find(word:lower(), 1, true) then socketType = key break end
-                end
-                table.insert(result.socketTypes, socketType)
+        -- Строка пустого гнезда: ищем слово «гнездо» где угодно в строке, а тип
+        -- определяем по ключевому слову рядом. Раньше требовалось строгое
+        -- «<тип> гнездо», и гнёзда-шестерёнки (инженерные) не находились вовсе -
+        -- в игре они подписаны иначе.
+        local lowered = text:lower()
+        if lowered:find(SocketWord(), 1, true) then
+            local socketType = "prismatic"
+            for word, key in pairs(REVERSE_SOCKET_LABELS) do
+                if lowered:find(word:lower(), 1, true) then socketType = key break end
             end
+            table.insert(result.socketTypes, socketType)
+        end
+    end
+
+    -- Из таймера GameTooltip часто пустой, даже если вещь уже в кэше.
+    -- С 10.0.2 штатный путь — C_TooltipInfo; BankStack ещё зовёт
+    -- SurfaceArgs, иначе leftText в строках бывает пустым.
+    local data = C_TooltipInfo and C_TooltipInfo.GetHyperlink and C_TooltipInfo.GetHyperlink(link)
+    if data and TooltipUtil and TooltipUtil.SurfaceArgs then
+        TooltipUtil.SurfaceArgs(data)
+    end
+    local lines, used = data and data.lines, false
+    if lines then
+        for i = 1, #lines do
+            local line = lines[i]
+            if line and TooltipUtil and TooltipUtil.SurfaceArgs then
+                TooltipUtil.SurfaceArgs(line)
+            end
+            local text = line and line.leftText
+            -- Пустая строка в Lua истинна: «if text then used=true» считала
+            -- пустой тултип успехом и не шла в GameTooltip. Имя без статов
+            -- тоже не успех — иначе Легион отдавал только название.
+            if text and text ~= "" then
+                EatLine(text)
+                used = true
+            end
+        end
+    end
+    local hasStats
+    for _ in pairs(result.stats) do hasStats = true break end
+    if not used or (not hasStats and #result.socketTypes == 0) then
+        ScanTooltip:SetOwner(UIParent, "ANCHOR_NONE")
+        ScanTooltip:ClearLines()
+        ScanTooltip:SetHyperlink(link)
+        for i = 1, ScanTooltip:NumLines() do
+            local fs = _G["TrialGearFinderScanTooltipTextLeft" .. i]
+            EatLine(fs and fs:GetText())
         end
     end
 
@@ -2352,7 +2395,7 @@ commToggle:SetScript("OnClick", function()
     TrialGearFinderDB.showCommunity = not TrialGearFinderDB.showCommunity
     commToggle:SetChecked(TrialGearFinderDB.showCommunity and true or false)
     RefreshResults()
-    -- Тумблер один на оба окна: окно BiS собирает сборку из тех же двух баз,
+    -- Тумблер один на оба окна: окно BiS собирает сборку из тех же баз,
     -- и при переключении его надо пересобрать (BiS.lua грузится позже).
     if ns.RefreshBiS then ns.RefreshBiS() end
 end)
@@ -2735,9 +2778,11 @@ RefreshResults = function()
     end
 
     collect(ns.Items)
-    -- Пред-BiS от сообщества — только по тумблеру «Комьюнити».
-    if TrialGearFinderDB and TrialGearFinderDB.showCommunity and ns.CommunityItems then
-        collect(ns.CommunityItems)
+    -- Пред-BiS от сообщества и добыча журнала Путешествия во времени —
+    -- только по тумблеру «Комьюнити».
+    if TrialGearFinderDB and TrialGearFinderDB.showCommunity then
+        if ns.CommunityItems then collect(ns.CommunityItems) end
+        if ns.TimewalkItems then collect(ns.TimewalkItems) end
     end
 
     if #matches == 0 then
@@ -2978,6 +3023,8 @@ frame:SetScript("OnEvent", function(self, event, addonName)
         TrialGearFinderDB = TrialGearFinderDB or {}
         if TrialGearFinderDB.showStats == nil then TrialGearFinderDB.showStats = false end
         if TrialGearFinderDB.showCommunity == nil then TrialGearFinderDB.showCommunity = false end
+        if TrialGearFinderDB.journalTWBadge == nil then TrialGearFinderDB.journalTWBadge = true end
+        if TrialGearFinderDB.journalTWSeason == nil then TrialGearFinderDB.journalTWSeason = true end
 
         -- Отметки «убит» лежат ОТДЕЛЬНО, на персонажа. Лут у рарников «раз
         -- на персонажа» игра так и считает, а у нас отметки были общими:
@@ -3653,6 +3700,43 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
             label = label .. " (" .. ns.L"Орда" .. ")"
         end
         print(string.format(ns.L"|cFFFFD100[TGF]|r Запомнено: %s = карта %d, %.1f, %.1f", label, mapID, x, y))
+        return
+    end
+
+    -- /tgf tw — список экспансий. /tgf tw классика — одна. /tgf tw все —
+    -- сразу все. Без слова больше не снимает 67 данжей: кэш не успевает.
+    local twArg = msg:match("^tw%s*(.*)$")
+    if twArg then
+        if not ns.DumpTimewalkLoot then
+            print(ns.L"|cFFFFD100[TGF]|r Журнал подземелий недоступен.")
+            return
+        end
+        ns.DumpTimewalkLoot({
+            scan = ScanItemLink,
+            known = function(id)
+                return ns_ItemsByID[id] or ns_CommunityID[id]
+            end,
+            want = (twArg ~= "" and twArg) or nil,
+        })
+        return
+    end
+
+    -- /tgf dj — обычные подземелья журнала. Не путешествие во времени.
+    -- Старые экспансии — со включённым Временем Хроми той же эпохи.
+    -- Имя данжа — один инстанс; «список» — чеклист. Катаклизм — аксессуары.
+    local djArg = msg:match("^dj%s*(.*)$") or msg:match("^данж%s*(.*)$")
+    if djArg then
+        if not ns.DumpDungeonLoot then
+            print(ns.L"|cFFFFD100[TGF]|r Журнал подземелий недоступен.")
+            return
+        end
+        ns.DumpDungeonLoot({
+            scan = ScanItemLink,
+            known = function(id)
+                return ns_ItemsByID[id] or ns_CommunityID[id]
+            end,
+            want = (djArg ~= "" and djArg) or nil,
+        })
         return
     end
 

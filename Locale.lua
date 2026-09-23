@@ -94,6 +94,8 @@ local enUS = {
     ["Прок; в счёт идёт средний вклад за бой."] = "Proc; counted as its average contribution over the fight.",
     ["Пред-BiS от сообщества — не из гайда гильдии, но выбить может любой."] =
         "Community pre-BiS: not from the guild guide, but anyone can farm it.",
+    ["Путешествие во времени из журнала — не гайд главы гильдии."] =
+        "Timewalking from the journal — not the guild guide.",
     ["|cffE06C5EПеребор: после 30% каждая единица рейтинга даёт на 10% меньше|r"] =
         "|cffE06C5EOvercap: past 30% each point of rating gives 10% less|r",
     ["  |cff5fd35fвыше гайда|r"]  = "  |cff5fd35fabove guide|r",
@@ -206,6 +208,41 @@ local enUS = {
 
     ["|cFFFFD100[TGF]|r Путешествие во времени: вход только через поиск подземелий, в неделю события."] =
         "|cFFFFD100[TGF]|r Timewalking: entered through the dungeon finder only, during the event week.",
+    ["Сейчас: %s (до %s)"] = "Now: %s (until %s)",
+    ["Сейчас: %s"] = "Now: %s",
+    ["Сейчас нет Путешествия во времени"] = "No Timewalking event is active",
+    ["Следующее: %s"] = "Next: %s",
+    ["В календаре пока нет ближайшего Путешествия во времени"] =
+        "No upcoming Timewalking event on the calendar yet",
+    ["января"] = "January",
+    ["февраля"] = "February",
+    ["марта"] = "March",
+    ["апреля"] = "April",
+    ["мая"] = "May",
+    ["июня"] = "June",
+    ["июля"] = "July",
+    ["августа"] = "August",
+    ["сентября"] = "September",
+    ["октября"] = "October",
+    ["ноября"] = "November",
+    ["декабря"] = "December",
+    ["Классика"] = "Classic",
+    ["Гнев Короля-лича"] = "Wrath of the Lich King",
+    ["Катаклизм"] = "Cataclysm",
+    ["Пандария"] = "Pandaria",
+    ["Дренор"] = "Draenor",
+    ["Легион"] = "Legion",
+    ["Битва за Азерот"] = "Battle for Azeroth",
+    ["Темные земли"] = "Shadowlands",
+    ["Драконы"] = "Dragonflight",
+    ["Значок Путешествия во времени на плитках"] =
+        "Timewalking badge on dungeon tiles",
+    ["Показывать знак валюты в углу плитки, если у данжа есть сложность Путешествия во времени."] =
+        "Show the Timewalking currency icon on a tile when that dungeon has a Timewalking difficulty.",
+    ["Данжи Путешествия во времени на текущем сезоне"] =
+        "Timewalking dungeons on the current season tab",
+    ["На вкладке текущего сезона показывать данжи текущей недели Путешествия во времени вместо ключей Midnight."] =
+        "On the current season tab, show this week's Timewalking dungeons instead of Midnight key dungeons.",
     ["|cFFFFD100[TGF]|r На этой карте игра не разрешает ставить метку."] =
         "|cFFFFD100[TGF]|r The game does not allow markers on this map.",
 
@@ -340,6 +377,73 @@ local enUS = {
         "|cFFFFD100[TGF]|r Several matches, be more specific (%d):",
     ["|cFFFFD100[TGF]|r Запомнено: %s = карта %d, %.1f, %.1f"] =
         "|cFFFFD100[TGF]|r Saved: %s = map %d, %.1f, %.1f",
+    ["|cFFFFD100[TGF]|r Журнал не отдал добычу. Открой Путеводитель приключений и повтори /tgf tw."] =
+        "|cFFFFD100[TGF]|r The journal returned no loot. Open the Adventure Guide and run /tgf tw again.",
+    ["|cFF86C7BD[TGF]|r Какую экспансию снять — одна команда, не все сразу:"] =
+        "|cFF86C7BD[TGF]|r Pick an expansion — one command, not all at once:",
+    ["|cFFFFD100[TGF]|r Не знаю экспансию «%s». Так:"] =
+        "|cFFFFD100[TGF]|r Unknown expansion \"%s\". Try:",
+    ["|cFFFFD100[TGF]|r /tgf tw все  — все экспансии сразу"] =
+        "|cFFFFD100[TGF]|r /tgf tw all  — every expansion at once",
+    ["|cFF86C7BD[TGF]|r Обычные подземелья — одна экспансия, не все сразу:"] =
+        "|cFF86C7BD[TGF]|r Regular dungeons — one expansion, not all at once:",
+    ["|cFF86C7BD[TGF]|r Обычные подземелья — одно дополнение или один данж:"] =
+        "|cFF86C7BD[TGF]|r Regular dungeons — one expansion or one dungeon:",
+    ["|cFFFFD100[TGF]|r Не знаю экспансию или данж «%s». Так:"] =
+        "|cFFFFD100[TGF]|r Unknown expansion or dungeon \"%s\". Try:",
+    ["|cFFFFD100[TGF]|r /tgf dj кузня душ  — один данж"] =
+        "|cFFFFD100[TGF]|r /tgf dj forge of souls  — one dungeon",
+    ["|cFFFFD100[TGF]|r /tgf dj список  — чеклист по данжам"] =
+        "|cFFFFD100[TGF]|r /tgf dj list  — dungeon checklist",
+    ["|cFFFFD100[TGF]|r /tgf dj все  — все экспансии сразу"] =
+        "|cFFFFD100[TGF]|r /tgf dj all  — every expansion at once",
+    ["|cFFFFD100[TGF]|r Чеклист: %d данжей. Скопировать: Ctrl+C в открывшемся окне."] =
+        "|cFFFFD100[TGF]|r Checklist: %d dungeons. Copy: Ctrl+C in the window that opened.",
+    ["|cFFFFD100[TGF]|r Данж: %s."] =
+        "|cFFFFD100[TGF]|r Dungeon: %s.",
+    ["|cFFFFD100[TGF]|r Данж: %s (%s)."] =
+        "|cFFFFD100[TGF]|r Dungeon: %s (%s).",
+    ["|cFFFFD100[TGF]|r В журнале нет обычной сложности у «%s»."] =
+        "|cFFFFD100[TGF]|r The journal has no Normal difficulty for \"%s\".",
+    ["|cFFFFD100[TGF]|r Старые экспансии снимай со включённым Временем Хроми той же эпохи: без него лут вроде Террасы магистров не того уровня."] =
+        "|cFFFFD100[TGF]|r For old expansions turn on Chromie Time for that era: without it loot like Magisters' Terrace is the wrong item level.",
+    ["|cFFFFD100[TGF]|r Время Хроми одно на все экспансии — снимай по одной, иначе чужие данжи будут не того уровня."] =
+        "|cFFFFD100[TGF]|r Chromie Time is one expansion at a time — dump one era, or other dungeons will be the wrong item level.",
+    ["|cFFFFD100[TGF]|r Время Хроми выкл. Для «%s» включи историю этой эпохи, иначе лут вроде Террасы магистров не того уровня."] =
+        "|cFFFFD100[TGF]|r Chromie Time is off. For \"%s\" turn on that era's campaign, or loot like Magisters' Terrace is the wrong item level.",
+    ["|cFFFFD100[TGF]|r Снимаю %s, а Время Хроми — %s. Включи историю этой эпохи."] =
+        "|cFFFFD100[TGF]|r Dumping %s, but Chromie Time is %s. Turn on that era's campaign.",
+    ["|cFFFFD100[TGF]|r Время Хроми: %s."] =
+        "|cFFFFD100[TGF]|r Chromie Time: %s.",
+    ["|cFFFFD100[TGF]|r Время Хроми: Настоящее."] =
+        "|cFFFFD100[TGF]|r Chromie Time: Present.",
+    ["Настоящее"] = "Present",
+    ["|cFFFFD100[TGF]|r В журнале нет обычных подземелий для «%s»."] =
+        "|cFFFFD100[TGF]|r The journal has no regular dungeons for \"%s\".",
+    ["|cFFFFD100[TGF]|r В журнале нет обычных подземелий."] =
+        "|cFFFFD100[TGF]|r The journal has no regular dungeons.",
+    ["|cFFFFD100[TGF]|r Журнал не отдал добычу. Открой Путеводитель приключений и повтори /tgf dj."] =
+        "|cFFFFD100[TGF]|r The journal returned no loot. Open the Adventure Guide and run /tgf dj again.",
+    ["|cFFFFD100[TGF]|r Обычные подземелья: %d новых из %d. Скопировать: Ctrl+C в открывшемся окне."] =
+        "|cFFFFD100[TGF]|r Regular dungeons: %d new of %d. Copy: Ctrl+C in the window that opened.",
+    ["|cFFFFD100[TGF]|r Без обычной сложности пропущено данжей: %d."] =
+        "|cFFFFD100[TGF]|r Skipped %d dungeons with no Normal difficulty.",
+    ["|cFFFFD100[TGF]|r Катаклизм: броню и оружие не снимал, только аксессуары (%d пропущено)."] =
+        "|cFFFFD100[TGF]|r Cataclysm: skipped armor and weapons, trinkets only (%d skipped).",
+    ["|cFFFFD100[TGF]|r Снимаю %s."] =
+        "|cFFFFD100[TGF]|r Dumping %s.",
+    ["|cFFFFD100[TGF]|r Снимаю все экспансии."] =
+        "|cFFFFD100[TGF]|r Dumping all expansions.",
+    ["|cFFFFD100[TGF]|r В журнале нет подземелий Путешествия во времени для «%s»."] =
+        "|cFFFFD100[TGF]|r The journal has no Timewalking dungeons for \"%s\".",
+    ["|cFFFFD100[TGF]|r В журнале нет подземелий с Путешествием во времени."] =
+        "|cFFFFD100[TGF]|r The journal has no Timewalking dungeons.",
+    ["|cFFFFD100[TGF]|r Путешествие во времени: %d новых из %d. Скопировать: Ctrl+C в открывшемся окне."] =
+        "|cFFFFD100[TGF]|r Timewalking: %d new of %d. Copy: Ctrl+C in the window that opened.",
+    ["|cFFFFD100[TGF]|r Гружу %d вещей из журнала, подожди несколько секунд."] =
+        "|cFFFFD100[TGF]|r Loading %d journal items, wait a few seconds.",
+    ["|cFFFFD100[TGF]|r Дамп уже идёт, подожди."] =
+        "|cFFFFD100[TGF]|r Dump already running, wait.",
     ["|cFF86C7BD[TGF]|r /tgf new [шея|кольцо|аксессуар] — без слова покажет все вещи, которых нет в базе"] =
         "|cFF86C7BD[TGF]|r /tgf new [neck|finger|trinket] — with no word, lists every item not in the database",
     ["|cFFFFD100[TGF]|r Не из базы: %d %s (надето, сумки, банк если открыт). Скопировать: /tgf copy"] =
@@ -473,6 +577,9 @@ local enUS = {
     ["Кристаллический волшебный посох Камуи: двуручный, интеллект 30. Откуда падает — не выяснено"] = "Kamui's Crystalline Staff of Wizardry: two-hand, 30 Int. Drop source not confirmed",
     ["редкий: Рука Эдварда Странного, уникальная одноручка, мировой дроп. В сборку не ставим (Keotore, армори ilvl 27)"] = "rare: Hand of Edward the Odd, unique one-hander, world drop. Not in the set (Keotore, armory ilvl 27)",
     ["Бадья: кольцо на универсальность/искусность. Тир 32"] = "Bucket: ring, vers/mastery. Tier 32",
+    ["крафт (инженерия); Специализированная ретинальная защита: латный шлем, особое гнездо и два для зубчатого колеса. Статы двадцатки в игре не сняты"] = "crafted (Engineering); Specialized Retinal Armor: plate helm, meta socket and two cogwheels. Level-20 stats not live-checked",
+    ["падает с Ром'огга Костекрушителя; Щит железной леди: Путешествие во времени, уровень 32. Статы двадцатки в игре не сняты"] = "drops from Rom'ogg Bonecrusher; Shield of the Iron Maiden: Timewalking, item level 32. Level-20 stats not live-checked",
+    ["[Танк] падает с Асаада; Сердце грома: версия Путешествия во времени, уровень 32. Данжевая копия в гайде — другая вещь, уровень 23"] = "[Tank] drops from Asaad; Heart of Thunder: Timewalking version, item level 32. Dungeon copy in the guide is a different item, item level 23",
     ["Бусы предков Укхел: шея на скорость/искусность (слепок, ×4; была удалена)"] = "Ukhel Ancestry Beads: neck, haste/mastery (snapshot ×4; was removed)",
     ["Двойной клинок мастерства: кинжал разбойника, обе руки (от сообщества)"] = "Twinblade of Mastery: rogue dagger, both hands (community)",
     ["Драгоценная петля из кровошипа: кольцо со всеми статами и универсальностью, с Горума (слепок, ×17)"] = "Bloodthorn Loop: ring with all stats and vers, from Goruk (snapshot ×17)",
@@ -798,6 +905,30 @@ local function BuildOptions()
         container:Add(3, L"Английский")
         return container:GetData()
     end, L"Язык окна и сообщений аддона. Смена языка применится после /reload.")
+
+    local function JournalFlag(key)
+        return not TrialGearFinderDB or TrialGearFinderDB[key] ~= false
+    end
+
+    local function SetJournalFlag(key, value)
+        TrialGearFinderDB = TrialGearFinderDB or {}
+        TrialGearFinderDB[key] = value and true or false
+        if ns.RefreshJournal then ns.RefreshJournal() end
+    end
+
+    local badgeSetting = Settings.RegisterProxySetting(category, "TRIALGEARFINDER_JOURNAL_TW_BADGE",
+        Settings.VarType.Boolean, L"Значок Путешествия во времени на плитках", true,
+        function() return JournalFlag("journalTWBadge") end,
+        function(value) SetJournalFlag("journalTWBadge", value) end)
+    Settings.CreateCheckbox(category, badgeSetting,
+        L"Показывать знак валюты в углу плитки, если у данжа есть сложность Путешествия во времени.")
+
+    local seasonSetting = Settings.RegisterProxySetting(category, "TRIALGEARFINDER_JOURNAL_TW_SEASON",
+        Settings.VarType.Boolean, L"Данжи Путешествия во времени на текущем сезоне", true,
+        function() return JournalFlag("journalTWSeason") end,
+        function(value) SetJournalFlag("journalTWSeason", value) end)
+    Settings.CreateCheckbox(category, seasonSetting,
+        L"На вкладке текущего сезона показывать данжи текущей недели Путешествия во времени вместо ключей Midnight.")
 
     Settings.RegisterAddOnCategory(category)
 end

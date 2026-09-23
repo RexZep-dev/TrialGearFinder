@@ -153,8 +153,9 @@ end
 
 -- classFile -> { [slotKey] = { item, item, ... } }. Считается один раз: база
 -- статична, а equipLoc через GetItemInfoInstant синхронный.
--- Кандидаты берутся из двух баз: гайд главы гильдии (ns.Items) и предметы
--- от сообщества (ns.CommunityItems). Формат записи одинаковый.
+-- Кандидаты берутся из трёх баз: гайд главы гильдии (ns.Items), предметы
+-- от сообщества (ns.CommunityItems) и добыча журнала Путешествия во времени
+-- (ns.TimewalkItems). Формат записи одинаковый.
 local allItemsCache
 local communityId = {} -- itemID -> true: пришёл из ns.CommunityItems, не из гайда
 
@@ -163,10 +164,11 @@ local function CommunityOn()
     return (TrialGearFinderDB and TrialGearFinderDB.showCommunity) and true or false
 end
 
--- Полный список обеих баз. Метка communityId заполняется ВСЕГДА, независимо
+-- Полный список трёх баз. Метка communityId заполняется ВСЕГДА, независимо
 -- от тумблера: по ней и рисуется пометка, и отсекаются предметы сообщества
--- при выключенном тумблере. Отбор делает BuildBuckets, а не эта функция -
--- ItemByID должен находить предмет в любом случае.
+-- при выключенном тумблере. Дамп журнала узнаём по ns.TimewalkID. Отбор
+-- делает BuildBuckets, а не эта функция — ItemByID должен находить предмет
+-- в любом случае.
 local function AllItems()
     if not allItemsCache then
         allItemsCache = {}
@@ -175,8 +177,16 @@ local function AllItems()
             allItemsCache[#allItemsCache + 1] = it
             communityId[it.itemID] = true
         end
+        for _, it in ipairs(ns.TimewalkItems or {}) do
+            allItemsCache[#allItemsCache + 1] = it
+        end
     end
     return allItemsCache
+end
+
+-- Вещь не из гайда: сообщество или дамп журнала. Тумблер прячет обе.
+local function ExtraId(id)
+    return communityId[id] or (ns.TimewalkID and ns.TimewalkID[id]) or false
 end
 
 -- itemID -> запись, для ручных поправок ns.BiSPick.
@@ -229,7 +239,7 @@ local function BuildBuckets(classFile)
     if bucketCache[ckey] then return bucketCache[ckey] end
     local buckets = {}
     for _, item in ipairs(AllItems()) do
-        if (withComm or not communityId[item.itemID]) and ClassAllowed(item, classFile) then
+        if (withComm or not ExtraId(item.itemID)) and ClassAllowed(item, classFile) then
             local _, _, _, equipLoc = C_Item.GetItemInfoInstant(item.itemID)
             local slotKey = equipLoc and EQUIPLOC_SLOT[equipLoc]
             if slotKey then
@@ -351,13 +361,17 @@ local GEM_VALUE = SOCKET_VALUE.prismatic -- запасное, если тип г
 -- пользователя) - два экземпляра ОДНОГО предмета в гнёзда не встанут разом.
 -- У крита и скорости есть по ДВЕ РАЗНЫХ шестерёнки верхнего тира на одно
 -- и то же число (гномья/гоблинская инженерия: Гладкое/Прочное,
--- Быстрое/Аккуратное) - их можно вставить парой. У версы и искусности такой
--- пары нет, вставится только одна.
+-- Быстрое/Аккуратное) - их можно вставить парой. У искусности вторая —
+-- MoP +8 (другой предмет). У версы второй +10 нет.
 local COGWHEEL_IDS = {
     crit  = { 59478, 59493 }, -- Гладкое, Прочное
     haste = { 59479, 59489 }, -- Быстрое, Аккуратное
     vers  = { 59496 },        -- Искрящееся - второй такой не откован
-    iskus = { 59480 },        -- Растрескавшееся - второй такой не откован
+    -- Растрескавшееся +10 и Сломанная шестерёнка +8 — разные предметы,
+    -- оба «Уникальный использующийся», поэтому оба встанут разом.
+    -- Без +8 второе гнездо уходило в другой стат; пользователь: в
+    -- Дракончике 10 и 8 искусности плюс 10 скорости, не виридий.
+    iskus = { 59480, 77547 },
 }
 
 -- Какие шестерёнки поставить под спек. Первая проверенная версия давала по
@@ -382,9 +396,9 @@ local COGWHEEL_IDS = {
 --
 -- НО «2» под один стат получится, только если под него есть вторая РАЗНАЯ
 -- шестерёнка (см. COGWHEEL_IDS выше) - иначе второй экземпляр не встанет
--- (Уникальный использующийся). Если у топ-стата такой пары нет (верса,
--- искусность), недостающее гнездо уходит следующему по приоритету стату -
--- он и заберёт освободившееся место, если у него сама пара есть.
+-- (Уникальный использующийся). У искусности вторая — MoP +8, не вторая
+-- копия +10. Если у топ-стата пары нет (верса), недостающее гнездо уходит
+-- следующему по приоритету стату.
 --
 -- Возвращает список { key = "haste", id = 59479 }, а не просто ключи стата:
 -- вызывающему нужен именно itemID для вставки в ссылку.
@@ -550,14 +564,42 @@ local function GemByID(id)
     return gemByID[id]
 end
 
--- Чара под слот и спек. Считаем так же, как вещь: сумма статов на вес,
--- только основная характеристика у чар записана как main или all —
+-- Тип оружия для поля fit в Enchants.lua. Имена как у Харфа: Enchant Weapon,
+-- Enchant 2H Weapon, Scope, Enchant Off-Hand. Лук/ружьё/арбалет — не melee.
+-- Номера subclassID те же, что ниже у WEAPON_NORM.
+local ENCH_RANGED = { [2] = true, [3] = true, [18] = true }
+local ENCH_2H = { [1] = true, [5] = true, [6] = true, [8] = true, [10] = true }
+
+local function ItemEnchantFit(item)
+    if not (item and item.itemID) then return nil end
+    local _, _, _, equipLoc, _, classID, subclassID = C_Item.GetItemInfoInstant(item.itemID)
+    if classID == 2 then
+        if ENCH_RANGED[subclassID] then return "ranged" end
+        if subclassID == 19 then return "wand" end
+        if ENCH_2H[subclassID] then return "2h" end
+        return "1h"
+    end
+    if equipLoc == "INVTYPE_HOLDABLE" then return "offhand" end
+    if equipLoc == "INVTYPE_SHIELD" then return "shield" end
+    return nil
+end
+
+local function EnchantAllowed(e, fit)
+    local need = e.fit
+    if not need then return true end
+    if not fit then return false end
+    if need == "melee" then return fit == "1h" or fit == "2h" end
+    return need == fit
+end
+
+-- Чара под слот, спек и тип предмета. Считаем так же, как вещь: сумма статов
+-- на вес, только основная характеристика у чар записана как main или all —
 -- подставляем свою. Стат, уже упёршийся в софткап, дальше не наливаем.
 --
 -- Проки (Рыцарь, Знак когтя) в stats записаны средним вкладом: у Рыцаря
 -- это 33 силы × аптайм, см. шапку Enchants.lua. Иначе формула их не увидит
 -- вовсе, а в слепке именно они у большинства.
-local function PickEnchant(slotKey, w, primary, running)
+local function PickEnchant(slotKey, w, primary, running, item, specID)
     if not ns.Enchants or not w then return nil end
     -- Левая рука бывает и оружием, и держимым предметом: у кастера там своя
     -- чара на интеллект, у воина — оружейная. Поэтому сначала ищем в списке
@@ -567,12 +609,26 @@ local function PickEnchant(slotKey, w, primary, running)
     elseif slotKey == "MAINHAND" then keys = { "WEAPON" }
     elseif slotKey == "OFFHAND" then keys = { "OFFHAND", "WEAPON" } end
 
+    local fit = ItemEnchantFit(item)
     local CAP = { crit = 132.96, haste = 127.18, vers = 156.08, iskus = 132.96 }
     local best, bestScore, fallback
     for _, e in ipairs(ns.Enchants) do
         local match = false
         for _, k in ipairs(keys) do if e.slot == k then match = true end end
-        if match then
+        if match and EnchantAllowed(e, fit) then
+            -- Чара с specs — только этим спекам. Иначе Frozen Spellthread
+            -- на +5 инт и выносливость перебил бы +5% маны у всех кастеров.
+            if e.specs then
+                local specOk = false
+                if specID then
+                    for i = 1, #e.specs do
+                        if e.specs[i] == specID then specOk = true end
+                    end
+                end
+                if not specOk then match = false end
+            end
+        end
+        if match and EnchantAllowed(e, fit) then
             local score = 0
             for stat, val in pairs(e.stats or {}) do
                 local k = stat
@@ -963,7 +1019,9 @@ local function MakeSlotRow(parent, index, y)
         end
         if self.entry then
             GameTooltip:AddLine(" ")
-            if communityId[self.itemID] then
+            if ns.TimewalkID and ns.TimewalkID[self.itemID] then
+                GameTooltip:AddLine(ns.L"Путешествие во времени из журнала — не гайд главы гильдии.", 0.25, 0.78, 0.92, true)
+            elseif communityId[self.itemID] then
                 GameTooltip:AddLine(ns.L"Пред-BiS от сообщества — не из гайда гильдии, но выбить может любой.", 0.85, 0.72, 0.42, true)
             end
             if self.entry.source then
@@ -1088,14 +1146,14 @@ local function RenderSlots()
     -- Список уже отсортирован, поэтому достаточно первой не-комьюнити записи.
     local function BestGuideScore(list)
         for _, it in ipairs(list or {}) do
-            if not communityId[it.itemID] then return ScoreItem(it, w) end
+            if not ExtraId(it.itemID) then return ScoreItem(it, w) end
         end
         return nil
     end
 
     -- Чем помечать выбранную вещь сообщества: дырой в гайде или превосходством.
     local function MarkFor(list, pick)
-        if not (pick and communityId[pick.itemID]) then return nil end
+        if not (pick and ExtraId(pick.itemID)) then return nil end
         local best = BestGuideScore(list)
         if best == nil then return "gap" end
         return ScoreItem(pick, w) > best and "beat" or nil
@@ -1149,7 +1207,7 @@ local function RenderSlots()
             local forced = ItemByID(ov)
             -- Поправка указывает на вещь сообщества, а тумблер выключен:
             -- поправку игнорируем и оставляем лучшее из гайда по весам спека.
-            if forced and communityId[ov] and not CommunityOn() then forced = nil end
+            if forced and ExtraId(ov) and not CommunityOn() then forced = nil end
             pick = forced or pick
         end
 
@@ -1211,7 +1269,7 @@ local function RenderSlots()
         local c = chosen[i]
         local row = panel.slotRows[i]
         local gems = c.pick and GemPicks(c.pick, w, total, role) or nil
-        local ench = c.pick and PickEnchant(slot.key, w, primary, total) or nil
+        local ench = c.pick and PickEnchant(slot.key, w, primary, total, c.pick, state.specID) or nil
         if ench then
             -- Чара идёт в сумму сборки наравне со шмотом и камнями.
             for stat, val in pairs(ench.stats or {}) do
