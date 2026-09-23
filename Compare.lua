@@ -70,14 +70,24 @@ if ENCHANTED_TOOLTIP_LINE then
     ENCH_PAT = "^" .. esc:gsub("%%s", "(.+)") .. "$"
 end
 
+-- Строка «Уровень предмета: %d» - уровень надетой вещи берём из её подсказки,
+-- как ChonkyCharacterSheet (сверено с его исходником). Уровень по одной ссылке
+-- у части вещей неверен: «Плащ свирепого йети» выходил 84 вместо 23
+-- (пользователь 23 сентября). Без якоря в конце: за числом бывает приписка.
+local ILVL_PAT
+if ITEM_LEVEL then
+    local esc = ITEM_LEVEL:gsub("[%(%)%.%+%-%*%?%[%]%^%$]", "%%%0")
+    ILVL_PAT = "^" .. esc:gsub("%%d", "(%%d+)")
+end
+
 local frame, rows, boxes = nil, {}, { bis = {}, cur = {} }
 local snap -- снимок сборки для своего спека
 
-local function EnchantFrom(data)
-    if not (data and data.lines and ENCH_PAT) then return nil end
+local function TooltipMatch(data, pat)
+    if not (data and data.lines and pat) then return nil end
     for _, line in ipairs(data.lines) do
         local text = line.leftText
-        local m = text and text:match(ENCH_PAT)
+        local m = text and text:match(pat)
         if m then return m end
     end
     return nil
@@ -338,7 +348,7 @@ function ns.RefreshCompare()
                 local gid = s.gems and s.gems[gi]
                 if gid and gid ~= 0 then bisGems[#bisGems + 1] = { icon = IconOf(gid), ref = "item:" .. gid } end
             end
-            bisEnch = C_TooltipInfo and EnchantFrom(C_TooltipInfo.GetHyperlink(bisLink))
+            bisEnch = C_TooltipInfo and TooltipMatch(C_TooltipInfo.GetHyperlink(bisLink), ENCH_PAT)
             if not bisEnch and s.ench then bisEnch = L(s.ench.ru or "") end
             local ok = HAND[key] and pcall(model.TryOn, model, bisLink, HAND[key])
             if not ok then pcall(model.TryOn, model, bisLink) end
@@ -350,13 +360,14 @@ function ns.RefreshCompare()
         local curName, curIlvl, curGems, curEnch
         if curLink then
             curName = curLink:match("%[(.-)%]")
-            curIlvl = C_Item.GetDetailedItemLevelInfo(curLink)
+            local tip = C_TooltipInfo and C_TooltipInfo.GetInventoryItem("player", row.invID)
+            curIlvl = tonumber(TooltipMatch(tip, ILVL_PAT)) or C_Item.GetDetailedItemLevelInfo(curLink)
             curGems = {}
             for gi = 1, 4 do
                 local _, gemLink = C_Item.GetItemGem(curLink, gi)
                 if gemLink then curGems[#curGems + 1] = { icon = IconOf(gemLink), ref = gemLink } end
             end
-            curEnch = C_TooltipInfo and EnchantFrom(C_TooltipInfo.GetInventoryItem("player", row.invID))
+            curEnch = TooltipMatch(tip, ENCH_PAT)
         end
         PaintSide(row.r, curLink, curName, curIlvl, curGems, curEnch, s and s.ench ~= nil, row.emptyTex, mark)
     end
