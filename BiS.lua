@@ -1898,14 +1898,14 @@ local function BuildPanel()
         -- как в окне сравнения; у вторичек под числом доля порога тем же
         -- цветом, что на диаграмме.
         local BOX_KEYS = { "stam", "primary", "crit", "haste", "iskus", "vers" }
-        local BOX_LABEL = { stam = "Вын", str = "Сила", agi = "Лов", int = "Инт",
-                            crit = "Крит", haste = "Скор", iskus = "Иск", vers = "Уни" }
         panel.totalBoxes = {}
         for i = 1, #BOX_KEYS do
             local box = CreateFrame("Frame", nil, card)
-            box:SetSize(70, 52)
+            -- 104, а не 70: полное название стата («Универсальность»)
+            -- вместо сокращения (пользователь 24 сентября).
+            box:SetSize(104, 52)
             local col, row = (i - 1) % 3, math.floor((i - 1) / 3)
-            box:SetPoint("TOPLEFT", card, "CENTER", -111 + col * 76, 53 - row * 58)
+            box:SetPoint("TOPLEFT", card, "CENTER", -162 + col * 110, 53 - row * 58)
             Bevel(box, C.block2 or { 0.09, 0.10, 0.11 }, C.borderSoft or { 0.13, 0.14, 0.16 })
             box.label = box:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             box.label:SetPoint("TOP", 0, -5)
@@ -1915,8 +1915,14 @@ local function BuildPanel()
             box.pct:SetPoint("BOTTOM", 0, 4)
             box.key = BOX_KEYS[i]
             box:EnableMouse(true)
-            box:SetScript("OnEnter", function(self) ShowStatOnRows(self.statKey) end)
-            box:SetScript("OnLeave", function() ShowStatOnRows(nil) end)
+            box:SetScript("OnEnter", function(self)
+                ShowStatOnRows(self.statKey)
+                if ns.ShowStatTooltip then ns.ShowStatTooltip(self, self.statKey) end
+            end)
+            box:SetScript("OnLeave", function()
+                ShowStatOnRows(nil)
+                GameTooltip:Hide()
+            end)
             box:Hide()
             panel.totalBoxes[i] = box
         end
@@ -1926,7 +1932,7 @@ local function BuildPanel()
                 local key = (box.key == "primary") and (primary or "str") or box.key
                 box.statKey = key
                 local v = math.floor((values[key] or 0) + 0.5)
-                box.label:SetText(ns.L(BOX_LABEL[key] or key))
+                box.label:SetText(ns.StatFullName and ns.StatFullName(key) or key)
                 box.value:SetText(v)
                 local pct, cr, cg, cb = 0, 0.8, 0.82, 0.85
                 if ns.StatTone then pct, cr, cg, cb = ns.StatTone(key, v) end

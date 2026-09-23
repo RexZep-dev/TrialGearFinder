@@ -72,6 +72,22 @@ function ns.StatTone(key, v)
     return pct, 0.80, 0.82, 0.85
 end
 
+-- Полное название стата - подсказке при наведении на плашку или подпись
+-- диаграммы. На подписях места мало, там сокращения; по наведению - как
+-- в шапке таблицы основного окна (пользователь 24 сентября: «Уни», «Иск»
+-- непонятны). Ключи словаря - те же, что у столбцов основного окна.
+local FULL_RU = {
+    str = "Сила", agi = "Ловкость", int = "Интеллект", stam = "Выносливость",
+    crit = "Критический удар", haste = "Скорость", iskus = "Искусность", vers = "Универсальность",
+}
+function ns.StatFullName(key) return ns.L(FULL_RU[key] or key) end
+function ns.ShowStatTooltip(owner, key)
+    if not key then return end
+    GameTooltip:SetOwner(owner, "ANCHOR_TOP")
+    GameTooltip:AddLine(ns.StatFullName(key))
+    GameTooltip:Show()
+end
+
 function ns.MakeRadar(parent, radius)
     local f = CreateFrame("Frame", nil, parent)
     f:SetSize(radius * 2, radius * 2)
@@ -145,8 +161,14 @@ function ns.MakeRadar(parent, radius)
                 local hit = CreateFrame("Frame", nil, self)
                 hit:SetAllPoints(fs)
                 hit:EnableMouse(true)
-                hit:SetScript("OnEnter", function(h) if self.OnStatEnter then self.OnStatEnter(h.key) end end)
-                hit:SetScript("OnLeave", function() if self.OnStatLeave then self.OnStatLeave() end end)
+                hit:SetScript("OnEnter", function(h)
+                    ns.ShowStatTooltip(h, h.key)
+                    if self.OnStatEnter then self.OnStatEnter(h.key) end
+                end)
+                hit:SetScript("OnLeave", function()
+                    GameTooltip:Hide()
+                    if self.OnStatLeave then self.OnStatLeave() end
+                end)
                 fs.hit = hit
             end
             local v = values[key] or 0

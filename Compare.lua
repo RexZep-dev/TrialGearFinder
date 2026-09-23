@@ -17,7 +17,9 @@ local L = ns.L
 -- Ширина с запасом по краям: строки привязаны к середине, модели - к краям,
 -- и между ними остаётся зазор (пользователь 23 сентября: фигуры заходили
 -- под текст).
-local W, H = 1300, 912
+-- 1380, а не 1300: «+N» подсветки по стату стоит за краем строк, между
+-- ними и моделями (пользователь 24 сентября).
+local W, H = 1380, 912
 -- Строка 40, а не 36: между рамками вещей нужен зазор (пользователь 23 сентября:
 -- вещи шли сплошной кашей). Окно из-за этого выше на 32.
 local ROW_H, TOP = 40, -100
@@ -53,8 +55,6 @@ local HAND = { MAINHAND = "MAINHANDSLOT", OFFHAND = "SECONDARYHANDSLOT" }
 
 -- Плашки внизу. Основная характеристика подставляется по спеку сборки.
 local BOX_KEYS = { "stam", "primary", "crit", "haste", "iskus", "vers" }
-local BOX_LABEL = { stam = "Вын", str = "Сила", agi = "Лов", int = "Инт",
-                    crit = "Крит", haste = "Скор", iskus = "Иск", vers = "Уни" }
 local UNIT_STAT = { str = 1, agi = 2, stam = 3, int = 4 }
 local RATING = {
     crit = CR_CRIT_MELEE or 9, haste = CR_HASTE_MELEE or 18,
@@ -219,9 +219,10 @@ local function MakeSide(parent, y, left)
     side.hit:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
     -- Вклад вещи в стат под мышью в плашках или на диаграмме своей стороны
-    -- (пользователь 24 сентября, как у Чонки). Вид - как в окне BiS, где он
-    -- пользователю понравился: полоса строки тёплым тоном и «+N» у внешнего
-    -- края. Первый вариант, число поверх иконки, закрывал вещь и камни.
+    -- (пользователь 24 сентября, как у Чонки): полоса строки тёплым тоном,
+    -- как в окне BiS, и «+N» снаружи строк, за краем своей половины. Число
+    -- поверх иконки закрывало вещь и камни, у края внутри строки - налезало
+    -- на название.
     -- Полоса - от середины до края зебры, под рамкой вещи.
     side.hl = parent:CreateTexture(nil, "BACKGROUND", nil, 0)
     local warmC = SC.warm or { 0.85, 0.72, 0.42 }
@@ -232,11 +233,11 @@ local function MakeSide(parent, y, left)
     if left then
         side.hl:SetPoint("TOPLEFT", parent, "TOP", -HALF + 1, bandTop)
         side.hl:SetPoint("BOTTOMRIGHT", parent, "TOP", -1, bandTop - ROW_H)
-        side.pill:SetPoint("LEFT", parent, "TOP", -HALF + 8, bandMid)
+        side.pill:SetPoint("RIGHT", parent, "TOP", -HALF - 6, bandMid)
     else
         side.hl:SetPoint("TOPLEFT", parent, "TOP", 1, bandTop)
         side.hl:SetPoint("BOTTOMRIGHT", parent, "TOP", HALF - 1, bandTop - ROW_H)
-        side.pill:SetPoint("RIGHT", parent, "TOP", HALF - 8, bandMid)
+        side.pill:SetPoint("LEFT", parent, "TOP", HALF + 6, bandMid)
     end
     side.hl:Hide()
     side.pill:SetFrameLevel(side.hit:GetFrameLevel() + 2)
@@ -353,7 +354,7 @@ local function MakeBox(parent)
     local S = ns.Style or {}
     local C = S.C or {}
     local b = CreateFrame("Frame", nil, parent)
-    b:SetSize(70, 52)
+    b:SetSize(104, 52) -- под полное название стата, как в окне BiS
     if S.RoundedPanel then
         S.RoundedPanel(b, C.block2 or { 0.09, 0.10, 0.11 }, C.borderSoft or { 0.13, 0.14, 0.16 })
     end
@@ -494,8 +495,8 @@ function ns.RefreshCompare()
         local curV = CurrentStat(key)
         local lb, rb = boxes.bis[i], boxes.cur[i]
         lb.statKey, rb.statKey = key, key
-        lb.label:SetText(L(BOX_LABEL[key]))
-        rb.label:SetText(L(BOX_LABEL[key]))
+        lb.label:SetText(ns.StatFullName(key))
+        rb.label:SetText(ns.StatFullName(key))
         lb.value:SetText(bisV)
         rb.value:SetText(curV)
         local d = bisV - curV
@@ -716,8 +717,14 @@ local function Build()
         for sideKey, list in pairs({ l = boxes.bis, r = boxes.cur }) do
             local b = list[i]
             b:EnableMouse(true)
-            b:SetScript("OnEnter", function(self) ShowStat(sideKey, self.statKey) end)
-            b:SetScript("OnLeave", function() ShowStat(sideKey, nil) end)
+            b:SetScript("OnEnter", function(self)
+                ShowStat(sideKey, self.statKey)
+                ns.ShowStatTooltip(self, self.statKey)
+            end)
+            b:SetScript("OnLeave", function()
+                ShowStat(sideKey, nil)
+                GameTooltip:Hide()
+            end)
         end
     end
     if frame.lRadar then
@@ -731,13 +738,13 @@ local function Build()
     -- Раскладка по галочкам. Строки, разделитель и диаграммы держатся
     -- за середину окна, поэтому ширина меняется без их перестановки; шапки
     -- и плашки встают от края текущей ширины.
-    --   с персонажами - 1300: модели по краям;
-    --   без персонажей - 1100: плашкам нужно место слева от диаграмм;
-    --   без персонажей и диаграмм - 760: строки и плашки.
+    --   с персонажами - 1380: модели по краям;
+    --   без персонажей - 1300: плашкам нужно место слева от диаграмм;
+    --   без персонажей и диаграмм - 800: строки, «+N» за их краем и плашки.
     function frame.Relayout()
         local models = not Hidden("compareHideModels")
         local radars = not Hidden("compareHideRadars")
-        local w = models and W or (radars and 1100 or 760)
+        local w = models and W or (radars and 1300 or 800)
         frame:SetWidth(w)
         frame.lModel:SetShown(models)
         frame.rModel:SetShown(models)
@@ -752,16 +759,16 @@ local function Build()
         -- Плашки: с диаграммами - у краёв окна, место посередине их; без
         -- диаграмм - по центру своей половины, под строками (пользователь:
         -- у краёв они смотрелись не по центру).
-        local blockW = 3 * 76 - 6
+        local blockW = 3 * 110 - 6
         local leftX = radars and -(w / 2 - 30) or (-w / 4 - blockW / 2)
         local rightX = radars and (w / 2 - 30 - blockW) or (w / 4 - blockW / 2)
         for i = 1, #BOX_KEYS do
             local col, row = (i - 1) % 3, math.floor((i - 1) / 3)
             local y = BOTTOM - row * 58
             boxes.bis[i]:ClearAllPoints()
-            boxes.bis[i]:SetPoint("TOPLEFT", content, "TOP", leftX + col * 76, y)
+            boxes.bis[i]:SetPoint("TOPLEFT", content, "TOP", leftX + col * 110, y)
             boxes.cur[i]:ClearAllPoints()
-            boxes.cur[i]:SetPoint("TOPLEFT", content, "TOP", rightX + col * 76, y)
+            boxes.cur[i]:SetPoint("TOPLEFT", content, "TOP", rightX + col * 110, y)
         end
 
         -- Галочки столбиком в рамке. Ширина рамки - по длинной подписи:
