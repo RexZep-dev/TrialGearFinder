@@ -739,12 +739,13 @@ local function Build()
     -- за середину окна, поэтому ширина меняется без их перестановки; шапки
     -- и плашки встают от края текущей ширины.
     --   с персонажами - 1380: модели по краям;
-    --   без персонажей - 1300: плашкам нужно место слева от диаграмм;
+    --   без персонажей - 1340: плашкам нужно место рядом с диаграммами,
+    --     а подписи диаграмм с «-ть» длиннее («Скор-ть 142 (33%)»);
     --   без персонажей и диаграмм - 800: строки, «+N» за их краем и плашки.
     function frame.Relayout()
         local models = not Hidden("compareHideModels")
         local radars = not Hidden("compareHideRadars")
-        local w = models and W or (radars and 1300 or 800)
+        local w = models and W or (radars and 1340 or 800)
         frame:SetWidth(w)
         frame.lModel:SetShown(models)
         frame.rModel:SetShown(models)

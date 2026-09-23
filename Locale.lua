@@ -36,13 +36,13 @@ local enUS = {
     ["Скорость"]           = "Haste",
     ["Искусность"]         = "Mastery",
     ["Универсальность"]    = "Versatility",
-    ["Лов"]                = "Agi",
+    ["Лов-ть"]             = "Agi",
     ["Инт"]                = "Int",
-    ["Вын"]                = "Sta",
+    ["Вын-ть"]             = "Sta",
     ["Крит"]               = "Crit",
-    ["Скор"]               = "Haste",
-    ["Иск"]                = "Mast",
-    ["Уни"]                = "Vers",
+    ["Скор-ть"]            = "Haste",
+    ["Иск-ть"]             = "Mast",
+    ["Уни-ть"]             = "Vers",
 
     -- Гнёзда
     ["особое"]             = "meta",
@@ -341,7 +341,6 @@ local enUS = {
     ["шестерёнка гнёзда"] = "cogwheel sockets",
     ["владычества гнездо"] = "domination socket",
     ["владычества гнёзда"] = "domination sockets",
-    ["Верса"] = "Vers",
     ["Статы поправлены по базе — клиент масштабирует эту ссылку неточно."] =
         "Stats corrected from the database — the client scales this link inaccurately.",
     ["Твоя копия отличается от базы:"] = "Your copy differs from the database:",

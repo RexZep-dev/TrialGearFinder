@@ -842,8 +842,15 @@ end
 local function AddHeaderLabel(x, width, ru, justify, sortKey, fullRU)
     local text = ns.ShortLabel(ru)
     local fs = header:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    fs:SetPoint("TOPLEFT", header, "TOPLEFT", x, 0)
-    fs:SetWidth(width)
+    -- Подпись по центру столбца шире самого столбца на 2 с каждой стороны,
+    -- за счёт промежутка между столбцами: «Скор-ть» в 36 не помещалась
+    -- (сокращения с «-ть», пользователь 24 сентября). Без переноса - иначе
+    -- ломалась бы на «Скор-» и «ть». Стрелку сортировки это не сдвигает:
+    -- она встаёт по ширине текста, а не рамки.
+    local pad = (justify == "CENTER") and 2 or 0
+    fs:SetPoint("TOPLEFT", header, "TOPLEFT", x - pad, 0)
+    fs:SetWidth(width + 2 * pad)
+    fs:SetWordWrap(false)
     fs:SetJustifyH(justify or "LEFT")
     fs:SetText(text)
     fs:SetTextColor(HEADER_COLOR[1], HEADER_COLOR[2], HEADER_COLOR[3])
@@ -923,13 +930,13 @@ local COL_SOURCE_W = ROW_WIDTH - COL_SOURCE_X - 10
 
 AddHeaderLabel(COL_NAME_X, COL_NAME_W, "Предмет", "LEFT")
 AddHeaderLabel(COL_STR_X, COL_STAT_W, "Сила", "CENTER", "str", "Сила")
-AddHeaderLabel(COL_AGI_X, COL_STAT_W, "Лов", "CENTER", "agi", "Ловкость")
+AddHeaderLabel(COL_AGI_X, COL_STAT_W, "Лов-ть", "CENTER", "agi", "Ловкость")
 AddHeaderLabel(COL_INT_X, COL_STAT_W, "Инт", "CENTER", "int", "Интеллект")
-AddHeaderLabel(COL_STAM_X, COL_STAT_W, "Вын", "CENTER", "stam", "Выносливость")
+AddHeaderLabel(COL_STAM_X, COL_STAT_W, "Вын-ть", "CENTER", "stam", "Выносливость")
 AddHeaderLabel(COL_CRIT_X, COL_STAT_W, "Крит", "CENTER", "crit", "Критический удар")
-AddHeaderLabel(COL_HASTE_X, COL_STAT_W, "Скор", "CENTER", "haste", "Скорость")
-AddHeaderLabel(COL_ISKUS_X, COL_STAT_W, "Иск", "CENTER", "iskus", "Искусность")
-AddHeaderLabel(COL_VERS_X, COL_STAT_W, "Уни", "CENTER", "vers", "Универсальность")
+AddHeaderLabel(COL_HASTE_X, COL_STAT_W, "Скор-ть", "CENTER", "haste", "Скорость")
+AddHeaderLabel(COL_ISKUS_X, COL_STAT_W, "Иск-ть", "CENTER", "iskus", "Искусность")
+AddHeaderLabel(COL_VERS_X, COL_STAT_W, "Уни-ть", "CENTER", "vers", "Универсальность")
 AddHeaderLabel(COL_SOURCE_X, COL_SOURCE_W, "Источник", "CENTER", "source")
 ns.OnLocaleReady(function()
     for _, fs in ipairs(headerFontStrings) do
