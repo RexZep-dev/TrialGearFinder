@@ -58,6 +58,20 @@ local function Point(i, n, d, radius)
     return math.cos(a) * radius * d, -math.sin(a) * radius * d
 end
 
+-- Доля порога и цвет - тем же правилом, что подписи и грани диаграммы:
+-- красный - перебор софткапа, зелёный - дошли, белый - недобор. Нужно
+-- плашкам итога сборки в режиме «Цифры» (BiS.lua), чтобы оба вида
+-- говорили одно и то же. Процент - только у вторичек с порогом.
+function ns.StatTone(key, v)
+    v = v or 0
+    local max = AXIS_MAX[key] or 100
+    local d = v / max
+    local pct = CAPPED[key] and (v * 30 / max) or nil
+    if CAPPED[key] and d > 1.02 then return pct, 0.88, 0.42, 0.37 end
+    if d >= 0.95 then return pct, 0.42, 0.78, 0.45 end
+    return pct, 0.80, 0.82, 0.85
+end
+
 function ns.MakeRadar(parent, radius)
     local f = CreateFrame("Frame", nil, parent)
     f:SetSize(radius * 2, radius * 2)

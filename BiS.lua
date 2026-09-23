@@ -1321,6 +1321,7 @@ local function RenderSlots()
             values[k] = total[k] or 0
         end
         panel.radar:Update(values)
+        if panel.UpdateTotalBoxes then panel.UpdateTotalBoxes(values, primary) end
 
         local over = {}
         for _, k in ipairs({ "crit", "haste", "iskus", "vers" }) do
@@ -1473,6 +1474,37 @@ local function Bevel(frame, fill, border)
     frame:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
     frame:SetBackdropColor(fill[1], fill[2], fill[3], 1)
     frame:SetBackdropBorderColor(border[1], border[2], border[3], 1)
+end
+
+-- Плоская кнопка в стиле аддона: тёмный блок и мягкая рамка, при наведении
+-- тёплая рамка и белый текст. Вместо штатной красной UIPanelButtonTemplate,
+-- которая выбивалась из окна (пользователь 23 сентября). Подсветка - на
+-- SetScript, поэтому подсказки кнопкам вешаются через HookScript.
+local function FlatButton(parent, text, width)
+    local btn = CreateFrame("Button", nil, parent)
+    btn:SetSize(width, 22)
+    if S.RoundedPanel then
+        local _, edge = S.RoundedPanel(btn, C.block2 or { 0.09, 0.10, 0.11 }, C.borderSoft or { 0.13, 0.14, 0.16 })
+        btn.edge = edge
+    end
+    btn.fs = btn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    btn.fs:SetPoint("CENTER", 0, 0)
+    btn.fs:SetText(text)
+
+    local function Paint(self)
+        local lit = self.active or self:IsMouseOver()
+        local e = lit and (C.warm or { 0.85, 0.72, 0.42 }) or (C.borderSoft or { 0.13, 0.14, 0.16 })
+        local t = lit and (C.text or { 0.96, 0.96, 0.96 }) or (C.text2 or { 0.68, 0.71, 0.74 })
+        if self.edge then self.edge:SetVertexColor(e[1], e[2], e[3], 1) end
+        self.fs:SetTextColor(t[1], t[2], t[3])
+    end
+    btn.Paint = Paint
+    -- Выбранная половина переключателя горит, как под мышью.
+    function btn:SetActive(on) self.active = on; Paint(self) end
+    btn:SetScript("OnEnter", Paint)
+    btn:SetScript("OnLeave", Paint)
+    Paint(btn)
+    return btn
 end
 
 -- Выгрузка сборки в SimulationCraft. Живёт здесь, а не в обработчике
@@ -1737,29 +1769,33 @@ local function BuildPanel()
         -- Кнопка выгрузки в SimulationCraft. Окно копирования с профилем
         -- открывает сама ExportSimC; журнал сюда больше не зовём — он перебил
         -- бы чистый профиль строками чата.
-        local simc = CreateFrame("Button", nil, card, "UIPanelButtonTemplate")
-        simc:SetSize(64, 20)
-        simc:SetPoint("TOPRIGHT", card, "TOPRIGHT", -8, -6)
-        simc:SetText("SimC")
+        -- Полка над блоком: слева «График / Цифры», справа кнопки. Внутри блока
+        -- кнопки налезали на верхнюю подпись диаграммы (пользователь 23 сентября).
+        local bar = CreateFrame("Frame", nil, panel)
+        bar:SetPoint("BOTTOMLEFT", card, "TOPLEFT", 0, 6)
+        bar:SetPoint("BOTTOMRIGHT", card, "TOPRIGHT", 0, 6)
+        bar:SetHeight(22)
+        panel.totalsBar = bar
+
+        local simc = FlatButton(bar, "SimC", 64)
+        simc:SetPoint("RIGHT", bar, "RIGHT", 0, 0)
         simc:SetScript("OnClick", function()
             if ns.ExportSimC then ns.ExportSimC() end
         end)
-        simc:SetScript("OnEnter", function(self)
+        simc:HookScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_LEFT")
             GameTooltip:AddLine(ns.L"Выгрузить сборку для SimulationCraft")
             GameTooltip:AddLine(ns.L"Готовый профиль для Advanced Sim на Raidbots: персонаж, вещи, чары и ротация двадцатки.", 0.8, 0.8, 0.8, true)
             GameTooltip:Show()
         end)
-        simc:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        simc:HookScript("OnLeave", function() GameTooltip:Hide() end)
         panel.simcBtn = simc
 
         -- Кнопка талантов: печатает код сборки и открывает окно копирования.
         -- Новичку нужен именно код — он вставляется в игре одной кнопкой,
         -- а список названий ему ничего не скажет.
-        local tal = CreateFrame("Button", nil, card, "UIPanelButtonTemplate")
-        tal:SetSize(74, 20)
+        local tal = FlatButton(bar, ns.L"Таланты", 74)
         tal:SetPoint("RIGHT", simc, "LEFT", -6, 0)
-        tal:SetText(ns.L"Таланты")
         tal:SetScript("OnClick", function()
             local t = ns.TalentCodes and ns.TalentCodes[state.specID]
             if not t then
@@ -1771,7 +1807,7 @@ local function BuildPanel()
             -- Подпись сборки осталась в подсказке кнопки.
             if ns.ShowCopyText then ns.ShowCopyText(t.code) end
         end)
-        tal:SetScript("OnEnter", function(self)
+        tal:HookScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_LEFT")
             local t = ns.TalentCodes and ns.TalentCodes[state.specID]
             GameTooltip:AddLine(ns.L"Код талантов")
@@ -1779,23 +1815,82 @@ local function BuildPanel()
             GameTooltip:AddLine(ns.L"Вставляется в игре: окно талантов — Загрузить сборку.", 0.6, 0.6, 0.6, true)
             GameTooltip:Show()
         end)
-        tal:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        tal:HookScript("OnLeave", function() GameTooltip:Hide() end)
         panel.talentBtn = tal
 
         -- Сравнение сборки с надетым - отдельное окно (Compare.lua).
-        local cmp = CreateFrame("Button", nil, card, "UIPanelButtonTemplate")
-        cmp:SetSize(84, 20)
+        local cmp = FlatButton(bar, ns.L"Сравнить", 84)
         cmp:SetPoint("RIGHT", tal, "LEFT", -6, 0)
-        cmp:SetText(ns.L"Сравнить")
         cmp:SetScript("OnClick", function() if ns.ToggleCompare then ns.ToggleCompare() end end)
-        cmp:SetScript("OnEnter", function(self)
+        cmp:HookScript("OnEnter", function(self)
             GameTooltip:SetOwner(self, "ANCHOR_LEFT")
             GameTooltip:AddLine(ns.L"Сравнить сборку с надетым")
             GameTooltip:AddLine(ns.L"Слева сборка твоего спека, справа то, что на тебе. То же окно - /tgf compare.", 0.8, 0.8, 0.8, true)
             GameTooltip:Show()
         end)
-        cmp:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        cmp:HookScript("OnLeave", function() GameTooltip:Hide() end)
         panel.cmpBtn = cmp
+
+        -- «График / Цифры»: итог сборки диаграммой или плашками с числами, как
+        -- в окне сравнения (пользователь 23 сентября). Выбор запоминается.
+        local chartBtn = FlatButton(bar, ns.L"График", 64)
+        chartBtn:SetPoint("LEFT", bar, "LEFT", 0, 0)
+        local numBtn = FlatButton(bar, ns.L"Цифры", 64)
+        numBtn:SetPoint("LEFT", chartBtn, "RIGHT", 4, 0)
+
+        -- Плашки режима «Цифры»: сеткой три на два по центру блока. Порядок
+        -- как в окне сравнения; у вторичек под числом доля порога тем же
+        -- цветом, что на диаграмме.
+        local BOX_KEYS = { "stam", "primary", "crit", "haste", "iskus", "vers" }
+        local BOX_LABEL = { stam = "Вын", str = "Сила", agi = "Лов", int = "Инт",
+                            crit = "Крит", haste = "Скор", iskus = "Иск", vers = "Уни" }
+        panel.totalBoxes = {}
+        for i = 1, #BOX_KEYS do
+            local box = CreateFrame("Frame", nil, card)
+            box:SetSize(70, 52)
+            local col, row = (i - 1) % 3, math.floor((i - 1) / 3)
+            box:SetPoint("TOPLEFT", card, "CENTER", -111 + col * 76, 53 - row * 58)
+            Bevel(box, C.block2 or { 0.09, 0.10, 0.11 }, C.borderSoft or { 0.13, 0.14, 0.16 })
+            box.label = box:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            box.label:SetPoint("TOP", 0, -5)
+            box.value = box:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+            box.value:SetPoint("CENTER", 0, -2)
+            box.pct = box:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            box.pct:SetPoint("BOTTOM", 0, 4)
+            box.key = BOX_KEYS[i]
+            box:Hide()
+            panel.totalBoxes[i] = box
+        end
+
+        function panel.UpdateTotalBoxes(values, primary)
+            for _, box in ipairs(panel.totalBoxes) do
+                local key = (box.key == "primary") and (primary or "str") or box.key
+                local v = math.floor((values[key] or 0) + 0.5)
+                box.label:SetText(ns.L(BOX_LABEL[key] or key))
+                box.value:SetText(v)
+                local pct, cr, cg, cb = 0, 0.8, 0.82, 0.85
+                if ns.StatTone then pct, cr, cg, cb = ns.StatTone(key, v) end
+                box.value:SetTextColor(cr, cg, cb)
+                box.pct:SetText(pct and string.format("%.0f%%", pct) or "")
+                box.pct:SetTextColor(cr, cg, cb)
+            end
+        end
+
+        function panel.ApplyTotalsMode()
+            local numbers = TrialGearFinderDB and TrialGearFinderDB.bisTotalsNumbers and true or false
+            panel.radar:SetShown(not numbers)
+            for _, box in ipairs(panel.totalBoxes) do box:SetShown(numbers) end
+            chartBtn:SetActive(not numbers)
+            numBtn:SetActive(numbers)
+        end
+        local function SetMode(numbers)
+            TrialGearFinderDB = TrialGearFinderDB or {}
+            TrialGearFinderDB.bisTotalsNumbers = numbers or nil
+            panel.ApplyTotalsMode()
+        end
+        chartBtn:SetScript("OnClick", function() SetMode(false) end)
+        numBtn:SetScript("OnClick", function() SetMode(true) end)
+        panel.ApplyTotalsMode()
 
         panel.card = card
     end
