@@ -89,7 +89,7 @@ function ns.MakeRadar(parent, radius)
         for _, t in ipairs({ self.grid, self.spokes, self.edges, self.fill }) do
             for _, l in ipairs(t) do l:Hide() end
         end
-        for _, fs in ipairs(self.labels) do fs:Hide() end
+        for _, fs in ipairs(self.labels) do fs:Hide(); fs.hit:Hide() end
         if n < 3 then return end
 
         local r = self.radius
@@ -139,6 +139,15 @@ function ns.MakeRadar(parent, radius)
             if not fs then
                 fs = self:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
                 self.labels[li] = fs
+                -- Невидимая область над подписью: сама подпись мышь не ловит.
+                -- Наведение на стат подсвечивает вещи, которые его дают, -
+                -- что делать, решает хозяин диаграммы (OnStatEnter/OnStatLeave).
+                local hit = CreateFrame("Frame", nil, self)
+                hit:SetAllPoints(fs)
+                hit:EnableMouse(true)
+                hit:SetScript("OnEnter", function(h) if self.OnStatEnter then self.OnStatEnter(h.key) end end)
+                hit:SetScript("OnLeave", function() if self.OnStatLeave then self.OnStatLeave() end end)
+                fs.hit = hit
             end
             local v = values[key] or 0
             local max = AXIS_MAX[key] or 100
@@ -173,6 +182,8 @@ function ns.MakeRadar(parent, radius)
             if lx > r * 0.35 then anchor = "LEFT" elseif lx < -r * 0.35 then anchor = "RIGHT" end
             fs:SetPoint(anchor, self, "CENTER", lx, ly)
             fs:Show()
+            fs.hit.key = key
+            fs.hit:Show()
         end
 
         -- Фигура значений. Заливки нет: веер линий из центра читался полосами

@@ -1183,6 +1183,9 @@ local function StemToStatKey(text)
     return nil
 end
 
+-- Окну сравнения (Compare.lua): вклад надетой вещи по строкам её подсказки.
+ns.StemToStatKey = StemToStatKey
+
 -- Правка завышенных статов прямо в уже открытом GameTooltip.
 --
 -- Клиент масштабирует старые вещи по кривой уровня неточно: у Шлема удара

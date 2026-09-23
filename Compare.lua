@@ -214,6 +214,18 @@ local function MakeSide(parent, y, left)
         GameTooltip:Show()
     end)
     side.hit:SetScript("OnLeave", function() GameTooltip:Hide() end)
+
+    -- «+N» поверх иконки: вклад вещи в стат под мышью в плашках или на
+    -- диаграмме своей стороны (пользователь 24 сентября, как у Чонки).
+    side.pill = CreateFrame("Frame", nil, parent)
+    side.pill:SetSize(30, 16)
+    side.pill:SetPoint("CENTER", side.icon, "CENTER", 0, 0)
+    side.pill:SetFrameLevel(side.hit:GetFrameLevel() + 2)
+    if ST.RoundedPanel then ST.RoundedPanel(side.pill, SC.bg or { 0.02, 0.03, 0.03 }, SC.warm or { 0.85, 0.72, 0.42 }) end
+    side.pill.fs = side.pill:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    side.pill.fs:SetPoint("CENTER", 0, 0)
+    side.pill.fs:SetTextColor(GREEN[1], GREEN[2], GREEN[3])
+    side.pill:Hide()
     return side
 end
 
@@ -248,6 +260,71 @@ local function PaintSide(side, link, name, ilvl, gems, ench, needEnch, emptyTex,
         g.ref = gem and gem.ref
         g.tex:SetTexture(gem and gem.icon)
         g:SetShown(gem ~= nil)
+    end
+end
+
+-- Вклад надетой вещи по статам - из её подсказки, как у Чонки (сверено
+-- с его исходником): каждое «+N» в строке, камни «+2 к силе и +2 к скорости»
+-- делятся по «и». Серые строки - неактивное (бонус за гнёзда не по цвету,
+-- несобранный комплект), их пропускаем. Ссылке не верим: уровень по ней
+-- у части вещей неверен (см. уровень выше).
+local PRIMARIES = { "str", "agi", "int" }
+function ns.StatsFromTooltip(data)
+    local out = {}
+    if not (data and data.lines and ns.StemToStatKey) then return out end
+    local function Add(k, v) out[k] = (out[k] or 0) + v end
+    for _, line in ipairs(data.lines) do
+        local text, c = line.leftText, line.leftColor
+        local grey = c and c.r and c.g and c.b and c.r > 0.4 and c.r < 0.6
+            and math.abs(c.r - c.g) < 0.05 and math.abs(c.g - c.b) < 0.05
+        if type(text) == "string" and not grey then
+            text = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|T.-|t", ""):gsub("|A.-|a", "")
+            text = text:gsub("%s+и%s+", "\n"):gsub("%s+and%s+", "\n"):gsub(",%s*", "\n")
+            for part in text:gmatch("[^\n]+") do
+                local v, name = part:match("%+(%d+)%s+(.+)$")
+                v = tonumber(v)
+                local low = name and name:lower()
+                if not v then
+                    -- числа в этой части нет
+                elseif name:find("атак") or name:find("передвиж") or name:find("заклин")
+                    or low:find("attack power", 1, true) or low:find("spell power", 1, true)
+                    or low:find("movement", 1, true) then
+                    -- сила атаки, сила заклинаний, скорость бега - не наши шесть статов
+                elseif name:find("всем характеристик") or low:find("all stats", 1, true) then
+                    for _, k in ipairs(PRIMARIES) do Add(k, v) end
+                    Add("stam", v)
+                elseif name:find("основной характеристик") or low:find("primary stat", 1, true) then
+                    for _, k in ipairs(PRIMARIES) do Add(k, v) end
+                else
+                    local k = ns.StemToStatKey(name)
+                    if k then Add(k, v) end
+                end
+            end
+        end
+    end
+    return out
+end
+
+-- Наведение на стат: у вещей своей стороны, которые его дают, поверх иконки
+-- «+N», остальные гаснут. sideKey - "l" (сборка) или "r" (надетое);
+-- statKey = nil возвращает всё как было.
+local function ShowStat(sideKey, statKey)
+    for _, row in ipairs(rows) do
+        local side = row[sideKey]
+        local v = math.floor((statKey and side.contrib and side.contrib[statKey] or 0) + 0.5)
+        local on = statKey ~= nil and v > 0
+        if on then
+            side.pill.fs:SetText("+" .. v)
+            side.pill:SetWidth((side.pill.fs:GetStringWidth() or 16) + 12)
+        end
+        side.pill:SetShown(on)
+        local a = (statKey and not on) and 0.35 or 1
+        side.name:SetAlpha(a)
+        side.lvl:SetAlpha(a)
+        side.ench:SetAlpha(a)
+        side.bar:SetAlpha(a)
+        for _, g in ipairs(side.gems) do g:SetAlpha(a) end
+        side.icon:SetAlpha(side.link and a or 0.4)
     end
 end
 
@@ -356,8 +433,9 @@ function ns.RefreshCompare()
             nBis = nBis + 1
         end
         PaintSide(row.l, bisLink, bisName or "…", s and s.item.ilvl, bisGems, bisEnch, false, row.emptyTex, mark)
+        row.l.contrib = s and s.contrib or nil
 
-        local curName, curIlvl, curGems, curEnch
+        local curName, curIlvl, curGems, curEnch, curContrib
         if curLink then
             curName = curLink:match("%[(.-)%]")
             local tip = C_TooltipInfo and C_TooltipInfo.GetInventoryItem("player", row.invID)
@@ -368,8 +446,10 @@ function ns.RefreshCompare()
                 if gemLink then curGems[#curGems + 1] = { icon = IconOf(gemLink), ref = gemLink } end
             end
             curEnch = TooltipMatch(tip, ENCH_PAT)
+            curContrib = ns.StatsFromTooltip(tip)
         end
         PaintSide(row.r, curLink, curName, curIlvl, curGems, curEnch, s and s.ench ~= nil, row.emptyTex, mark)
+        row.r.contrib = curContrib
     end
 
     -- Двуручное оружие игра считает в среднем уровне дважды: левой руки
@@ -393,6 +473,7 @@ function ns.RefreshCompare()
         local bisV = math.floor((total[key] or 0) + 0.5)
         local curV = CurrentStat(key)
         local lb, rb = boxes.bis[i], boxes.cur[i]
+        lb.statKey, rb.statKey = key, key
         lb.label:SetText(L(BOX_LABEL[key]))
         rb.label:SetText(L(BOX_LABEL[key]))
         lb.value:SetText(bisV)
@@ -469,6 +550,10 @@ local function Build()
     frame:SetPoint("CENTER")
     frame:SetFrameStrata("DIALOG")
     frame:SetClampedToScreen(true)
+    -- Щелчок поднимает окно над основным, как и основное над ним: оба
+    -- в одном слое DIALOG, и открытое кнопкой «Сравнить» окно оказывалось
+    -- под основным (пользователь 24 сентября).
+    frame:SetToplevel(true)
     frame:SetMovable(true)
     frame:EnableMouse(true)
     frame:RegisterForDrag("LeftButton")
@@ -605,6 +690,24 @@ local function Build()
         frame.rRadar:SetPoint("CENTER", content, "TOP", 150, BOTTOM - 70)
     end
 
+    -- Наведение на стат в плашках или на диаграмме подсвечивает вещи своей
+    -- стороны, которые его дают.
+    for i = 1, #BOX_KEYS do
+        for sideKey, list in pairs({ l = boxes.bis, r = boxes.cur }) do
+            local b = list[i]
+            b:EnableMouse(true)
+            b:SetScript("OnEnter", function(self) ShowStat(sideKey, self.statKey) end)
+            b:SetScript("OnLeave", function() ShowStat(sideKey, nil) end)
+        end
+    end
+    if frame.lRadar then
+        frame.lRadar.OnStatEnter = function(k) ShowStat("l", k) end
+        frame.lRadar.OnStatLeave = function() ShowStat("l", nil) end
+        frame.rRadar.OnStatEnter = function(k) ShowStat("r", k) end
+        frame.rRadar.OnStatLeave = function() ShowStat("r", nil) end
+    end
+    frame.rows, frame.boxes = rows, boxes -- дымовой проверке
+
     -- Раскладка по галочкам. Строки, разделитель и диаграммы держатся
     -- за середину окна, поэтому ширина меняется без их перестановки; шапки
     -- и плашки встают от края текущей ширины.
@@ -669,6 +772,10 @@ function ns.ToggleCompare()
     f.content:Show() -- на случай, если слой спрятали отдельно от окна
     f:Show()
     f:Raise()
+    -- И ещё раз кадром позже: щелчок по кнопке «Сравнить» поднимает основное
+    -- окно, и если игра делает это после нашего Raise, окно сравнения
+    -- оказывалось под ним.
+    C_Timer.After(0, function() if f:IsShown() then f:Raise() end end)
     C_Timer.After(0, ns.RefreshCompare) -- модели подгружаются кадром позже
 end
 

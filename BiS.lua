@@ -993,6 +993,17 @@ local function MakeSlotRow(parent, index, y)
     row.check:SetAtlas("common-icon-checkmark")
     row.check:Hide()
 
+    -- Вклад вещи в стат под мышью в итоге сборки: «+N» у конца строки, как
+    -- у Чонки в окне персонажа (пользователь 24 сентября).
+    row.pill = CreateFrame("Frame", nil, row)
+    row.pill:SetSize(36, 18)
+    row.pill:SetPoint("RIGHT", row, "RIGHT", -24, 0)
+    if S.RoundedPanel then S.RoundedPanel(row.pill, C.bg or { 0.02, 0.03, 0.03 }, C.warm or { 0.85, 0.72, 0.42 }) end
+    row.pill.fs = row.pill:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    row.pill.fs:SetPoint("CENTER", 0, 0)
+    row.pill.fs:SetTextColor(0.42, 0.78, 0.45)
+    row.pill:Hide()
+
     row.valueFS = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     row.valueFS:SetPoint("LEFT", row.icon, "RIGHT", 4, 0)
     row.valueFS:SetPoint("RIGHT", row, "RIGHT", -22, 0)
@@ -1276,6 +1287,9 @@ local function RenderSlots()
     for i, slot in ipairs(SLOTS) do
         local c = chosen[i]
         local row = panel.slotRows[i]
+        -- Сумма до камней и чары слота: разница после них - их вклад.
+        local before = {}
+        for k, v in pairs(total) do if type(v) == "number" then before[k] = v end end
         local gems = c.pick and GemPicks(c.pick, w, total, role) or nil
         local ench = c.pick and PickEnchant(slot.key, w, primary, total, c.pick, state.specID) or nil
         if ench then
@@ -1289,6 +1303,23 @@ local function RenderSlots()
         end
         RenderRow(row, slot, c.pick, c.mark, gems, ench)
         if c.twoHand then row.valueFS:SetText(ns.L"— двуручное") end
+        -- Вклад слота по статам: вещь, бонус за гнёзда, камни и чара - ровно
+        -- то, из чего сложен итог. Нужен подсветке по наведению на стат.
+        local contrib
+        if c.pick and not c.twoHand then
+            contrib = {}
+            for k, v in pairs(c.pick.stats or {}) do contrib[k] = (contrib[k] or 0) + v end
+            local sb = c.pick.socketBonus
+            if sb and sb.key and (c.pick.sockets or 0) > 0 then
+                contrib[sb.key] = (contrib[sb.key] or 0) + sb.value
+            end
+            for k, v in pairs(total) do
+                if type(v) == "number" and v ~= (before[k] or 0) then
+                    contrib[k] = (contrib[k] or 0) + v - (before[k] or 0)
+                end
+            end
+        end
+        row.contrib = contrib
         if c.pick and not c.twoHand then
             local ids = {}
             for gi = 1, #(c.pick.socketTypes or {}) do
@@ -1296,6 +1327,7 @@ local function RenderSlots()
             end
             ns.LastBuild.slots[#ns.LastBuild.slots + 1] = {
                 key = slot.key, name = ns.L(slot.nameRU), item = c.pick, gems = ids, ench = ench,
+                contrib = contrib, -- окну сравнения, для той же подсветки
             }
         end
     end
@@ -1329,6 +1361,27 @@ local function RenderSlots()
         end
         panel.overFS:SetText(#over > 0
             and ns.L"|cffE06C5EПеребор: после 30% каждая единица рейтинга даёт на 10% меньше|r" or "")
+    end
+end
+
+-- Наведение на стат в итоге сборки (плашку или подпись диаграммы): вещи,
+-- которые его дают, подсвечиваются и показывают «+N», остальные гаснут.
+-- Как в окне персонажа у Чонки (пользователь 24 сентября). key = nil -
+-- вернуть всё как было.
+local function ShowStatOnRows(key)
+    for _, row in ipairs(panel and panel.slotRows or {}) do
+        local v = math.floor((key and row.contrib and row.contrib[key] or 0) + 0.5)
+        if key and v > 0 then
+            row.pill.fs:SetText("+" .. v)
+            row.pill:SetWidth((row.pill.fs:GetStringWidth() or 20) + 14)
+            row.pill:Show()
+            row.hl:Show()
+            row:SetAlpha(1)
+        else
+            row.pill:Hide()
+            row.hl:Hide()
+            row:SetAlpha(key and 0.45 or 1)
+        end
     end
 end
 
@@ -1761,6 +1814,8 @@ local function BuildPanel()
 
         panel.radar = ns.MakeRadar(card, 44)
         panel.radar:SetPoint("CENTER", card, "CENTER", 0, 4)
+        panel.radar.OnStatEnter = ShowStatOnRows
+        panel.radar.OnStatLeave = function() ShowStatOnRows(nil) end
 
         panel.overFS = card:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         panel.overFS:SetPoint("BOTTOM", card, "BOTTOM", 0, 3)
@@ -1859,6 +1914,9 @@ local function BuildPanel()
             box.pct = box:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             box.pct:SetPoint("BOTTOM", 0, 4)
             box.key = BOX_KEYS[i]
+            box:EnableMouse(true)
+            box:SetScript("OnEnter", function(self) ShowStatOnRows(self.statKey) end)
+            box:SetScript("OnLeave", function() ShowStatOnRows(nil) end)
             box:Hide()
             panel.totalBoxes[i] = box
         end
@@ -1866,6 +1924,7 @@ local function BuildPanel()
         function panel.UpdateTotalBoxes(values, primary)
             for _, box in ipairs(panel.totalBoxes) do
                 local key = (box.key == "primary") and (primary or "str") or box.key
+                box.statKey = key
                 local v = math.floor((values[key] or 0) + 0.5)
                 box.label:SetText(ns.L(BOX_LABEL[key] or key))
                 box.value:SetText(v)
