@@ -233,7 +233,13 @@ local function ScanCalendar()
             for i = 1, n do
                 local e = C_Calendar.GetDayEvent(monthOffset, day, i)
                 if e and e.calendarType == "HOLIDAY" and IsTimewalkTitle(e.title) then
-                    local id = e.eventID or (e.title .. tostring(EventStamp(e.startTime) or day))
+                    -- Повтор - это тот же номер И тот же день начала: многодневное
+                    -- событие стоит на каждом своём дне. Номер у всех недель
+                    -- Путешествия один, и по одному номеру прошедшая сентябрьская
+                    -- неделя отбрасывала октябрьскую - вкладка писала «в календаре
+                    -- нет», хотя 7 октября оно было (пользователь 24 сентября).
+                    local id = tostring(e.eventID or e.title) .. "@"
+                        .. tostring(EventStamp(e.startTime) or (monthOffset .. "/" .. day))
                     if not seen[id] then
                         seen[id] = true
                         local s = EventStamp(e.startTime)
@@ -270,6 +276,12 @@ local function ScanCalendar()
     end
     nextEvent = upcomingNamed or upcomingAny
     scanning = false
+end
+
+-- Для проверок и отладки: прогнать разбор календаря и вернуть найденное.
+function ns.ScanTimewalkCalendar()
+    ScanCalendar()
+    return nextEvent
 end
 
 local function AskCalendar()
