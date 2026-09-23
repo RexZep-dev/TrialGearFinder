@@ -2761,6 +2761,8 @@ local function BuildRowData(item)
 end
 
 RefreshResults = function()
+    -- Замер по /tgf prof: игра подвисала на открытии окна (23 сентября).
+    local t0 = ns.profOpen and debugprofilestop()
     local matches = {}
     local pending = false
 
@@ -2785,6 +2787,7 @@ RefreshResults = function()
         if ns.TimewalkItems then collect(ns.TimewalkItems) end
     end
 
+    local t1 = t0 and debugprofilestop()
     if #matches == 0 then
         for _, row in ipairs(rows) do row:Hide() end
         content:SetHeight(1)
@@ -2845,6 +2848,7 @@ RefreshResults = function()
         end)
     end
 
+    local t2 = t0 and debugprofilestop()
     emptyText:Hide()
 
     -- Строк ровно столько, сколько предметов. Высота content - вся стопка,
@@ -2867,6 +2871,10 @@ RefreshResults = function()
     content:SetWidth(math.max(scrollBox:GetWidth(), 1))
     content:SetHeight(#matches * ROW_PITCH - ROW_SPACING)
     scrollBox:FullUpdate(ScrollBoxConstants.UpdateImmediately)
+    if t0 then
+        print(string.format("[TGF] замер: вещей %d, строк %d (новых %d); отбор %.0f мс, сортировка %.0f мс, строки %.0f мс",
+            #matches, #rows, #rows - poolSize, t1 - t0, t2 - t1, debugprofilestop() - t2))
+    end
 end
 
 -- Автоотметка «был здесь». Скрытый квестовый флаг рарника знал бы это точно, но
@@ -3102,8 +3110,10 @@ frame:HookScript("OnEvent", function(_, event)
 end)
 
 frame:SetScript("OnShow", function()
+    local t0 = ns.profOpen and debugprofilestop()
     ClearExpiredDailyMarks() -- сброс мог случиться посреди сессии
     RefreshResults()
+    if t0 then print(string.format("[TGF] замер: главное окно всего %.0f мс", debugprofilestop() - t0)) end
 end)
 
 ------------------------------------------------------------
@@ -3934,6 +3944,12 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     end
     if msg == "copy" then
         if ns.ShowCopyWindow then ns.ShowCopyWindow() end
+        return
+    end
+    if msg == "prof" then
+        ns.profOpen = not ns.profOpen
+        print(ns.profOpen and "[TGF] замер включён: открой окно, время шагов будет в чате. Выключить - /tgf prof"
+            or "[TGF] замер выключен")
         return
     end
     if msg == "compare" or msg == "сравнение" then

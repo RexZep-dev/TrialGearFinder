@@ -1103,13 +1103,21 @@ local function RenderRow(row, slot, item, mark, gems, ench)
 
     row.valueFS:SetText("…")
     row.valueFS:SetTextColor(0.7, 0.7, 0.7)
-    local mixin = Item:CreateFromItemLink(link)
+    -- Ждём загрузку по номеру предмета, а не по полной ссылке. На ссылку
+    -- с номерами двадцатки, камнями и чарой ответ от игры иногда не приходит
+    -- вовсе - строка так и висела с «…», пока переключение спека не
+    -- перерисовывало её уже из кэша (23 сентября, скриншот пользователя).
+    -- Имя и цвет берём из полной ссылки: суффикс вещи живёт в её номерах.
+    local mixin = Item:CreateFromItemID(id)
     mixin:ContinueOnItemLoad(function()
         if row.itemID ~= id then return end
-        local label = mixin:GetItemName() or ("item:" .. id)
-        row.valueFS:SetText(label)
-        local q = mixin:GetItemQualityColor()
-        if q then row.valueFS:SetTextColor(q.r, q.g, q.b) end
+        local lname, _, lquality = C_Item.GetItemInfo(link)
+        row.valueFS:SetText(lname or mixin:GetItemName() or ("item:" .. id))
+        local q = lquality or mixin:GetItemQuality()
+        if q then
+            local r, g, bl = C_Item.GetItemQualityColor(q)
+            row.valueFS:SetTextColor(r, g, bl)
+        end
         local ic = mixin:GetItemIcon()
         if ic then row.icon:SetTexture(ic) end
     end)
@@ -1888,11 +1896,13 @@ local main = _G[MAIN]
 if main then
     MakeArrow() -- дочерний main, скрывается вместе с ним
     main:HookScript("OnShow", function()
+        local t0 = ns.profOpen and debugprofilestop()
         if not IsCollapsed() then
             if not panel then BuildPanel() end
             Populate()
         end
         ApplyCollapsed()
+        if t0 then print(string.format("[TGF] замер: окно BiS %.0f мс", debugprofilestop() - t0)) end
     end)
     if main:IsShown() then
         if not IsCollapsed() then BuildPanel(); Populate() end
