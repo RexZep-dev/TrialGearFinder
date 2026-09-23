@@ -489,10 +489,22 @@ local function Build()
     content:SetFrameLevel(frame.lModel:GetFrameLevel() + 5)
     frame.content = content
 
-    -- Крестик сам по себе прячет своего родителя - слой со строками, а не окно.
-    -- Так и было 23 сентября: слой пропадал, окно с моделями оставалось.
-    local close = CreateFrame("Button", nil, content, "UIPanelCloseButton")
-    close:SetPoint("TOPRIGHT", content, "TOPRIGHT", -2, -2)
+    -- Крестик как в главном окне: знак умножения шрифтом окна, белый,
+    -- при наведении тёплый. Штатный красный в золотой рамке выбивался
+    -- (пользователь 23 сентября). Простая кнопка, а не UIPanelCloseButton:
+    -- та сама прячет родителя - слой со строками, а не окно.
+    local close = CreateFrame("Button", nil, content)
+    close:SetSize(28, 28)
+    close:SetPoint("TOPRIGHT", content, "TOPRIGHT", -8, -8)
+    close.glyph = close:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+    local glyphFont, glyphSize, glyphFlags = close.glyph:GetFont()
+    if glyphFont and glyphSize then close.glyph:SetFont(glyphFont, glyphSize * 1.5, glyphFlags) end
+    close.glyph:SetPoint("CENTER", close, "CENTER", 0, 0)
+    close.glyph:SetText("\195\151") -- U+00D7, знак умножения
+    local textC, warmC = C.text or { 0.96, 0.96, 0.96 }, C.warm or { 0.85, 0.72, 0.42 }
+    close.glyph:SetTextColor(textC[1], textC[2], textC[3])
+    close:SetScript("OnEnter", function(self) self.glyph:SetTextColor(warmC[1], warmC[2], warmC[3]) end)
+    close:SetScript("OnLeave", function(self) self.glyph:SetTextColor(textC[1], textC[2], textC[3]) end)
     close:SetScript("OnClick", function() frame:Hide() end)
 
     -- Галочки «Персонажи» и «Диаграммы» (тестеры, 23 сентября): убрать модели

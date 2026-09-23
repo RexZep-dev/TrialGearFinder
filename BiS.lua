@@ -1769,7 +1769,7 @@ local function BuildPanel()
         -- Кнопка выгрузки в SimulationCraft. Окно копирования с профилем
         -- открывает сама ExportSimC; журнал сюда больше не зовём — он перебил
         -- бы чистый профиль строками чата.
-        -- Полка над блоком: слева «График / Цифры», справа кнопки. Внутри блока
+        -- Полка над блоком: слева «Диаграмма / Цифры», справа кнопки. Внутри блока
         -- кнопки налезали на верхнюю подпись диаграммы (пользователь 23 сентября).
         local bar = CreateFrame("Frame", nil, panel)
         bar:SetPoint("BOTTOMLEFT", card, "TOPLEFT", 0, 6)
@@ -1831,9 +1831,10 @@ local function BuildPanel()
         cmp:HookScript("OnLeave", function() GameTooltip:Hide() end)
         panel.cmpBtn = cmp
 
-        -- «График / Цифры»: итог сборки диаграммой или плашками с числами, как
+        -- «Диаграмма / Цифры» (было «График» - в окне сравнения та же вещь
+        -- звалась «Диаграммы», пользователь попросил одно слово): итог сборки диаграммой или плашками с числами, как
         -- в окне сравнения (пользователь 23 сентября). Выбор запоминается.
-        local chartBtn = FlatButton(bar, ns.L"График", 64)
+        local chartBtn = FlatButton(bar, ns.L"Диаграмма", 84)
         chartBtn:SetPoint("LEFT", bar, "LEFT", 0, 0)
         local numBtn = FlatButton(bar, ns.L"Цифры", 64)
         numBtn:SetPoint("LEFT", chartBtn, "RIGHT", 4, 0)
