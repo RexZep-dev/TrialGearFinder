@@ -20,8 +20,11 @@ local L = ns.L
 local W, H = 1300, 880
 local ROW_H, TOP = 36, -100
 local ICON = 32
-local GAP = 22        -- от середины до иконки: в щели стоят камни обеих сторон
-local GEM = 10        -- иконка камня
+local GEM = 16        -- иконка камня (было 10 - пользователь: мелкие, 23 сентября)
+-- От середины до иконки: в щели стоят камни обеих сторон, по два в столбике
+-- и до двух столбиков - у Дракончика три шестерёнки, у шлемов и поясов
+-- бывает три гнезда.
+local GAP = 3 + 2 * (GEM + 2) + 2
 local MODEL_W = 300
 local BOTTOM = TOP - 16 * ROW_H - 12 -- верх нижнего блока: плашки и диаграмма
 
@@ -149,14 +152,16 @@ local function MakeSide(parent, y, left)
         side.bar:SetPoint("TOPRIGHT", side.icon, "TOPLEFT", -3, 0)
         side.name:SetPoint("TOPRIGHT", side.bar, "TOPLEFT", -6, 1)
         for i, g in ipairs(side.gems) do
-            g:SetPoint("TOPLEFT", side.icon, "TOPRIGHT", 3, -(i - 1) * (GEM + 1))
+            local col, row = math.floor((i - 1) / 2), (i - 1) % 2
+            g:SetPoint("TOPLEFT", side.icon, "TOPRIGHT", 3 + col * (GEM + 2), -row * (GEM + 1))
         end
     else
         side.icon:SetPoint("TOPLEFT", parent, "TOP", GAP, y)
         side.bar:SetPoint("TOPLEFT", side.icon, "TOPRIGHT", 3, 0)
         side.name:SetPoint("TOPLEFT", side.bar, "TOPRIGHT", 6, 1)
         for i, g in ipairs(side.gems) do
-            g:SetPoint("TOPRIGHT", side.icon, "TOPLEFT", -3, -(i - 1) * (GEM + 1))
+            local col, row = math.floor((i - 1) / 2), (i - 1) % 2
+            g:SetPoint("TOPRIGHT", side.icon, "TOPLEFT", -3 - col * (GEM + 2), -row * (GEM + 1))
         end
     end
     local anchor = left and "TOPRIGHT" or "TOPLEFT"
@@ -456,17 +461,16 @@ local function Build()
 
     -- Галочки «Персонажи» и «Диаграммы» (тестеры, 23 сентября): убрать модели
     -- или диаграммы, чтобы остались одни вещи. Выбор запоминается, по умолчанию
-    -- всё видно. Стоят столбиком в левом верхнем углу: в узком окне рядом
-    -- с ними уже шапка сборки.
+    -- всё видно. Стоят внизу по центру в одну строку (пользователь: в углу
+    -- их не замечали); место раскладывает Relayout по ширине подписей.
     local function Hidden(key) return TrialGearFinderDB and TrialGearFinderDB[key] end
-    local function MakeToggle(ru, key, y)
+    local function MakeToggle(ru, key)
         local t = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
         t:SetSize(24, 24)
         if S.CheckBox then S.CheckBox(t, 11) end
-        t.label = content:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        t.label:SetPoint("TOPLEFT", content, "TOPLEFT", 14, y)
+        t.label = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        t.label:SetPoint("LEFT", t, "RIGHT", 4, 0)
         t.label:SetText(L(ru))
-        t:SetPoint("TOPLEFT", t.label, "BOTTOMLEFT", 0, -2)
         t:SetChecked(not Hidden(key))
         t:SetScript("OnClick", function(self)
             TrialGearFinderDB = TrialGearFinderDB or {}
@@ -478,8 +482,8 @@ local function Build()
         end)
         return t
     end
-    frame.modelToggle = MakeToggle("Персонажи", "compareHideModels", -12)
-    frame.radarToggle = MakeToggle("Диаграммы", "compareHideRadars", -54)
+    frame.modelToggle = MakeToggle("Персонажи", "compareHideModels")
+    frame.radarToggle = MakeToggle("Диаграммы", "compareHideRadars")
 
     -- Разделитель посередине.
     local line = content:CreateTexture(nil, "BACKGROUND", nil, 2)
@@ -542,14 +546,31 @@ local function Build()
         frame.lTitle:SetPoint("TOP", content, "TOP", -w / 4, -12)
         frame.rTitle:ClearAllPoints()
         frame.rTitle:SetPoint("TOP", content, "TOP", w / 4, -12)
+        -- Плашки: с диаграммами - у краёв окна, место посередине их; без
+        -- диаграмм - по центру своей половины, под строками (пользователь:
+        -- у краёв они смотрелись не по центру).
+        local blockW = 3 * 76 - 6
+        local leftX = radars and -(w / 2 - 30) or (-w / 4 - blockW / 2)
+        local rightX = radars and (w / 2 - 30 - blockW) or (w / 4 - blockW / 2)
         for i = 1, #BOX_KEYS do
             local col, row = (i - 1) % 3, math.floor((i - 1) / 3)
             local y = BOTTOM - row * 58
             boxes.bis[i]:ClearAllPoints()
-            boxes.bis[i]:SetPoint("TOPLEFT", content, "TOP", -(w / 2 - 30) + col * 76, y)
+            boxes.bis[i]:SetPoint("TOPLEFT", content, "TOP", leftX + col * 76, y)
             boxes.cur[i]:ClearAllPoints()
-            boxes.cur[i]:SetPoint("TOPLEFT", content, "TOP", (w / 2 - 30 - 3 * 76 + 6) + col * 76, y)
+            boxes.cur[i]:SetPoint("TOPLEFT", content, "TOP", rightX + col * 76, y)
         end
+
+        -- Галочки: одна строка внизу по центру. Ширина - по самим подписям,
+        -- они на двух языках разные.
+        local t1, t2 = frame.modelToggle, frame.radarToggle
+        local w1 = 24 + 4 + (t1.label:GetStringWidth() or 60)
+        local w2 = 24 + 4 + (t2.label:GetStringWidth() or 60)
+        local start = -(w1 + 28 + w2) / 2
+        t1:ClearAllPoints()
+        t1:SetPoint("BOTTOMLEFT", content, "BOTTOM", start, 12)
+        t2:ClearAllPoints()
+        t2:SetPoint("BOTTOMLEFT", content, "BOTTOM", start + w1 + 28, 12)
     end
     frame.Relayout()
     return frame
