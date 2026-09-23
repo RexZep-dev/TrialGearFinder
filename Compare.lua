@@ -123,7 +123,9 @@ local function MakeSide(parent, y, left)
     local SC = ST.C or {}
     if ST.RoundedTexture then
         side.boxEdge = ST.RoundedTexture(parent, "BACKGROUND", SC.border or { 0.18, 0.20, 0.22 }, 1)
-        side.boxBody = ST.RoundedTexture(parent, "BACKGROUND", SC.block2 or { 0.09, 0.10, 0.11 }, 2)
+        -- Подложка - цвет фона окна, темнее обеих полос зебры: рамка читается
+        -- и на светлой строке, и на тёмной.
+        side.boxBody = ST.RoundedTexture(parent, "BACKGROUND", SC.bg or { 0.02, 0.03, 0.03 }, 2)
         local inner = GAP + ICON + 2
         if left then
             side.boxEdge:SetPoint("TOPRIGHT", parent, "TOP", -2, y + 2)
@@ -536,6 +538,29 @@ local function Build()
     frame.lTitle, frame.lClass, frame.lIlvl = Header()
     frame.rTitle, frame.rClass, frame.rIlvl = Header()
     frame.rTitle:SetTextColor(1, 1, 1)
+
+    -- Зебра, как в списке главного окна (пользователь 23 сентября): скруглённая
+    -- подложка в рамке, чётные строки светлее. Только посередине, от текста
+    -- до текста: модели по краям в полосах тонули. Сверху и снизу поле
+    -- в 6 пикселей - прямоугольные полосы не срезают скруглённых углов.
+    -- Кадр между моделями и слоем строк: под текстом, над моделями.
+    local half = GAP + ICON + 12 + 240 + 10
+    local listTop = TOP + 4 -- верх первой полосы: рамка вещи начинается на 2 выше иконки
+    local listBg = CreateFrame("Frame", nil, frame)
+    listBg:SetFrameLevel(frame.lModel:GetFrameLevel() + 2)
+    listBg:SetPoint("TOPLEFT", frame, "TOP", -half, listTop + 6)
+    listBg:SetPoint("BOTTOMRIGHT", frame, "TOP", half, listTop - #ROWS * ROW_H - 6)
+    if S.RoundedPanel then
+        S.RoundedPanel(listBg, C.block or { 0.06, 0.07, 0.08 }, C.border or { 0.18, 0.20, 0.22 })
+    end
+    local stripeColor = C.block2 or { 0.09, 0.10, 0.11 }
+    for i = 2, #ROWS, 2 do
+        local stripe = listBg:CreateTexture(nil, "BORDER")
+        stripe:SetColorTexture(stripeColor[1], stripeColor[2], stripeColor[3], 1)
+        stripe:SetPoint("TOPLEFT", listBg, "TOPLEFT", 1, -6 - (i - 1) * ROW_H)
+        stripe:SetPoint("TOPRIGHT", listBg, "TOPRIGHT", -1, -6 - (i - 1) * ROW_H)
+        stripe:SetHeight(ROW_H)
+    end
 
     for i, key in ipairs(ROWS) do
         local y = TOP - (i - 1) * ROW_H
