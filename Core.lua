@@ -2543,14 +2543,25 @@ end
 -- BuildItemLink comment). Returns nil while the client hasn't cached the item yet;
 -- RefreshResults retries on GET_ITEM_INFO_RECEIVED.
 local function BuildRowData(item)
-    local link = BuildItemLink(item.itemID, item.bonusIDs or {})
-    local name, _, quality, _, _, _, itemSubType, _, equipLoc, icon, _, classID, subclassID =
-        C_Item.GetItemInfo(link)
-
-    if not name then
-        C_Item.RequestLoadItemDataByID(item.itemID)
-        return nil
+    -- Сведения о предмете за сессию не меняются - спрашиваем игру один раз
+    -- и держим их прямо в записи. Раньше ссылка и GetItemInfo считались заново
+    -- на каждую перестройку для всех ~470 вещей (замер 23 сентября: отбор
+    -- 130 мс на перестройку).
+    local info = item._info
+    if not info then
+        local link = BuildItemLink(item.itemID, item.bonusIDs or {})
+        local iname, _, iquality, _, _, _, _, _, iequipLoc, iicon, _, iclassID, isubclassID =
+            C_Item.GetItemInfo(link)
+        if not iname then
+            C_Item.RequestLoadItemDataByID(item.itemID)
+            return nil
+        end
+        info = { link = link, name = iname, quality = iquality, equipLoc = iequipLoc,
+                 icon = iicon, classID = iclassID, subclassID = isubclassID }
+        item._info = info
     end
+    local link, name, quality, equipLoc = info.link, info.name, info.quality, info.equipLoc
+    local icon, classID, subclassID = info.icon, info.classID, info.subclassID
 
     -- Categories still being worked on (neck, rings) are kept out of the list
     -- entirely, not just out of the Слот dropdown.
@@ -2633,7 +2644,17 @@ local function BuildRowData(item)
     -- Счётчик держим числом, а не превращаем сразу в да/нет: когда вещь
     -- числится, но найти её негде, единственное, что можно показать игроку, -
     -- это само число, по которому аддон и решил, что вещь есть.
-    local ownedCount = C_Item.GetItemCount(item.itemID, true, false, true) or 0
+    -- Сколько таких у персонажа - тоже из запаса: пересчёт нужен, только когда
+    -- сдвинулись сумки или экипировка, а не на каждую подгрузку чужой вещи.
+    -- Запас сбрасывает обработчик событий (BAG_UPDATE_DELAYED и смена экипировки)
+    -- и показ окна.
+    local counts = frame.ownedCounts
+    if not counts then counts = {}; frame.ownedCounts = counts end
+    local ownedCount = counts[item.itemID]
+    if ownedCount == nil then
+        ownedCount = C_Item.GetItemCount(item.itemID, true, false, true) or 0
+        counts[item.itemID] = ownedCount
+    end
     local owned = ownedCount > 0
     local ownedDiffs
     if owned then
@@ -3051,6 +3072,11 @@ frame:SetScript("OnEvent", function(self, event, addonName)
     -- without this the addon rebuilt all 121 rows hundreds of times a second in
     -- a busy city - top CPU consumer among addons and 199 MB of garbage.
     --
+    -- Сумки и экипировка сдвинулись - запас «сколько у персонажа» устарел.
+    -- Сбрасываем всегда, даже при закрытом окне: иначе откроешь после торговли
+    -- и увидишь старые галочки.
+    if event ~= "GET_ITEM_INFO_RECEIVED" then frame.ownedCounts = nil end
+    --
     -- И одного «только при открытом окне» мало. С тумблером «Комьюнити» в списке
     -- сотни вещей, игра подгружает их по одной, и событие приходило на каждую:
     -- замер 23 сентября - 70 полных перестроек подряд по 200-350 мс, игра
@@ -3124,6 +3150,7 @@ end)
 
 frame:SetScript("OnShow", function()
     local t0 = ns.profOpen and debugprofilestop()
+    frame.ownedCounts = nil -- пока окно было закрыто, что-то могли купить или продать
     ClearExpiredDailyMarks() -- сброс мог случиться посреди сессии
     RefreshResults()
     if t0 then print(string.format("[TGF] замер: главное окно всего %.0f мс", debugprofilestop() - t0)) end
