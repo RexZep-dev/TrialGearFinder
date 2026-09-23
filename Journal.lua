@@ -234,10 +234,10 @@ local function ScanCalendar()
                 local e = C_Calendar.GetDayEvent(monthOffset, day, i)
                 if e and e.calendarType == "HOLIDAY" and IsTimewalkTitle(e.title) then
                     -- Повтор - это тот же номер И тот же день начала: многодневное
-                    -- событие стоит на каждом своём дне. Номер у всех недель
-                    -- Путешествия один, и по одному номеру прошедшая сентябрьская
-                    -- неделя отбрасывала октябрьскую - вкладка писала «в календаре
-                    -- нет», хотя 7 октября оно было (пользователь 24 сентября).
+                    -- событие стоит на каждом своём дне, а одна эпоха повторяется
+                    -- под тем же номером из недели в неделю (у AllTheThings на номер
+                    -- - список дат). По одному номеру вторая неделя той же эпохи
+                    -- за три месяца отбросилась бы как повтор первой.
                     local id = tostring(e.eventID or e.title) .. "@"
                         .. tostring(EventStamp(e.startTime) or (monthOffset .. "/" .. day))
                     if not seen[id] then
@@ -278,11 +278,18 @@ local function ScanCalendar()
     scanning = false
 end
 
--- Для проверок и отладки: прогнать разбор календаря и вернуть найденное.
-function ns.ScanTimewalkCalendar()
-    ScanCalendar()
+-- Ближайшая неделя. Не было ещё разбора календаря - разбираем сейчас,
+-- не дожидаясь сигнала CALENDAR_UPDATE_EVENT_LIST. Вкладка сезона писала
+-- «в календаре нет», хотя 7 октября неделя стояла, и календарь отдавал её
+-- как надо: номер 652, тип HOLIDAY, начало (проверено /run у пользователя
+-- 24 сентября). Похоже, сигнал не приходил, и разбор не запускался вовсе:
+-- календарь мог быть уже загружен, например AllTheThings. *Не доказано* -
+-- подтвердится, если после правки вкладка покажет 7 октября.
+local function NextTimewalk()
+    if not nextEvent then ScanCalendar() end
     return nextEvent
 end
+ns.NextTimewalk = NextTimewalk -- дымовой проверке
 
 local function AskCalendar()
     if calendarAsked then return end
@@ -343,11 +350,12 @@ local function UpdateSeasonMessage(active)
         return
     end
     local text
-    if nextEvent then
-        local which = ExpansionLabel(nextEvent.tier, nextEvent.title)
+    local upcoming = NextTimewalk()
+    if upcoming then
+        local which = ExpansionLabel(upcoming.tier, upcoming.title)
         text = ns.L("Сейчас нет Путешествия во времени") .. "\n\n"
             .. ns.L("Следующее: %s"):format(which) .. "\n"
-            .. FormatDay(nextEvent.startTime)
+            .. FormatDay(upcoming.startTime)
     else
         text = ns.L("В календаре пока нет ближайшего Путешествия во времени")
     end
