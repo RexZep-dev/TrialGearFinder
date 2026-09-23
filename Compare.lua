@@ -264,7 +264,10 @@ function ns.RefreshCompare()
     end
 
     -- Шапка: слева сборка, справа персонаж.
-    local _, specName, _, _, _, classFile = GetSpecializationInfoByID(snap.specID)
+    local _, _, _, _, _, classFile = GetSpecializationInfoByID(snap.specID)
+    -- Спек по словарю аддона: у клиента он на языке клиента, и на русском
+    -- клиенте с английским окном выходило «Warrior (Неистовство)».
+    local specName = ns.SpecName and ns.SpecName(snap.specID)
     local _, pClassFile = UnitClass("player")
     local cc = C_ClassColor and C_ClassColor.GetClassColor(classFile or pClassFile)
     local className = ns.ClassName and ns.ClassName(classFile or pClassFile) or ""
@@ -272,7 +275,8 @@ function ns.RefreshCompare()
     frame.lClass:SetText(string.format("%s (%s)", className, specName or ""))
     frame.rTitle:SetText(UnitName("player") or "")
     local ownIdx = GetSpecialization and GetSpecialization()
-    local ownSpec = ownIdx and select(2, GetSpecializationInfo(ownIdx)) or ""
+    local ownSpecID = ownIdx and GetSpecializationInfo(ownIdx)
+    local ownSpec = ownSpecID and ns.SpecName and ns.SpecName(ownSpecID) or ""
     frame.rClass:SetText(string.format("%s (%s) " .. L"%d-го уровня", className, ownSpec, UnitLevel("player") or 0))
     if cc then
         frame.lClass:SetTextColor(cc.r, cc.g, cc.b)
@@ -451,6 +455,29 @@ local function Build()
     local close = CreateFrame("Button", nil, content, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", content, "TOPRIGHT", -2, -2)
     close:SetScript("OnClick", function() frame:Hide() end)
+
+    -- «Персонажи»: тестеры попросили убрать модели, чтобы остались одни вещи
+    -- (23 сентября). Выбор запоминается; по умолчанию модели видны.
+    local function ModelsShown()
+        return not (TrialGearFinderDB and TrialGearFinderDB.compareHideModels)
+    end
+    local toggle = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
+    toggle:SetSize(24, 24)
+    if S.CheckBox then S.CheckBox(toggle, 11) end
+    toggle.label = content:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    toggle.label:SetPoint("TOPLEFT", content, "TOPLEFT", 14, -12)
+    toggle.label:SetText(L"Персонажи")
+    toggle:SetPoint("TOP", toggle.label, "BOTTOM", 0, -2)
+    toggle:SetChecked(ModelsShown())
+    toggle:SetScript("OnClick", function(self)
+        TrialGearFinderDB = TrialGearFinderDB or {}
+        TrialGearFinderDB.compareHideModels = not self:GetChecked() or nil
+        frame.lModel:SetShown(ModelsShown())
+        frame.rModel:SetShown(ModelsShown())
+    end)
+    frame.lModel:SetShown(ModelsShown())
+    frame.rModel:SetShown(ModelsShown())
+    frame.modelToggle = toggle
 
     -- Разделитель посередине.
     local line = content:CreateTexture(nil, "BACKGROUND", nil, 2)
