@@ -17,14 +17,16 @@ local L = ns.L
 -- Ширина с запасом по краям: строки привязаны к середине, модели - к краям,
 -- и между ними остаётся зазор (пользователь 23 сентября: фигуры заходили
 -- под текст).
-local W, H = 1300, 880
-local ROW_H, TOP = 36, -100
+local W, H = 1300, 912
+-- Строка 40, а не 36: между рамками вещей нужен зазор (пользователь 23 сентября:
+-- вещи шли сплошной кашей). Окно из-за этого выше на 32.
+local ROW_H, TOP = 40, -100
 local ICON = 32
 local GEM = 16        -- иконка камня (было 10 - пользователь: мелкие, 23 сентября)
 -- От середины до иконки: в щели стоят камни обеих сторон, по два в столбике
 -- и до двух столбиков - у Дракончика три шестерёнки, у шлемов и поясов
 -- бывает три гнезда.
-local GAP = 3 + 2 * (GEM + 2) + 2
+local GAP = 3 + 2 * (GEM + 2) + 6 -- рамка у разделителя и поле камням внутри рамки
 local MODEL_W = 300
 local BOTTOM = TOP - 16 * ROW_H - 12 -- верх нижнего блока: плашки и диаграмма
 
@@ -113,6 +115,27 @@ end
 -- ── Одна сторона строки: иконка, полоска-метка и три строки текста ─────────
 local function MakeSide(parent, y, left)
     local side = {}
+    -- Рамка вокруг вещи и её камней на тёмной подложке: без неё иконка
+    -- и камни сливались с соседними вещами в одну кашу. Качество - полоска
+    -- снаружи рамки. Рамка - текстуры на том же кадре, что и иконка, иначе
+    -- дочерний кадр лёг бы поверх неё.
+    local ST = ns.Style or {}
+    local SC = ST.C or {}
+    if ST.RoundedTexture then
+        side.boxEdge = ST.RoundedTexture(parent, "BACKGROUND", SC.border or { 0.18, 0.20, 0.22 }, 1)
+        side.boxBody = ST.RoundedTexture(parent, "BACKGROUND", SC.block2 or { 0.09, 0.10, 0.11 }, 2)
+        local inner = GAP + ICON + 2
+        if left then
+            side.boxEdge:SetPoint("TOPRIGHT", parent, "TOP", -2, y + 2)
+            side.boxEdge:SetPoint("BOTTOMLEFT", parent, "TOP", -inner, y - ICON - 2)
+        else
+            side.boxEdge:SetPoint("TOPLEFT", parent, "TOP", 2, y + 2)
+            side.boxEdge:SetPoint("BOTTOMRIGHT", parent, "TOP", inner, y - ICON - 2)
+        end
+        side.boxBody:SetPoint("TOPLEFT", side.boxEdge, "TOPLEFT", 1, -1)
+        side.boxBody:SetPoint("BOTTOMRIGHT", side.boxEdge, "BOTTOMRIGHT", -1, 1)
+    end
+
     side.icon = parent:CreateTexture(nil, "ARTWORK")
     side.icon:SetSize(ICON, ICON)
     side.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
