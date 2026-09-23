@@ -918,9 +918,14 @@ local LIST_HEIGHT = NUM_VISIBLE_ROWS * ROW_HEIGHT + (NUM_VISIBLE_ROWS - 1) * ROW
 -- а полоса двигалась ступенькой в ряд. Плавность на нём не вышла - полоса
 -- округляет значение к шагу, и все обходные приёмы упирались в это.
 --
--- Здесь всё содержимое лежит в одном длинном блоке content, а scrollBox
--- двигает его целиком и по пикселям. Строки создаются по мере надобности
--- и переиспользуются между обновлениями - список не пересобирается заново.
+-- Вид - список (WowScrollBoxList): вещи отдаются ему списком, а строк игра
+-- держит столько, сколько видно, и подставляет в них вещи при прокрутке.
+-- Прокрутка по-прежнему плавная, по пикселям.
+--
+-- До 23 сентября строк было ровно столько, сколько вещей, одним длинным
+-- блоком. На 120 вещах это ничего не стоило, а с «Комьюнити» вещей стало
+-- 467 (до 900): первое построение 417 строк - 250 мс, и игра заметно
+-- дёргалась. Список создаёт строк на экран и не зависит от числа вещей.
 ------------------------------------------------------------
 
 local SCROLLBAR_PAD = 16 -- место справа под полосу
@@ -932,7 +937,7 @@ scrollArea:SetPoint("TOPLEFT", header, "BOTTOMLEFT", 0, -6)
 scrollArea:SetPoint("TOPRIGHT", header, "BOTTOMRIGHT", SCROLLBAR_PAD, -6)
 scrollArea:SetHeight(LIST_HEIGHT)
 
-local scrollBox = CreateFrame("Frame", "TrialGearFinderScrollBox", scrollArea, "WowScrollBox")
+local scrollBox = CreateFrame("Frame", "TrialGearFinderScrollBox", scrollArea, "WowScrollBoxList")
 scrollBox:SetPoint("TOPLEFT", scrollArea, "TOPLEFT", 0, 0)
 scrollBox:SetPoint("BOTTOMRIGHT", scrollArea, "BOTTOMRIGHT", -SCROLLBAR_PAD, 0)
 
@@ -941,20 +946,8 @@ scrollBar:SetPoint("TOPLEFT", scrollBox, "TOPRIGHT", 6, 0)
 scrollBar:SetPoint("BOTTOMLEFT", scrollBox, "BOTTOMRIGHT", 6, 0)
 if scrollBar.SetHideIfUnscrollable then scrollBar:SetHideIfUnscrollable(true) end
 
-local content = CreateFrame("Frame", nil, scrollBox)
-content.scrollable = true -- по этому полю scrollBox узнаёт, что двигать
-content:SetWidth(1)
-
--- Дети уже перепривязываются внутри SetView; без этого флага повторная
--- привязка регистрирует тот же фрейм дважды и содержимое уезжает вниз.
-if scrollBox.SetAlignmentOverlapIgnored then scrollBox:SetAlignmentOverlapIgnored(true) end
-
-local scrollView = CreateScrollBoxLinearView(0, 0, 0, 0, 0)
-if scrollView.SetElementStretchDisabled then scrollView:SetElementStretchDisabled(true) end
--- Шаг колеса. Без него у вида с одним длинным блоком шага нет вовсе, и колесо
--- либо не работает, либо прокручивает на случайную величину. Строка за щелчок.
-if scrollView.SetPanExtent then scrollView:SetPanExtent(ROW_PITCH) end
-ScrollUtil.InitScrollBoxWithScrollBar(scrollBox, scrollBar, scrollView)
+-- Вид списка подключается ниже, после CreateRow и LayoutRow: заполнителю
+-- строк нужны обе, а объявлены они дальше по файлу.
 
 -- Полосу трудно поймать мышью: она тонкая, и попадать надо ровно в ползунок.
 -- Ширину не трогаем - вид должен остаться тонким, - а расширяем область захвата
@@ -1912,8 +1905,10 @@ local function SaveSourceWaypoint(sourceName, sourceType, itemID)
             string.format(ns.L"карта %d: %.1f, %.1f", mapID, x, y))))
 end
 
-local function CreateRow(index)
-    local row = CreateFrame("Frame", "TrialGearFinderRow" .. index, frame)
+-- Кадр строки даёт список (см. вид ниже), здесь он только обрастает деталями.
+-- Номер строки в списке меняется при прокрутке, поэтому всё, что от него
+-- зависит, ставит SetListIndex при каждом заполнении.
+local function CreateRow(row)
     row:SetSize(ROW_WIDTH, ROW_HEIGHT)
     row:EnableMouse(true)
 
@@ -1927,11 +1922,7 @@ local function CreateRow(index)
     -- Чередование строк как на сайте: два соседних оттенка блока. Нечётные
     -- оставляем прозрачными - их оттенок даёт скруглённая подложка списка,
     -- и через неё же видно скругление у первой и последней строки.
-    if index % 2 == 0 then
-        Fill(row.bgAlt, C.block2)
-    else
-        row.bgAlt:SetColorTexture(0, 0, 0, 0)
-    end
+    row.bgAlt:SetColorTexture(0, 0, 0, 0) -- оттенок по чётности ставит SetListIndex
 
     row.bg = row:CreateTexture(nil, "BACKGROUND", nil, 1)
     row.bg:SetPoint("TOPLEFT", row, "TOPLEFT", 1, 0) -- тоже мимо рамки подложки
@@ -1948,7 +1939,7 @@ local function CreateRow(index)
     -- спотыкались с ползунком - капсула 16x16 не тянулась). Поэтому там, где
     -- угол круглый, поджимаем её внутрь на радиус и берём капсулу: торцы
     -- получаются скруглёнными.
-    local topInset = (index == 1) and 6 or 0
+    local topInset = 0 -- у первой строки отступ ставит SetListIndex
 
     row.hoverBar = row:CreateTexture(nil, "ARTWORK")
     row.hoverBar:SetWidth(2)
@@ -1966,7 +1957,11 @@ local function CreateRow(index)
 
     -- Какая строка последняя - знает только список: он теперь длиной во все
     -- найденные вещи, а не в девять строк. Метку ставит RefreshResults.
-    function row:SetLastInList(isLast)
+    function row:SetListIndex(i, isLast)
+        -- Чётные строки подкрашены, нечётные прозрачные и показывают подложку.
+        if i % 2 == 0 then Fill(self.bgAlt, C.block2) else self.bgAlt:SetColorTexture(0, 0, 0, 0) end
+        -- Полоска наведения у первой строки поджата под скруглённый верхний угол.
+        self.hoverBar:SetPoint("TOPLEFT", self, "TOPLEFT", 0, i == 1 and -6 or 0)
         self.hoverBar:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", 0, isLast and 6 or 0)
         -- Заливка строки прямоугольная и срезала бы скруглённый нижний угол
         -- списка. Последняя строка отдаёт угол подложке - как первая, она
@@ -2315,37 +2310,15 @@ local function CreateRow(index)
     return row
 end
 
--- Строки лежат в content одной длинной стопкой и создаются по мере надобности:
--- сколько предметов в списке, столько и строк. Прокрутка двигает весь блок
--- целиком, поэтому ни окна обрезки, ни подмены данных при сдвиге больше нет -
--- scrollBox сам не рисует то, что вышло за его края.
+-- Все кадры строк, какие список успел создать: раскладка колонок
+-- (ApplyStatsLayout) проходит по ним при смене режима «Мин-Макс».
 local rows = {}
-
-local function GetRow(index)
-    local row = rows[index]
-    if row then return row end
-
-    row = CreateRow(index)
-    row:SetParent(content)
-    if index == 1 then
-        row:SetPoint("TOPLEFT", content, "TOPLEFT", 0, 0)
-    else
-        row:SetPoint("TOPLEFT", GetRow(index - 1), "BOTTOMLEFT", 0, -ROW_SPACING)
-    end
-    row:Hide() -- пустая строка до первого SetData
-    rows[index] = row
-    return row
-end
-
--- Экран строк вперёд: ApplyStatsLayout раскладывает уже созданные, и при первом
--- проходе ему нужно что-то разложить.
-for i = 1, NUM_VISIBLE_ROWS do GetRow(i) end
 
 -- Подложка под всю стопку: скруглить углы у отдельной строки нельзя - текстура
 -- скругляет сразу все четыре, и по краям стопки вылезли бы насечки. Поэтому
 -- один скруглённый блок под списком, а нечётные строки прозрачные и показывают
 -- его - первая как раз нечётная, её верхний угол и скруглён. Нижний отдаёт
--- подложке последняя строка, см. SetLastInList: какая она - зависит от фильтра.
+-- подложке последняя строка, см. SetListIndex: какая она - зависит от фильтра.
 -- Привязана к видимой области, а не к строкам: строки ездят, а подложка
 -- со скруглением и рамкой должна стоять на месте.
 local listBg = CreateFrame("Frame", nil, frame)
@@ -2426,6 +2399,24 @@ end
 
 -- Source column slides left into the freed space and takes the extra width;
 -- everything else keeps its position, so only these three move.
+local function LayoutRow(row)
+    local show = TrialGearFinderDB and TrialGearFinderDB.showStats or false
+    local sourceX = show and COL_SOURCE_X or COL_STR_X
+    local rowWidth = show and ROW_WIDTH or ROW_WIDTH_NARROW
+    local sourceW = rowWidth - sourceX - 34 -- 34: место под галочку «уже был»
+    row:SetWidth(rowWidth)
+    for _, key in ipairs(STAT_COLS) do
+        if row[key] then row[key]:SetShown(show) end
+    end
+    row.source:ClearAllPoints()
+    row.source:SetPoint("TOPLEFT", row, "TOPLEFT", sourceX, -4)
+    row.source:SetWidth(sourceW)
+    row.sourceboss:SetWidth(sourceW)
+    row.sourceHitbox:ClearAllPoints()
+    row.sourceHitbox:SetPoint("TOPLEFT", row, "TOPLEFT", sourceX, 0)
+    row.sourceHitbox:SetWidth(sourceW)
+end
+
 local function ApplyStatsLayout()
     local show = TrialGearFinderDB and TrialGearFinderDB.showStats or false
     local sourceX = show and COL_SOURCE_X or COL_STR_X
@@ -2478,20 +2469,27 @@ local function ApplyStatsLayout()
         srcEntry.fs:SetWidth(sourceW)
     end
 
-    for _, row in ipairs(rows) do
-        row:SetWidth(rowWidth)
-        for _, key in ipairs(STAT_COLS) do
-            if row[key] then row[key]:SetShown(show) end
-        end
-        row.source:ClearAllPoints()
-        row.source:SetPoint("TOPLEFT", row, "TOPLEFT", sourceX, -4)
-        row.source:SetWidth(sourceW)
-        row.sourceboss:SetWidth(sourceW)
-        row.sourceHitbox:ClearAllPoints()
-        row.sourceHitbox:SetPoint("TOPLEFT", row, "TOPLEFT", sourceX, 0)
-        row.sourceHitbox:SetWidth(sourceW)
-    end
+    for _, row in ipairs(rows) do LayoutRow(row) end
 end
+
+-- Вид списка. Заполнитель зовётся на каждую видимую строку при прокрутке
+-- и перестройке: новый кадр сперва обрастает деталями и раскладкой колонок,
+-- потом получает номер в списке и данные вещи.
+local scrollView = CreateScrollBoxListLinearView(0, 0, 0, 0, ROW_SPACING)
+scrollView:SetElementExtent(ROW_HEIGHT)
+-- Шаг колеса - строка за щелчок.
+if scrollView.SetPanExtent then scrollView:SetPanExtent(ROW_PITCH) end
+scrollView:SetElementInitializer("Frame", function(row, data)
+    if not row.built then
+        CreateRow(row)
+        row.built = true
+        rows[#rows + 1] = row
+        LayoutRow(row)
+    end
+    row:SetListIndex(data._i, data._last)
+    row:SetData(data)
+end)
+ScrollUtil.InitScrollBoxListWithScrollBar(scrollBox, scrollBar, scrollView)
 
 statsToggle:SetScript("OnClick", function(self)
     TrialGearFinderDB.showStats = not TrialGearFinderDB.showStats
@@ -2839,9 +2837,7 @@ RefreshResults = function()
 
     local t1 = t0 and debugprofilestop()
     if #matches == 0 then
-        for _, row in ipairs(rows) do row:Hide() end
-        content:SetHeight(1)
-        scrollBox:FullUpdate(ScrollBoxConstants.UpdateImmediately)
+        scrollBox:SetDataProvider(CreateDataProvider(), ScrollBoxConstants.RetainScrollPosition)
         emptyText:Show()
         emptyText:SetText(pending and ns.L"|cFF888888Загрузка данных...|r"
             or ns.L"|cFF888888Нет предметов под эти фильтры.|r")
@@ -2905,22 +2901,11 @@ RefreshResults = function()
     -- по ней игра сама считает и ход полосы, и размер ползунка, и прокручивает
     -- по пикселям. Лишние строки прячем, а не удаляем: при следующем показе
     -- пригодятся.
+    -- Номер в списке и признак последней - в данные вещи: строка их узнаёт
+    -- при заполнении, а кадр при прокрутке достаётся другой вещи.
     local poolSize = #rows
-    for i = 1, #matches do
-        local row = GetRow(i)
-        row:SetData(matches[i])
-        row:SetLastInList(i == #matches)
-    end
-    for i = #matches + 1, #rows do
-        rows[i]:Hide()
-    end
-    -- Новые строки рождаются с шириной и колонками по умолчанию; раскладка
-    -- знает текущий режим Мин-Макс и приводит их в общий вид.
-    if #rows > poolSize then ApplyStatsLayout() end
-
-    content:SetWidth(math.max(scrollBox:GetWidth(), 1))
-    content:SetHeight(#matches * ROW_PITCH - ROW_SPACING)
-    scrollBox:FullUpdate(ScrollBoxConstants.UpdateImmediately)
+    for i, m in ipairs(matches) do m._i, m._last = i, (i == #matches) end
+    scrollBox:SetDataProvider(CreateDataProvider(matches), ScrollBoxConstants.RetainScrollPosition)
     if t0 then
         print(string.format("[TGF] замер: вещей %d, строк %d (новых %d); отбор %.0f мс, сортировка %.0f мс, строки %.0f мс",
             #matches, #rows, #rows - poolSize, t1 - t0, t2 - t1, debugprofilestop() - t2))
