@@ -246,6 +246,22 @@ local enUS = {
     ["|cFFFFD100[TGF]|r На этой карте игра не разрешает ставить метку."] =
         "|cFFFFD100[TGF]|r The game does not allow markers on this map.",
 
+    -- Примерка сборки (Planner.lua)
+    ["Примерка"] = "Gear Planner",
+    ["Примерка сборки"] = "Gear Planner",
+    ["Сборка: %s"] = "Build: %s",
+    ["Уже надето"] = "Already equipped",
+    ["Лежит в сумках"] = "In your bags",
+    ["Сейчас в слоте: "] = "Equipped now: ",
+    ["Слот сейчас пуст"] = "Nothing equipped in this slot",
+    ["Shift - сравнить с надетым"] = "Shift - compare with equipped",
+    ["Собрано %d из %d: надето %d, в сумках %d"] = "Collected %d of %d: %d equipped, %d in bags",
+    ["Дальше: "] = "Next: ",
+    ["Вся сборка собрана"] = "The whole build is collected",
+    ["Потяни модель - повернуть, колесо - приблизить. Shift над слотом - сравнить с надетым."] = "Drag the model to rotate, mouse wheel to zoom. Shift over a slot to compare with equipped.",
+    ["Примерить сборку на своего персонажа"] = "Try the build on your character",
+    ["Модель в полный рост в вещах сборки. Галочка - вещь уже надета, сумка - лежит в сумках."] = "Full-size model wearing the build. A tick means already equipped, a bag means it is in your bags.",
+
     -- Параметры
     ["Язык"]               = "Language",
     ["Как в игре"]         = "Same as game client",

@@ -1292,6 +1292,9 @@ local function RenderSlots()
         end
     end
 
+    -- Открытая примерка (Planner.lua) переодевается вслед за сменой спека.
+    if ns.RefreshPlanner then ns.RefreshPlanner() end
+
     -- Итог сборки: шмот плюс камни, которые окно само и советует. Считаем
     -- здесь, а не в ScoreItem: счёт ранжирует ОДНУ вещь, а перебор вторички
     -- бывает только у сборки целиком.
@@ -1768,6 +1771,22 @@ local function BuildPanel()
         end)
         tal:SetScript("OnLeave", function() GameTooltip:Hide() end)
         panel.talentBtn = tal
+
+        -- Примерка: сборка на своей модели, галочки на том, что уже надето
+        -- (Planner.lua). Игроки просили сравнение со своим шмотом.
+        local fit = CreateFrame("Button", nil, card, "UIPanelButtonTemplate")
+        fit:SetSize(84, 20)
+        fit:SetPoint("RIGHT", tal, "LEFT", -6, 0)
+        fit:SetText(ns.L"Примерка")
+        fit:SetScript("OnClick", function() if ns.TogglePlanner then ns.TogglePlanner() end end)
+        fit:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+            GameTooltip:AddLine(ns.L"Примерить сборку на своего персонажа")
+            GameTooltip:AddLine(ns.L"Модель в полный рост в вещах сборки. Галочка - вещь уже надета, сумка - лежит в сумках.", 0.8, 0.8, 0.8, true)
+            GameTooltip:Show()
+        end)
+        fit:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        panel.planBtn = fit
 
         panel.card = card
     end

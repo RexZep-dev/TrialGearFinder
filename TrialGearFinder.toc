@@ -26,3 +26,4 @@ Copy.lua
 BiS_Data.lua
 Radar.lua
 BiS.lua
+Planner.lua
