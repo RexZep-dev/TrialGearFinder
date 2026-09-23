@@ -858,6 +858,18 @@ local function AddHeaderLabel(x, width, ru, justify, sortKey, fullRU)
     fs._tgfFullRU = fullRU
     headerFontStrings[#headerFontStrings + 1] = fs
 
+    -- Рамка ячейки: в режиме «Мин-Макс» подписи столбцов шли сплошной
+    -- строкой и сливались (пользователь 24 сентября). Текстуры на самой
+    -- шапке, на заднем слое - под текстом; держатся за подпись и переезжают
+    -- вместе с ней. Прячутся вместе с ней в ApplyStatsLayout.
+    local boxEdge = RoundedTexture(header, "BACKGROUND", C.border, 0)
+    boxEdge:SetPoint("TOPLEFT", fs, "TOPLEFT", 1, 3)
+    boxEdge:SetPoint("BOTTOMRIGHT", fs, "BOTTOMRIGHT", -1, -3)
+    local boxBody = RoundedTexture(header, "BACKGROUND", C.block2, 1)
+    boxBody:SetPoint("TOPLEFT", boxEdge, "TOPLEFT", 1, -1)
+    boxBody:SetPoint("BOTTOMRIGHT", boxEdge, "BOTTOMRIGHT", -1, 1)
+    fs._box = { boxEdge, boxBody }
+
     if sortKey then
         local arrow = header:CreateTexture(nil, "OVERLAY")
         arrow:SetTexture(ARROW_TEXTURE)
@@ -2501,7 +2513,10 @@ local function ApplyStatsLayout()
 
     for _, key in ipairs(STAT_COLS) do
         local entry = headerLabels[key]
-        if entry then entry.fs:SetShown(show) end
+        if entry then
+            entry.fs:SetShown(show)
+            for _, t in ipairs(entry.fs._box or {}) do t:SetShown(show) end
+        end
     end
     local srcEntry = headerLabels.source
     if srcEntry then

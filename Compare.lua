@@ -717,14 +717,9 @@ local function Build()
         for sideKey, list in pairs({ l = boxes.bis, r = boxes.cur }) do
             local b = list[i]
             b:EnableMouse(true)
-            b:SetScript("OnEnter", function(self)
-                ShowStat(sideKey, self.statKey)
-                ns.ShowStatTooltip(self, self.statKey)
-            end)
-            b:SetScript("OnLeave", function()
-                ShowStat(sideKey, nil)
-                GameTooltip:Hide()
-            end)
+            -- Без подсказки: название на плашке и так целиком.
+            b:SetScript("OnEnter", function(self) ShowStat(sideKey, self.statKey) end)
+            b:SetScript("OnLeave", function() ShowStat(sideKey, nil) end)
         end
     end
     if frame.lRadar then

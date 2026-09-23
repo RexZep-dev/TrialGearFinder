@@ -1915,14 +1915,10 @@ local function BuildPanel()
             box.pct:SetPoint("BOTTOM", 0, 4)
             box.key = BOX_KEYS[i]
             box:EnableMouse(true)
-            box:SetScript("OnEnter", function(self)
-                ShowStatOnRows(self.statKey)
-                if ns.ShowStatTooltip then ns.ShowStatTooltip(self, self.statKey) end
-            end)
-            box:SetScript("OnLeave", function()
-                ShowStatOnRows(nil)
-                GameTooltip:Hide()
-            end)
+            -- Подсказки с названием нет: оно и так написано целиком
+            -- (пользователь 24 сентября). У подписей диаграммы она осталась.
+            box:SetScript("OnEnter", function(self) ShowStatOnRows(self.statKey) end)
+            box:SetScript("OnLeave", function() ShowStatOnRows(nil) end)
             box:Hide()
             panel.totalBoxes[i] = box
         end
