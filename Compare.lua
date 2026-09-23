@@ -20,7 +20,6 @@ local L = ns.L
 local W, H = 1300, 880
 local ROW_H, TOP = 36, -100
 local ICON = 32
-local MID = W / 2
 local GAP = 22        -- от середины до иконки: в щели стоят камни обеих сторон
 local GEM = 10        -- иконка камня
 local MODEL_W = 300
@@ -146,14 +145,14 @@ local function MakeSide(parent, y, left)
     end
 
     if left then
-        side.icon:SetPoint("TOPRIGHT", parent, "TOPLEFT", MID - GAP, y)
+        side.icon:SetPoint("TOPRIGHT", parent, "TOP", -GAP, y)
         side.bar:SetPoint("TOPRIGHT", side.icon, "TOPLEFT", -3, 0)
         side.name:SetPoint("TOPRIGHT", side.bar, "TOPLEFT", -6, 1)
         for i, g in ipairs(side.gems) do
             g:SetPoint("TOPLEFT", side.icon, "TOPRIGHT", 3, -(i - 1) * (GEM + 1))
         end
     else
-        side.icon:SetPoint("TOPLEFT", parent, "TOPLEFT", MID + GAP, y)
+        side.icon:SetPoint("TOPLEFT", parent, "TOP", GAP, y)
         side.bar:SetPoint("TOPLEFT", side.icon, "TOPRIGHT", 3, 0)
         side.name:SetPoint("TOPLEFT", side.bar, "TOPRIGHT", 6, 1)
         for i, g in ipairs(side.gems) do
@@ -213,12 +212,11 @@ local function PaintSide(side, link, name, ilvl, gems, ench, needEnch, emptyTex,
 end
 
 -- ── Плашки характеристик ───────────────────────────────────────────────────
-local function MakeBox(parent, x, y)
+local function MakeBox(parent)
     local S = ns.Style or {}
     local C = S.C or {}
     local b = CreateFrame("Frame", nil, parent)
     b:SetSize(70, 52)
-    b:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
     if S.RoundedPanel then
         S.RoundedPanel(b, C.block2 or { 0.09, 0.10, 0.11 }, C.borderSoft or { 0.13, 0.14, 0.16 })
     end
@@ -456,39 +454,42 @@ local function Build()
     close:SetPoint("TOPRIGHT", content, "TOPRIGHT", -2, -2)
     close:SetScript("OnClick", function() frame:Hide() end)
 
-    -- «Персонажи»: тестеры попросили убрать модели, чтобы остались одни вещи
-    -- (23 сентября). Выбор запоминается; по умолчанию модели видны.
-    local function ModelsShown()
-        return not (TrialGearFinderDB and TrialGearFinderDB.compareHideModels)
+    -- Галочки «Персонажи» и «Диаграммы» (тестеры, 23 сентября): убрать модели
+    -- или диаграммы, чтобы остались одни вещи. Выбор запоминается, по умолчанию
+    -- всё видно. Стоят столбиком в левом верхнем углу: в узком окне рядом
+    -- с ними уже шапка сборки.
+    local function Hidden(key) return TrialGearFinderDB and TrialGearFinderDB[key] end
+    local function MakeToggle(ru, key, y)
+        local t = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
+        t:SetSize(24, 24)
+        if S.CheckBox then S.CheckBox(t, 11) end
+        t.label = content:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        t.label:SetPoint("TOPLEFT", content, "TOPLEFT", 14, y)
+        t.label:SetText(L(ru))
+        t:SetPoint("TOPLEFT", t.label, "BOTTOMLEFT", 0, -2)
+        t:SetChecked(not Hidden(key))
+        t:SetScript("OnClick", function(self)
+            TrialGearFinderDB = TrialGearFinderDB or {}
+            TrialGearFinderDB[key] = not self:GetChecked() or nil
+            frame.Relayout()
+            -- Спрятанная и снова показанная модель теряет примерку и встаёт
+            -- в то, что надето, - переодеваем кадром позже, когда она прогрузится.
+            C_Timer.After(0, ns.RefreshCompare)
+        end)
+        return t
     end
-    local toggle = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
-    toggle:SetSize(24, 24)
-    if S.CheckBox then S.CheckBox(toggle, 11) end
-    toggle.label = content:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    toggle.label:SetPoint("TOPLEFT", content, "TOPLEFT", 14, -12)
-    toggle.label:SetText(L"Персонажи")
-    toggle:SetPoint("TOP", toggle.label, "BOTTOM", 0, -2)
-    toggle:SetChecked(ModelsShown())
-    toggle:SetScript("OnClick", function(self)
-        TrialGearFinderDB = TrialGearFinderDB or {}
-        TrialGearFinderDB.compareHideModels = not self:GetChecked() or nil
-        frame.lModel:SetShown(ModelsShown())
-        frame.rModel:SetShown(ModelsShown())
-    end)
-    frame.lModel:SetShown(ModelsShown())
-    frame.rModel:SetShown(ModelsShown())
-    frame.modelToggle = toggle
+    frame.modelToggle = MakeToggle("Персонажи", "compareHideModels", -12)
+    frame.radarToggle = MakeToggle("Диаграммы", "compareHideRadars", -54)
 
     -- Разделитель посередине.
     local line = content:CreateTexture(nil, "BACKGROUND", nil, 2)
     line:SetColorTexture(0.25, 0.27, 0.30, 0.6)
-    line:SetPoint("TOP", content, "TOPLEFT", MID, -14)
+    line:SetPoint("TOP", content, "TOP", 0, -14)
     line:SetSize(1, H - 28)
 
     -- Шапки сторон: название, класс, большой средний уровень предметов.
-    local function Header(cx)
+    local function Header()
         local t = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-        t:SetPoint("TOP", content, "TOPLEFT", cx, -12)
         local c = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         c:SetPoint("TOP", t, "BOTTOM", 0, -3)
         local i = content:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
@@ -496,8 +497,8 @@ local function Build()
         i:SetTextColor(0.25, 0.60, 1.0)
         return t, c, i
     end
-    frame.lTitle, frame.lClass, frame.lIlvl = Header(W / 4)
-    frame.rTitle, frame.rClass, frame.rIlvl = Header(W * 3 / 4)
+    frame.lTitle, frame.lClass, frame.lIlvl = Header()
+    frame.rTitle, frame.rClass, frame.rIlvl = Header()
     frame.rTitle:SetTextColor(1, 1, 1)
 
     for i, key in ipairs(ROWS) do
@@ -510,17 +511,47 @@ local function Build()
     -- Низ: у каждой стороны плашки сеткой три на два у края окна и диаграмма
     -- итога сборки ближе к середине - та же, что в окне BiS.
     for i = 1, #BOX_KEYS do
-        local col, row = (i - 1) % 3, math.floor((i - 1) / 3)
-        local y = BOTTOM - row * 58
-        boxes.bis[i] = MakeBox(content, 30 + col * 76, y)
-        boxes.cur[i] = MakeBox(content, W - 30 - 3 * 76 + 6 + col * 76, y)
+        boxes.bis[i] = MakeBox(content)
+        boxes.cur[i] = MakeBox(content)
     end
     if ns.MakeRadar then
         frame.lRadar = ns.MakeRadar(content, 44)
-        frame.lRadar:SetPoint("CENTER", content, "TOPLEFT", MID - 150, BOTTOM - 70)
+        frame.lRadar:SetPoint("CENTER", content, "TOP", -150, BOTTOM - 70)
         frame.rRadar = ns.MakeRadar(content, 44)
-        frame.rRadar:SetPoint("CENTER", content, "TOPLEFT", MID + 150, BOTTOM - 70)
+        frame.rRadar:SetPoint("CENTER", content, "TOP", 150, BOTTOM - 70)
     end
+
+    -- Раскладка по галочкам. Строки, разделитель и диаграммы держатся
+    -- за середину окна, поэтому ширина меняется без их перестановки; шапки
+    -- и плашки встают от края текущей ширины.
+    --   с персонажами - 1300: модели по краям;
+    --   без персонажей - 1100: плашкам нужно место слева от диаграмм;
+    --   без персонажей и диаграмм - 760: строки и плашки.
+    function frame.Relayout()
+        local models = not Hidden("compareHideModels")
+        local radars = not Hidden("compareHideRadars")
+        local w = models and W or (radars and 1100 or 760)
+        frame:SetWidth(w)
+        frame.lModel:SetShown(models)
+        frame.rModel:SetShown(models)
+        if frame.lRadar then
+            frame.lRadar:SetShown(radars)
+            frame.rRadar:SetShown(radars)
+        end
+        frame.lTitle:ClearAllPoints()
+        frame.lTitle:SetPoint("TOP", content, "TOP", -w / 4, -12)
+        frame.rTitle:ClearAllPoints()
+        frame.rTitle:SetPoint("TOP", content, "TOP", w / 4, -12)
+        for i = 1, #BOX_KEYS do
+            local col, row = (i - 1) % 3, math.floor((i - 1) / 3)
+            local y = BOTTOM - row * 58
+            boxes.bis[i]:ClearAllPoints()
+            boxes.bis[i]:SetPoint("TOPLEFT", content, "TOP", -(w / 2 - 30) + col * 76, y)
+            boxes.cur[i]:ClearAllPoints()
+            boxes.cur[i]:SetPoint("TOPLEFT", content, "TOP", (w / 2 - 30 - 3 * 76 + 6) + col * 76, y)
+        end
+    end
+    frame.Relayout()
     return frame
 end
 

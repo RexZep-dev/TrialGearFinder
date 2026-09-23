@@ -252,6 +252,7 @@ local enUS = {
     ["%d-го уровня"] = "level %d",
     ["Нет чар"] = "No enchant",
     ["Персонажи"] = "Characters",
+    ["Диаграммы"] = "Charts",
     ["Сравнить"] = "Compare",
     ["Сравнить сборку с надетым"] = "Compare the build with your gear",
     ["Слева сборка твоего спека, справа то, что на тебе. То же окно - /tgf compare."] = "Your spec build on the left, what you wear on the right. Same window: /tgf compare.",
