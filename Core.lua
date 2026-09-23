@@ -1511,20 +1511,33 @@ local OWNED_CONTAINERS = (function()
     return ids
 end)()
 
+-- Надетое, сумки и банк обходятся ОДИН раз: получается таблица «номер вещи ->
+-- ссылка на копию персонажа». Раньше обход шёл заново на каждую вещь из базы:
+-- десятки вещей на руках на сотни слотов - десятки тысяч обращений к игре
+-- на одну перестройку списка, и каждое оставляло таблицу-мусор (23 сентября,
+-- игра подвисала на 2-3 секунды). Таблицу сбрасывает обработчик событий
+-- вместе с запасом количества: сумки, экипировка, открытый банк, показ окна.
+-- Кто первым встретился, тот и возвращается: надетое раньше сумок, как было.
 local function FindOwnedLink(itemID)
     if not itemID then return nil end
-    for slot = INVSLOT_FIRST_EQUIPPED, INVSLOT_LAST_EQUIPPED do
-        if GetInventoryItemID("player", slot) == itemID then
-            return GetInventoryItemLink("player", slot)
+    local map = frame.ownedLinks
+    if not map then
+        map = {}
+        for slot = INVSLOT_FIRST_EQUIPPED, INVSLOT_LAST_EQUIPPED do
+            local id = GetInventoryItemID("player", slot)
+            if id and not map[id] then map[id] = GetInventoryItemLink("player", slot) end
         end
-    end
-    for _, bag in ipairs(OWNED_CONTAINERS) do
-        for slot = 1, (C_Container.GetContainerNumSlots(bag) or 0) do
-            local info = C_Container.GetContainerItemInfo(bag, slot)
-            if info and info.itemID == itemID then return info.hyperlink end
+        for _, bag in ipairs(OWNED_CONTAINERS) do
+            for slot = 1, (C_Container.GetContainerNumSlots(bag) or 0) do
+                local info = C_Container.GetContainerItemInfo(bag, slot)
+                if info and info.itemID and not map[info.itemID] then
+                    map[info.itemID] = info.hyperlink
+                end
+            end
         end
+        frame.ownedLinks = map
     end
-    return nil
+    return map[itemID]
 end
 
 ------------------------------------------------------------
@@ -2391,13 +2404,19 @@ commToggle.label:SetText(ns.L"Комьюнити")
 ns.OnLocaleReady(function() commToggle.label:SetText(ns.L"Комьюнити") end)
 commToggle.label:SetTextColor(C.text[1], C.text[2], C.text[3])
 commToggle:SetScript("OnClick", function()
+    local t0 = ns.profOpen and debugprofilestop()
     TrialGearFinderDB = TrialGearFinderDB or {}
     TrialGearFinderDB.showCommunity = not TrialGearFinderDB.showCommunity
     commToggle:SetChecked(TrialGearFinderDB.showCommunity and true or false)
     RefreshResults()
     -- Тумблер один на оба окна: окно BiS собирает сборку из тех же баз,
     -- и при переключении его надо пересобрать (BiS.lua грузится позже).
-    if ns.RefreshBiS then ns.RefreshBiS() end
+    if ns.RefreshBiS then
+        local tb = t0 and debugprofilestop()
+        ns.RefreshBiS()
+        if tb then print(string.format("[TGF] замер: пересчёт окна BiS %.0f мс", debugprofilestop() - tb)) end
+    end
+    if t0 then print(string.format("[TGF] замер: тумблер «Комьюнити» всего %.0f мс", debugprofilestop() - t0)) end
 end)
 
 local function UpdateToggleVisual(on)
@@ -2661,7 +2680,17 @@ local function BuildRowData(item)
         local ownedLink = FindOwnedLink(item.itemID)
         local live
         if ownedLink then
-            live = ScanItemLink(ownedLink)
+            -- Подсказка копии читается один раз на ссылку: одна и та же вещь
+            -- даёт одну и ту же подсказку. Пустой замер не запоминаем - вещь
+            -- могла ещё не прогрузиться.
+            local scans = frame.liveScans
+            if not scans then scans = {}; frame.liveScans = scans end
+            local key = ownedLink .. "#" .. (UnitLevel("player") or 0)
+            live = scans[key]
+            if not live then
+                live = ScanItemLink(ownedLink)
+                if live and live.stats and next(live.stats) then scans[key] = live end
+            end
             -- Запоминаем ЗАМЕР живой вещи, а не готовый вывод. Содержимое банка
             -- игра отдаёт только пока он открыт, и без этой памяти вещь оттуда
             -- вдали от банка выглядела бы непроверенной.
@@ -2978,6 +3007,7 @@ frame:RegisterEvent("ADDON_LOADED") -- SavedVariables only exist by the time thi
 frame:RegisterEvent("PLAYER_LOGIN")  -- UnitClass is reliable from here on
 frame:RegisterEvent("BAG_UPDATE_DELAYED")     -- picked something up: recheck the "owned" ticks
 frame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
+frame:RegisterEvent("BANKFRAME_OPENED")     -- банк стал виден: вещи оттуда тоже «на руках»
 -- Смерть рарника ловим по трупу: боевой лог клиент этому аддону регистрировать
 -- не даёт (ADDON_ACTION_FORBIDDEN), а эти события открыты.
 frame:RegisterEvent("PLAYER_TARGET_CHANGED")
@@ -3075,7 +3105,7 @@ frame:SetScript("OnEvent", function(self, event, addonName)
     -- Сумки и экипировка сдвинулись - запас «сколько у персонажа» устарел.
     -- Сбрасываем всегда, даже при закрытом окне: иначе откроешь после торговли
     -- и увидишь старые галочки.
-    if event ~= "GET_ITEM_INFO_RECEIVED" then frame.ownedCounts = nil end
+    if event ~= "GET_ITEM_INFO_RECEIVED" then frame.ownedCounts, frame.ownedLinks = nil, nil end
     --
     -- И одного «только при открытом окне» мало. С тумблером «Комьюнити» в списке
     -- сотни вещей, игра подгружает их по одной, и событие приходило на каждую:
@@ -3150,7 +3180,7 @@ end)
 
 frame:SetScript("OnShow", function()
     local t0 = ns.profOpen and debugprofilestop()
-    frame.ownedCounts = nil -- пока окно было закрыто, что-то могли купить или продать
+    frame.ownedCounts, frame.ownedLinks = nil, nil -- пока окно было закрыто, что-то могли купить или продать
     ClearExpiredDailyMarks() -- сброс мог случиться посреди сессии
     RefreshResults()
     if t0 then print(string.format("[TGF] замер: главное окно всего %.0f мс", debugprofilestop() - t0)) end
