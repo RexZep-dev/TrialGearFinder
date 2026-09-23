@@ -461,14 +461,22 @@ local function Build()
 
     -- Галочки «Персонажи» и «Диаграммы» (тестеры, 23 сентября): убрать модели
     -- или диаграммы, чтобы остались одни вещи. Выбор запоминается, по умолчанию
-    -- всё видно. Стоят внизу по центру в одну строку (пользователь: в углу
-    -- их не замечали); место раскладывает Relayout по ширине подписей.
+    -- всё видно. Стоят наверху между шапками, столбиком, в рамке тёплого
+    -- акцента - пользователь хотел, чтобы они бросались в глаза; в углу и внизу
+    -- их не замечали. Разделитель начинается под рамкой.
+    local panel = CreateFrame("Frame", nil, content)
+    panel:SetPoint("TOP", content, "TOP", 0, -10)
+    if S.RoundedPanel then
+        S.RoundedPanel(panel, C.block2 or { 0.09, 0.10, 0.11 }, C.warm or { 0.85, 0.72, 0.42 })
+    end
+    frame.togglePanel = panel
+
     local function Hidden(key) return TrialGearFinderDB and TrialGearFinderDB[key] end
     local function MakeToggle(ru, key)
-        local t = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
+        local t = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
         t:SetSize(24, 24)
         if S.CheckBox then S.CheckBox(t, 11) end
-        t.label = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        t.label = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         t.label:SetPoint("LEFT", t, "RIGHT", 4, 0)
         t.label:SetText(L(ru))
         t:SetChecked(not Hidden(key))
@@ -488,8 +496,9 @@ local function Build()
     -- Разделитель посередине.
     local line = content:CreateTexture(nil, "BACKGROUND", nil, 2)
     line:SetColorTexture(0.25, 0.27, 0.30, 0.6)
-    line:SetPoint("TOP", content, "TOP", 0, -14)
-    line:SetSize(1, H - 28)
+    line:SetWidth(1)
+    line:SetPoint("TOP", panel, "BOTTOM", 0, -6)
+    line:SetPoint("BOTTOM", content, "BOTTOM", 0, 14)
 
     -- Шапки сторон: название, класс, большой средний уровень предметов.
     local function Header()
@@ -561,16 +570,15 @@ local function Build()
             boxes.cur[i]:SetPoint("TOPLEFT", content, "TOP", rightX + col * 76, y)
         end
 
-        -- Галочки: одна строка внизу по центру. Ширина - по самим подписям,
-        -- они на двух языках разные.
+        -- Галочки столбиком в рамке. Ширина рамки - по длинной подписи:
+        -- на двух языках они разные.
         local t1, t2 = frame.modelToggle, frame.radarToggle
-        local w1 = 24 + 4 + (t1.label:GetStringWidth() or 60)
-        local w2 = 24 + 4 + (t2.label:GetStringWidth() or 60)
-        local start = -(w1 + 28 + w2) / 2
+        local labelW = math.max(t1.label:GetStringWidth() or 60, t2.label:GetStringWidth() or 60)
+        panel:SetSize(8 + 24 + 4 + labelW + 12, 8 + 24 + 4 + 24 + 8)
         t1:ClearAllPoints()
-        t1:SetPoint("BOTTOMLEFT", content, "BOTTOM", start, 12)
+        t1:SetPoint("TOPLEFT", panel, "TOPLEFT", 8, -8)
         t2:ClearAllPoints()
-        t2:SetPoint("BOTTOMLEFT", content, "BOTTOM", start + w1 + 28, 12)
+        t2:SetPoint("TOPLEFT", t1, "BOTTOMLEFT", 0, -4)
     end
     frame.Relayout()
     return frame
