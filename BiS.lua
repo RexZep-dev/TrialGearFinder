@@ -1774,6 +1774,21 @@ local function BuildPanel()
         tal:SetScript("OnLeave", function() GameTooltip:Hide() end)
         panel.talentBtn = tal
 
+        -- Сравнение сборки с надетым - отдельное окно (Compare.lua).
+        local cmp = CreateFrame("Button", nil, card, "UIPanelButtonTemplate")
+        cmp:SetSize(84, 20)
+        cmp:SetPoint("RIGHT", tal, "LEFT", -6, 0)
+        cmp:SetText(ns.L"Сравнить")
+        cmp:SetScript("OnClick", function() if ns.ToggleCompare then ns.ToggleCompare() end end)
+        cmp:SetScript("OnEnter", function(self)
+            GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+            GameTooltip:AddLine(ns.L"Сравнить сборку с надетым")
+            GameTooltip:AddLine(ns.L"Слева сборка твоего спека, справа то, что на тебе. То же окно - /tgf compare.", 0.8, 0.8, 0.8, true)
+            GameTooltip:Show()
+        end)
+        cmp:SetScript("OnLeave", function() GameTooltip:Hide() end)
+        panel.cmpBtn = cmp
+
         panel.card = card
     end
 
