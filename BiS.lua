@@ -1292,8 +1292,10 @@ local function RenderSlots()
         end
     end
 
-    -- Открытая примерка (Planner.lua) переодевается вслед за сменой спека.
-    if ns.RefreshPlanner then ns.RefreshPlanner() end
+    -- Итог сборки для окна сравнения (Compare.lua): его плашки показывают
+    -- ту же сумму, что диаграмма ниже, - шмот, камни и чары.
+    ns.LastBuild.total = {}
+    for k, v in pairs(total) do ns.LastBuild.total[k] = v end
 
     -- Итог сборки: шмот плюс камни, которые окно само и советует. Считаем
     -- здесь, а не в ScoreItem: счёт ранжирует ОДНУ вещь, а перебор вторички
@@ -1772,22 +1774,6 @@ local function BuildPanel()
         tal:SetScript("OnLeave", function() GameTooltip:Hide() end)
         panel.talentBtn = tal
 
-        -- Примерка: сборка на своей модели, галочки на том, что уже надето
-        -- (Planner.lua). Игроки просили сравнение со своим шмотом.
-        local fit = CreateFrame("Button", nil, card, "UIPanelButtonTemplate")
-        fit:SetSize(84, 20)
-        fit:SetPoint("RIGHT", tal, "LEFT", -6, 0)
-        fit:SetText(ns.L"Примерка")
-        fit:SetScript("OnClick", function() if ns.TogglePlanner then ns.TogglePlanner() end end)
-        fit:SetScript("OnEnter", function(self)
-            GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-            GameTooltip:AddLine(ns.L"Примерить сборку на своего персонажа")
-            GameTooltip:AddLine(ns.L"Модель в полный рост в вещах сборки. Галочка - вещь уже надета, сумка - лежит в сумках.", 0.8, 0.8, 0.8, true)
-            GameTooltip:Show()
-        end)
-        fit:SetScript("OnLeave", function() GameTooltip:Hide() end)
-        panel.planBtn = fit
-
         panel.card = card
     end
 
@@ -1900,6 +1886,13 @@ if main then
 end
 
 ns.ToggleBiS = Toggle
+
+-- Сборка своего спека без показа окна: окно сравнения (Compare.lua) открывают
+-- отдельно, а считает сборку только эта панель. Собирается скрытой.
+ns.ComputeBuild = function()
+    if not panel then BuildPanel() end
+    Populate()
+end
 
 -- Зовёт основное окно, когда переключили тумблер «Комьюнити»: он один на оба
 -- окна, а состав котлов от него зависит - готовые кэши надо выбросить.

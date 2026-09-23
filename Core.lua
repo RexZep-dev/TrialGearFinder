@@ -3936,6 +3936,10 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         if ns.ShowCopyWindow then ns.ShowCopyWindow() end
         return
     end
+    if msg == "compare" or msg == "сравнение" then
+        if ns.ToggleCompare then ns.ToggleCompare() end
+        return
+    end
     if msg == "bis" then
         if ns.ToggleBiS then ns.ToggleBiS() end
         return
