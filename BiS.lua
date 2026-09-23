@@ -1935,6 +1935,13 @@ end
 
 local function ApplyCollapsed()
     if panel then panel:SetShown(not IsCollapsed()) end
+    -- Окно держится в пределах экрана (Core.lua), а панель торчит слева
+    -- от него на PANEL_W: рамку удержания раздвигаем туда же, иначе
+    -- панель уходила бы за левый край.
+    local main = _G[MAIN]
+    if main and main.SetClampRectInsets then
+        main:SetClampRectInsets((panel and not IsCollapsed()) and -PANEL_W or 0, 0, 0, 0)
+    end
     FitToScreen()
     UpdateArrow()
 end

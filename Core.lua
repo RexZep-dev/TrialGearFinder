@@ -383,6 +383,12 @@ frame:SetFrameStrata("DIALOG") -- above plain HIGH-strata addon windows, which i
                                 -- get tucked behind other UI
 frame:SetToplevel(true)
 frame:SetMovable(true)
+-- В пределах экрана, как окно сравнения. Без этого окно, частично ушедшее
+-- за край, при захвате мышью прыгало ещё дальше за край (пользователь,
+-- 24 сентября: схватил за низ панели BiS - окно улетело вверх и вправо
+-- примерно на столько, на сколько уже торчало). Панель BiS слева учтена
+-- рамкой удержания в BiS.lua.
+frame:SetClampedToScreen(true)
 frame:EnableMouse(true)
 frame:RegisterForDrag("LeftButton")
 tinsert(UISpecialFrames, "TrialGearFinderFrame") -- closes on Escape, like Blizzard's own panels
