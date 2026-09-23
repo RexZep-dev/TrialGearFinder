@@ -29,6 +29,9 @@ local GEM = 16        -- иконка камня (было 10 - пользова
 local GAP = 3 + 2 * (GEM + 2) + 6 -- рамка у разделителя и поле камням внутри рамки
 local MODEL_W = 300
 local BOTTOM = TOP - 16 * ROW_H - 12 -- верх нижнего блока: плашки и диаграмма
+-- Половина полосы строки от середины: камни, иконка, текст и поле. Столько
+-- же занимает зебра, её же тонирует подсветка по стату.
+local HALF = GAP + ICON + 12 + 240 + 10
 
 -- Порядок строк как у Чонки: голова..запястья, оружие, кисти..аксессуары.
 local ROWS = {
@@ -215,11 +218,27 @@ local function MakeSide(parent, y, left)
     end)
     side.hit:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-    -- «+N» поверх иконки: вклад вещи в стат под мышью в плашках или на
-    -- диаграмме своей стороны (пользователь 24 сентября, как у Чонки).
+    -- Вклад вещи в стат под мышью в плашках или на диаграмме своей стороны
+    -- (пользователь 24 сентября, как у Чонки). Вид - как в окне BiS, где он
+    -- пользователю понравился: полоса строки тёплым тоном и «+N» у внешнего
+    -- края. Первый вариант, число поверх иконки, закрывал вещь и камни.
+    -- Полоса - от середины до края зебры, под рамкой вещи.
+    side.hl = parent:CreateTexture(nil, "BACKGROUND", nil, 0)
+    local warmC = SC.warm or { 0.85, 0.72, 0.42 }
+    side.hl:SetColorTexture(warmC[1], warmC[2], warmC[3], 0.10)
+    local bandTop, bandMid = y + 4, y + 4 - ROW_H / 2
     side.pill = CreateFrame("Frame", nil, parent)
-    side.pill:SetSize(30, 16)
-    side.pill:SetPoint("CENTER", side.icon, "CENTER", 0, 0)
+    side.pill:SetSize(36, 18)
+    if left then
+        side.hl:SetPoint("TOPLEFT", parent, "TOP", -HALF + 1, bandTop)
+        side.hl:SetPoint("BOTTOMRIGHT", parent, "TOP", -1, bandTop - ROW_H)
+        side.pill:SetPoint("LEFT", parent, "TOP", -HALF + 8, bandMid)
+    else
+        side.hl:SetPoint("TOPLEFT", parent, "TOP", 1, bandTop)
+        side.hl:SetPoint("BOTTOMRIGHT", parent, "TOP", HALF - 1, bandTop - ROW_H)
+        side.pill:SetPoint("RIGHT", parent, "TOP", HALF - 8, bandMid)
+    end
+    side.hl:Hide()
     side.pill:SetFrameLevel(side.hit:GetFrameLevel() + 2)
     if ST.RoundedPanel then ST.RoundedPanel(side.pill, SC.bg or { 0.02, 0.03, 0.03 }, SC.warm or { 0.85, 0.72, 0.42 }) end
     side.pill.fs = side.pill:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -305,8 +324,8 @@ function ns.StatsFromTooltip(data)
     return out
 end
 
--- Наведение на стат: у вещей своей стороны, которые его дают, поверх иконки
--- «+N», остальные гаснут. sideKey - "l" (сборка) или "r" (надетое);
+-- Наведение на стат: вещи своей стороны, которые его дают, подсвечиваются
+-- и показывают «+N» у края строки, остальные гаснут. sideKey - "l" (сборка) или "r" (надетое);
 -- statKey = nil возвращает всё как было.
 local function ShowStat(sideKey, statKey)
     for _, row in ipairs(rows) do
@@ -315,9 +334,10 @@ local function ShowStat(sideKey, statKey)
         local on = statKey ~= nil and v > 0
         if on then
             side.pill.fs:SetText("+" .. v)
-            side.pill:SetWidth((side.pill.fs:GetStringWidth() or 16) + 12)
+            side.pill:SetWidth((side.pill.fs:GetStringWidth() or 20) + 14)
         end
         side.pill:SetShown(on)
+        side.hl:SetShown(on)
         local a = (statKey and not on) and 0.35 or 1
         side.name:SetAlpha(a)
         side.lvl:SetAlpha(a)
@@ -652,7 +672,7 @@ local function Build()
     -- до текста: модели по краям в полосах тонули. Сверху и снизу поле
     -- в 6 пикселей - прямоугольные полосы не срезают скруглённых углов.
     -- Кадр между моделями и слоем строк: под текстом, над моделями.
-    local half = GAP + ICON + 12 + 240 + 10
+    local half = HALF
     local listTop = TOP + 4 -- верх первой полосы: рамка вещи начинается на 2 выше иконки
     local listBg = CreateFrame("Frame", nil, frame)
     listBg:SetFrameLevel(frame.lModel:GetFrameLevel() + 2)
