@@ -444,8 +444,11 @@ local function Build()
     content:SetFrameLevel(frame.lModel:GetFrameLevel() + 5)
     frame.content = content
 
+    -- Крестик сам по себе прячет своего родителя - слой со строками, а не окно.
+    -- Так и было 23 сентября: слой пропадал, окно с моделями оставалось.
     local close = CreateFrame("Button", nil, content, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", content, "TOPRIGHT", -2, -2)
+    close:SetScript("OnClick", function() frame:Hide() end)
 
     -- Разделитель посередине.
     local line = content:CreateTexture(nil, "BACKGROUND", nil, 2)
@@ -503,6 +506,7 @@ function ns.ToggleCompare()
         return
     end
     f.retries = 0
+    f.content:Show() -- на случай, если слой спрятали отдельно от окна
     f:Show()
     f:Raise()
     C_Timer.After(0, ns.RefreshCompare) -- модели подгружаются кадром позже
