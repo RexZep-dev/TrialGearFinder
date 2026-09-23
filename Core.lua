@@ -821,7 +821,12 @@ local function UpdateHeaderSortIndicators()
                 local justify = entry.justify or "LEFT"
                 arrow:ClearAllPoints()
                 if justify == "CENTER" then
-                    arrow:SetPoint("LEFT", entry.fs, "CENTER", entry.fs:GetStringWidth() / 2 + 3, 0)
+                    -- Внутри своей рамки, у правого края: за текстом стрелка
+                    -- наезжала на соседнюю рамку (пользователь 24 сентября).
+                    -- Подпись на это время уже на 12 и уходит влево.
+                    entry.fs:SetWidth((entry.fs._baseWidth or entry.fs:GetWidth()) - 12)
+                    arrow:SetSize(8, 8)
+                    arrow:SetPoint("RIGHT", entry.box or entry.fs, "RIGHT", -3, 0)
                 elseif justify == "RIGHT" then
                     arrow:SetPoint("LEFT", entry.fs, "RIGHT", 3, 0)
                 else
@@ -829,6 +834,9 @@ local function UpdateHeaderSortIndicators()
                 end
             else
                 arrow:Hide()
+                if entry.justify == "CENTER" and entry.fs._baseWidth then
+                    entry.fs:SetWidth(entry.fs._baseWidth)
+                end
             end
         end
         if statFilter[key] then
@@ -843,10 +851,10 @@ local function AddHeaderLabel(x, width, ru, justify, sortKey, fullRU)
     local text = ns.ShortLabel(ru)
     local fs = header:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     -- Подпись по центру столбца шире самого столбца на 2 с каждой стороны,
-    -- за счёт промежутка между столбцами: «Скор-ть» в 36 не помещалась
-    -- (сокращения с «-ть», пользователь 24 сентября). Без переноса - иначе
-    -- ломалась бы на «Скор-» и «ть». Стрелку сортировки это не сдвигает:
-    -- она встаёт по ширине текста, а не рамки.
+    -- за счёт промежутка между столбцами. Сокращения с точкой («Скор.»,
+    -- «Унив.») - выбор пользователя 24 сентября, до них были «-ть», а ещё
+    -- раньше «Скор», «Уни». Без переноса, чтобы подпись не ломалась на две
+    -- строки.
     local pad = (justify == "CENTER") and 2 or 0
     fs:SetPoint("TOPLEFT", header, "TOPLEFT", x - pad, 0)
     fs:SetWidth(width + 2 * pad)
@@ -860,15 +868,23 @@ local function AddHeaderLabel(x, width, ru, justify, sortKey, fullRU)
 
     -- Рамка ячейки: в режиме «Мин-Макс» подписи столбцов шли сплошной
     -- строкой и сливались (пользователь 24 сентября). Текстуры на самой
-    -- шапке, на заднем слое - под текстом; держатся за подпись и переезжают
-    -- вместе с ней. Прячутся вместе с ней в ApplyStatsLayout.
+    -- шапке, на заднем слое - под текстом. Стоит по координатам столбца,
+    -- а не за подписью: у отсортированного столбца подпись сужается,
+    -- уступая место стрелке, а рамка остаётся. Прячется вместе с подписью
+    -- в ApplyStatsLayout, там же переезжает рамка «Источника».
     local boxEdge = RoundedTexture(header, "BACKGROUND", C.border, 0)
-    boxEdge:SetPoint("TOPLEFT", fs, "TOPLEFT", 1, 3)
-    boxEdge:SetPoint("BOTTOMRIGHT", fs, "BOTTOMRIGHT", -1, -3)
+    local function PlaceBox(bx, bw)
+        boxEdge:ClearAllPoints()
+        boxEdge:SetPoint("TOPLEFT", header, "TOPLEFT", bx - pad + 1, 3)
+        boxEdge:SetPoint("BOTTOMRIGHT", header, "TOPLEFT", bx + bw + pad - 1, -15)
+    end
+    PlaceBox(x, width)
     local boxBody = RoundedTexture(header, "BACKGROUND", C.block2, 1)
     boxBody:SetPoint("TOPLEFT", boxEdge, "TOPLEFT", 1, -1)
     boxBody:SetPoint("BOTTOMRIGHT", boxEdge, "BOTTOMRIGHT", -1, 1)
     fs._box = { boxEdge, boxBody }
+    fs._placeBox = PlaceBox
+    fs._baseWidth = width + 2 * pad
 
     if sortKey then
         local arrow = header:CreateTexture(nil, "OVERLAY")
@@ -907,7 +923,7 @@ local function AddHeaderLabel(x, width, ru, justify, sortKey, fullRU)
             UpdateHeaderSortIndicators()
             RefreshResults()
         end)
-        headerLabels[sortKey] = { fs = fs, text = text, arrow = arrow, justify = justify or "LEFT" }
+        headerLabels[sortKey] = { fs = fs, text = text, arrow = arrow, justify = justify or "LEFT", box = boxEdge }
     end
 
     if fullRU then
@@ -940,15 +956,15 @@ local COL_VERS_X = COL_ISKUS_X + COL_STAT_W + COL_STAT_GAP
 local COL_SOURCE_X = COL_VERS_X + COL_STAT_W + 16
 local COL_SOURCE_W = ROW_WIDTH - COL_SOURCE_X - 10
 
-AddHeaderLabel(COL_NAME_X, COL_NAME_W, "Предмет", "LEFT")
+AddHeaderLabel(COL_NAME_X, COL_NAME_W, "Предмет", "CENTER") -- по центру своей рамки, как «Источник»
 AddHeaderLabel(COL_STR_X, COL_STAT_W, "Сила", "CENTER", "str", "Сила")
-AddHeaderLabel(COL_AGI_X, COL_STAT_W, "Лов-ть", "CENTER", "agi", "Ловкость")
-AddHeaderLabel(COL_INT_X, COL_STAT_W, "Инт", "CENTER", "int", "Интеллект")
-AddHeaderLabel(COL_STAM_X, COL_STAT_W, "Вын-ть", "CENTER", "stam", "Выносливость")
+AddHeaderLabel(COL_AGI_X, COL_STAT_W, "Ловк.", "CENTER", "agi", "Ловкость")
+AddHeaderLabel(COL_INT_X, COL_STAT_W, "Инт.", "CENTER", "int", "Интеллект")
+AddHeaderLabel(COL_STAM_X, COL_STAT_W, "Вын.", "CENTER", "stam", "Выносливость")
 AddHeaderLabel(COL_CRIT_X, COL_STAT_W, "Крит", "CENTER", "crit", "Критический удар")
-AddHeaderLabel(COL_HASTE_X, COL_STAT_W, "Скор-ть", "CENTER", "haste", "Скорость")
-AddHeaderLabel(COL_ISKUS_X, COL_STAT_W, "Иск-ть", "CENTER", "iskus", "Искусность")
-AddHeaderLabel(COL_VERS_X, COL_STAT_W, "Уни-ть", "CENTER", "vers", "Универсальность")
+AddHeaderLabel(COL_HASTE_X, COL_STAT_W, "Скор.", "CENTER", "haste", "Скорость")
+AddHeaderLabel(COL_ISKUS_X, COL_STAT_W, "Иск.", "CENTER", "iskus", "Искусность")
+AddHeaderLabel(COL_VERS_X, COL_STAT_W, "Унив.", "CENTER", "vers", "Универсальность")
 AddHeaderLabel(COL_SOURCE_X, COL_SOURCE_W, "Источник", "CENTER", "source")
 ns.OnLocaleReady(function()
     for _, fs in ipairs(headerFontStrings) do
@@ -2523,6 +2539,8 @@ local function ApplyStatsLayout()
         srcEntry.fs:ClearAllPoints()
         srcEntry.fs:SetPoint("TOPLEFT", header, "TOPLEFT", sourceX, 0)
         srcEntry.fs:SetWidth(sourceW)
+        srcEntry.fs._baseWidth = sourceW
+        if srcEntry.fs._placeBox then srcEntry.fs._placeBox(sourceX, sourceW) end
     end
 
     for _, row in ipairs(rows) do LayoutRow(row) end
