@@ -3475,6 +3475,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         TrialGearFinderDB.dev = not TrialGearFinderDB.dev
         print(string.format("|cFFFFD100[TGF]|r Команды разработчика: %s",
             TrialGearFinderDB.dev and "включены" or "выключены"))
+        if ns.ApplyDevButtons then ns.ApplyDevButtons() end -- кнопка SimC в окне BiS
         return
     end
     if not (TrialGearFinderDB and TrialGearFinderDB.dev) then

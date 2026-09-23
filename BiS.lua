@@ -1385,6 +1385,11 @@ local function ShowStatOnRows(key)
     end
 end
 
+-- /tgf dev переключает кнопку SimC сразу, без /reload (Core.lua).
+function ns.ApplyDevButtons()
+    if panel and panel.ApplyDevButtons then panel.ApplyDevButtons() end
+end
+
 local function ClearSpecTabs()
     for _, t in ipairs(panel.specTabs or {}) do t:Hide() end
 end
@@ -1850,7 +1855,23 @@ local function BuildPanel()
         -- Новичку нужен именно код — он вставляется в игре одной кнопкой,
         -- а список названий ему ничего не скажет.
         local tal = FlatButton(bar, ns.L"Таланты", 74)
-        tal:SetPoint("RIGHT", simc, "LEFT", -6, 0)
+
+        -- Кнопка SimC - только в режиме разработчика, /tgf dev (пользователь
+        -- 24 сентября): со стоковым SimulationCraft двадцатка считается
+        -- неверно, наш движок ещё дорабатывается, и игрокам кнопка пока без
+        -- пользы. Без неё «Таланты» встают к краю полки. Команда /tgf simc
+        -- в справке и так не значится.
+        function panel.ApplyDevButtons()
+            local dev = TrialGearFinderDB and TrialGearFinderDB.dev and true or false
+            simc:SetShown(dev)
+            tal:ClearAllPoints()
+            if dev then
+                tal:SetPoint("RIGHT", simc, "LEFT", -6, 0)
+            else
+                tal:SetPoint("RIGHT", bar, "RIGHT", 0, 0)
+            end
+        end
+        panel.ApplyDevButtons()
         tal:SetScript("OnClick", function()
             local t = ns.TalentCodes and ns.TalentCodes[state.specID]
             if not t then
