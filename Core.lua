@@ -108,6 +108,17 @@ local ARMOR_SUBCLASSES = {
     { id = 3, labelRU = "Кольчуга" },
     { id = 4, labelRU = "Латы" },
 }
+
+-- Самая тяжёлая броня, которую класс может надеть (номера как выше): латники
+-- носят всё, кольчужники - до кольчуги, и так далее. По ней фильтр брони
+-- показывает только доступное, а у тканевых классов прячется совсем -
+-- выбирать им не из чего (пользователь 23 сентября).
+local ARMOR_BY_CLASS = {
+    PRIEST = 1, MAGE = 1, WARLOCK = 1,
+    ROGUE = 2, DRUID = 2, MONK = 2, DEMONHUNTER = 2,
+    HUNTER = 3, SHAMAN = 3, EVOKER = 3,
+    WARRIOR = 4, PALADIN = 4, DEATHKNIGHT = 4,
+}
 -- Class names live in Locale.lua, same as slot names.
 
 -- key stays in English - it's compared against item.sourceType from Data.lua.
@@ -671,6 +682,18 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
             local color = chosen and C.text or C.text2
             row.text:SetTextColor(color[1], color[2], color[3])
         end
+        -- Недоступные сейчас пункты прячем, остальные сдвигаем вплотную
+        -- (фильтр брони: только то, что класс может надеть).
+        local shown = 0
+        for _, row in ipairs(menu.rows) do
+            local ok = not button.available or button.available(row.entryKey)
+            row:SetShown(ok)
+            if ok then
+                row:SetPoint("TOP", menu, "TOP", 0, -(MENU_PADDING + shown * MENU_ROW_HEIGHT))
+                shown = shown + 1
+            end
+        end
+        menu:SetHeight(shown * MENU_ROW_HEIGHT + MENU_PADDING * 2)
         -- Всегда открываем вниз, но если до низа экрана не хватает - поднимаем
         -- ровно на недостающее, чтобы меню прилипло к краю экрана. Именно так
         -- ведёт себя стандартный список: он не переворачивается, а сползает.
@@ -727,11 +750,19 @@ local slotDrop = CreateSelect("TrialGearFinderSlotDrop", nil, "Слот", VISIBL
 local classDrop = CreateSelect("TrialGearFinderClassDrop", slotDrop, "Класс", CLASS_SORT_ORDER,
     function(c) return c end,
     function(c) return ns.ClassName(c) end,
-    function(key) filters.class = key; RefreshResults() end)
+    function(key)
+        filters.class = key
+        -- От класса зависит, какой фильтр брони вообще показывать.
+        if ns.ApplyStatsLayout then ns.ApplyStatsLayout() end
+        RefreshResults()
+    end)
 
 local armorDrop = CreateSelect("TrialGearFinderArmorDrop", classDrop, "Броня", ARMOR_SUBCLASSES,
     function(a) return a.id end, function(a) return ns.L(a.labelRU) end,
     function(key) filters.armor = key; RefreshResults() end)
+armorDrop.available = function(key)
+    return key == "ALL" or key <= (ARMOR_BY_CLASS[filters.class] or 4)
+end
 
 local sourceDrop = CreateSelect("TrialGearFinderSourceDrop", armorDrop, "Источник", SOURCE_TYPES,
     function(s) return s.key end, function(s) return ns.L(s.labelRU) end,
@@ -803,7 +834,7 @@ local function UpdateHeaderSortIndicators()
 end
 
 local function AddHeaderLabel(x, width, ru, justify, sortKey, fullRU)
-    local text = ns.L(ru)
+    local text = ns.ShortLabel(ru)
     local fs = header:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     fs:SetPoint("TOPLEFT", header, "TOPLEFT", x, 0)
     fs:SetWidth(width)
@@ -896,7 +927,7 @@ AddHeaderLabel(COL_VERS_X, COL_STAT_W, "Уни", "CENTER", "vers", "Универ
 AddHeaderLabel(COL_SOURCE_X, COL_SOURCE_W, "Источник", "CENTER", "source")
 ns.OnLocaleReady(function()
     for _, fs in ipairs(headerFontStrings) do
-        local text = ns.L(fs._tgfRU)
+        local text = ns.ShortLabel(fs._tgfRU)
         fs:SetText(text)
         for _, entry in pairs(headerLabels) do
             if entry.fs == fs then entry.text = text end
@@ -2017,19 +2048,10 @@ local function CreateRow(row)
         -- иначе одна вещь показывает в двух окнах разные числа.
         ns.FixTooltipStats(self.twink and self.twink.stats)
 
-        -- Копия на руках разошлась с базой - показываем чем именно. База =
-        -- статы с армори (эталон сообщества); игровой сквош у части вещей
-        -- завышает, и тогда надетая копия выглядит жирнее строки в базе. Плюс
-        -- у копии может не быть гнезда, которое база считает за BiS-ролл.
-        -- Расхождение уже посчитано в BuildRowData, тут только выводим.
-        if type(self.ownedDiffs) == "table" then
-            GameTooltip:AddLine(" ")
-            GameTooltip:AddLine(ns.L"Твоя копия отличается от базы:", 0.85, 0.72, 0.42)
-            for _, d in ipairs(self.ownedDiffs) do
-                GameTooltip:AddLine("  " .. FormatDiffLine(d), 1, 1, 1)
-            end
-            GameTooltip:Show()
-        end
+        -- Приписки «Твоя копия отличается от базы» здесь больше нет: игрокам она
+        -- мешала (пользователь 23 сентября). Расхождение по-прежнему считается
+        -- в BuildRowData - на нём держатся отметки рарников, - а посмотреть его
+        -- можно командой /tgf scan.
 
         local sc = self.srcColor or C.gold
         if self.fullSource and self.fullSource ~= "" then
@@ -2246,7 +2268,7 @@ local function CreateRow(row)
         local srcColor = (data.sourceType == "World") and C.silver or C.gold
         self.source:SetTextColor(srcColor[1], srcColor[2], srcColor[3], 1)
         self.srcColor = srcColor -- тем же цветом источник пишется и в подсказке
-        self.sourceboss:SetText(data.sourceboss and ns.L(data.sourceboss) or "")
+        self.sourceboss:SetText(data.sourceboss and ns.Note(data.sourceboss) or "")
         -- Галочка только у рарников и сокровищ (sourceType == "World"): они берутся
         -- раз в день или раз на персонажа, и есть смысл помнить, где уже был.
         -- Подземелья ходятся сколько угодно, там отмечать нечего.
@@ -2292,7 +2314,7 @@ local function CreateRow(row)
         self.sourceKey = data.source
         self.fullSource = data.source and ns.L(data.source) or nil
         self.sourceType = data.sourceType
-        self.fullNote = data.sourceboss and ns.L(data.sourceboss) or nil
+        self.fullNote = data.sourceboss and ns.Note(data.sourceboss) or nil
         self.hyperlink = data.hyperlink
         self.itemID = data.itemID
         self.twink = data.twink
@@ -2435,9 +2457,12 @@ local function ApplyStatsLayout()
     -- по центру окна - как футер с фильтрами.
     header:SetPoint("TOP", frame, "TOP", -SCROLLBAR_PAD / 2, -106)
     header:SetWidth(rowWidth)
-    for _, drop in ipairs(FULL_MODE_DROPS) do drop:SetShown(show) end
-    if not show then
-        -- Спрятанный фильтр с выбором отсеивал бы список без видимой причины.
+    -- Броня видна в полном режиме и только если классу есть из чего выбирать.
+    local maxArmor = ARMOR_BY_CLASS[filters.class] or 4
+    local armorShown = show and maxArmor > 1
+    for _, drop in ipairs(FULL_MODE_DROPS) do drop:SetShown(armorShown) end
+    if not armorShown or (filters.armor ~= "ALL" and filters.armor > maxArmor) then
+        -- Спрятанный или недоступный выбор отсеивал бы список без видимой причины.
         filters.armor = "ALL"
         armorDrop:SetSelected("ALL")
     end
@@ -2445,12 +2470,12 @@ local function ApplyStatsLayout()
     -- к спрятанному фрейму работает, но оставляет на его месте дыру, поэтому
     -- перецепляем на класс.
     sourceDrop:ClearAllPoints()
-    sourceDrop:SetPoint("LEFT", show and armorDrop or classDrop, "RIGHT", 4, 0)
+    sourceDrop:SetPoint("LEFT", armorShown and armorDrop or classDrop, "RIGHT", 4, 0)
 
     -- Filters are centred as a group: width is measured from the actual dropdowns
     -- so it works for three of them as well as four. The rest chain off the first.
     local groupWidth = slotDrop:GetWidth() + classDrop:GetWidth() + sourceDrop:GetWidth() + 8
-    if show then
+    if armorShown then
         groupWidth = groupWidth + armorDrop:GetWidth() + 4
     end
     slotDrop:ClearAllPoints()
@@ -2471,6 +2496,8 @@ local function ApplyStatsLayout()
 
     for _, row in ipairs(rows) do LayoutRow(row) end
 end
+-- Выбор класса объявлен выше по файлу и локальную функцию не видит.
+ns.ApplyStatsLayout = ApplyStatsLayout
 
 -- Вид списка. Заполнитель зовётся на каждую видимую строку при прокрутке
 -- и перестройке: новый кадр сперва обрастает деталями и раскладкой колонок,
@@ -3015,6 +3042,7 @@ frame:SetScript("OnEvent", function(self, event, addonName)
         if classToken then
             filters.class = classToken
             classDrop:SetSelected(classToken)
+            ApplyStatsLayout() -- фильтр брони зависит от класса
         end
         -- Фракция для отсева вещей чужой стороны. Здесь же, а не при
         -- выполнении файла: до входа UnitFactionGroup возвращает nil.

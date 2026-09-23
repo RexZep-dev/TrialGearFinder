@@ -157,7 +157,7 @@ local enUS = {
     ["Окулус"] = "The Oculus",
     ["Очищение Стратхольма"] = "The Culling of Stratholme",
     ["Паровое подземелье"] = "The Steamvault",
-    ["Разрушенные залы"] = "Hellfire Ramparts",
+    ["Разрушенные залы"] = "The Shattered Halls",
     ["Сетеккские залы"] = "Sethekk Halls",
     ["Старые предгорья Хилсбрада"] = "Old Hillsbrad Foothills",
     ["Стратхольм"] = "Stratholme",
@@ -254,6 +254,54 @@ local enUS = {
     ["Сравнить"] = "Compare",
     ["Сравнить сборку с надетым"] = "Compare the build with your gear",
     ["Слева сборка твоего спека, справа то, что на тебе. То же окно - /tgf compare."] = "Your spec build on the left, what you wear on the right. Same window: /tgf compare.",
+
+    ["Классические земли (мировой дроп)"] = "Classic zones (world drop)",
+    ["Цитадель Адского Пламени"] = "Hellfire Citadel",
+
+    -- Подземелья Путешествия во времени (Timewalk.lua): названия сняты
+    -- с русского журнала игры, английские - официальные.
+    ["Мертвые копи"] = "The Deadmines",
+    ["Стратхольм – главные врата"] = "Stratholme - Main Gate",
+    ["Чертоги Молний"] = "Halls of Lightning",
+    ["Затерянный город Тол'вир"] = "Lost City of the Tol'vir",
+    ["Каменные Недра"] = "The Stonecore",
+    ["Пещеры Черной горы"] = "Blackrock Caverns",
+    ["Трон Приливов"] = "Throne of the Tides",
+    ["Аукиндон"] = "Auchindoun",
+    ["Вечное Цветение"] = "The Everbloom",
+    ["Квартал Звезд"] = "Court of Stars",
+    ["Крепость Черной Ладьи"] = "Black Rook Hold",
+    ["Чаща Темного Сердца"] = "Darkheart Thicket",
+    ["Атал'Дазар"] = "Atal'Dazar",
+    ["Гробница королей"] = "Kings' Rest",
+    ["Святилище Штормов"] = "Shrine of the Storm",
+    ["Кровавые катакомбы"] = "Sanguine Depths",
+    ["Та Сторона"] = "De Other Side",
+    ["Шпили Перерождения"] = "Spires of Ascension",
+    ["Академия Алгет'ар"] = "Algeth'ar Academy",
+    ["Лощина Бурошкуров"] = "Brackenhide Hollow",
+    ["Чертоги Насыщения"] = "Halls of Infusion",
+    ["Нелтарий"] = "Neltharus",
+    ["Рубиновые Омуты Жизни"] = "Ruby Life Pools",
+    ["Лазурное хранилище"] = "The Azure Vault",
+    ["Забытый город – палаты Гордока"] = "Dire Maul - Gordok Commons",
+    ["Забытый город – центральный сад"] = "Dire Maul - Capital Gardens",
+    ["Забытый город – квартал Криводревов"] = "Dire Maul - Warpwood Quarter",
+    ["Зул'Фаррак"] = "Zul'Farrak",
+    ["Стратхольм – черный ход"] = "Stratholme - Service Entrance",
+    ["Гундрак"] = "Gundrak",
+    ["Конец Времен"] = "End Time",
+    ["Врата Заходящего Солнца"] = "Gate of the Setting Sun",
+    ["Дворец Могу'шан"] = "Mogu'shan Palace",
+    ["Монастырь Шадо-Пан"] = "Shado-Pan Monastery",
+    ["Хмелеварня Буйных Портеров"] = "Stormstout Brewery",
+    ["Храм Нефритовой Змеи"] = "Temple of the Jade Serpent",
+    ["Депо Мрачных Путей"] = "Grimrail Depot",
+    ["Небесный Путь"] = "Skyreach",
+    ["Некрополь Призрачной Луны"] = "Shadowmoon Burial Grounds",
+    ["Шлаковые шахты Кровавого Молота"] = "Bloodmaul Slag Mines",
+    ["Казематы Стражей"] = "Vault of the Wardens",
+    ["Вольная Гавань"] = "Freehold",
 
     -- Параметры
     ["Язык"]               = "Language",
@@ -839,6 +887,38 @@ end
 -- Язык КЛИЕНТА, не выбор в Параметрах. Нужно там, где разбирается тултип
 -- предмета: карточка рисуется игрой, и на русском клиенте с английским окном
 -- строки всё равно «+7 к ловкости». Если смотреть Resolve(), правка статов
+-- Короткие подписи колонок. Ключ словаря один на слово, а «Сила» - и полное
+-- название, и подпись узкой колонки: «Strength» в неё не влезало, переносилось
+-- на вторую строку и уезжало вниз (23 сентября).
+local SHORT_EN = { ["Сила"] = "Str" }
+
+function ns.ShortLabel(ru)
+    if Resolve() ~= "ruRU" and SHORT_EN[ru] then return SHORT_EN[ru] end
+    return ns.L(ru)
+end
+
+-- Заметка под источником. Гайдовые переведены словарём. Заметки Путешествия
+-- во времени собраны из русского журнала по шаблону «падает с <босс>; <вещь>.
+-- Журнал, <эпоха>, тир N»: имена боссов в них русские, английских взять
+-- неоткуда, а вещь и так названа в строке. Поэтому не на русском остаются
+-- эпоха и тир.
+local EPOCH_EN = {
+    ["классика"] = "Classic", ["BC"] = "Burning Crusade", ["гнев"] = "Wrath of the Lich King",
+    ["катаклизм"] = "Cataclysm", ["Пандария"] = "Mists of Pandaria", ["Дренор"] = "Warlords of Draenor",
+    ["Легион"] = "Legion", ["BfA"] = "Battle for Azeroth", ["Темные земли"] = "Shadowlands",
+    ["Драконы"] = "Dragonflight",
+}
+
+function ns.Note(text)
+    if not text or Resolve() == "ruRU" then return text end
+    if enUS[text] then return enUS[text] end
+    local epoch, tier = text:match("^падает с .-; .-%. Журнал, ([^,]+), тир (%d+)$")
+    if epoch then
+        return string.format("Timewalking journal: %s, tier %s", EPOCH_EN[epoch] or epoch, tier)
+    end
+    return text
+end
+
 -- молча отключается, а сверка копии пишет «отличается от базы».
 function ns.IsRussian()
     return GetLocale() == "ruRU"
