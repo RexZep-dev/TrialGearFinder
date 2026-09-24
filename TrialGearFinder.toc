@@ -15,15 +15,6 @@ Locale.lua
 Data.lua
 BiS_Community.lua
 Timewalk.lua
-Gems.lua
-Enchants.lua
-Talents.lua
-SimC.lua
 Pins.lua
-Journal.lua
 Core.lua
 Copy.lua
-BiS_Data.lua
-Radar.lua
-BiS.lua
-Compare.lua

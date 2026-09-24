@@ -22,7 +22,8 @@
 -- expensive: алгарийские +5 и прочие TWW — триалу не достать (нужна подписка).
 --   Пока только пометка; фильтр «только с подпиской» — отдельно.
 
-local addonName, ns = ...
+local addonName = ...
+local ns = TrialGearFinderNS -- общие данные ядра (Locale.lua): у модуля свой `...`
 
 ns.Gems = {
     { itemID = 59489, socket = "cogwheel", stats = { haste = 10 }, unique = true, expansion = "Cataclysm" }, -- Аккуратное зубчатое колесо

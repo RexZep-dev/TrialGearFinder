@@ -22,3 +22,9 @@ ignore:
 manual-changelog:
   filename: CHANGELOG.md
   markup-type: markdown
+
+# Модули - отдельные папки в AddOns у игрока. В репозитории они подпапки
+# ядра: рабочая копия - одна папка. Упаковщик выносит их наверх архива.
+move-folders:
+  TrialGearFinder/TrialGearFinder_Builds: TrialGearFinder_Builds
+  TrialGearFinder/TrialGearFinder_Journal: TrialGearFinder_Journal

@@ -13,7 +13,8 @@
 --
 -- Пока временно чёрное, чтобы визуально отличать от основного окна TGF.
 
-local addonName, ns = ...
+local addonName = ...
+local ns = TrialGearFinderNS -- общие данные ядра (Locale.lua): у модуля свой `...`
 
 local MAIN = "TrialGearFinderFrame" -- создаётся в Core.lua раньше этого файла
 

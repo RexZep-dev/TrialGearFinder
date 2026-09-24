@@ -1,0 +1,12 @@
+## Interface: 120007, 120100
+## Title: |cffc0c0c0Trial Gear Finder|r: Journal
+## Title-ruRU: |cffc0c0c0Trial Gear Finder|r: Журнал
+## Notes: Adventure Guide: Timewalking icons and the current-season tab.
+## Notes-ruRU: Путеводитель: значки Путешествия во времени и вкладка текущего сезона.
+## Author: RexZep
+## Group: TrialGearFinder
+## Dependencies: TrialGearFinder
+## IconTexture: Interface\AddOns\TrialGearFinder\icon
+## Version: 1.0.1
+
+Journal.lua

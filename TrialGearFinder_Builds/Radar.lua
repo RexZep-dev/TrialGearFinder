@@ -12,7 +12,8 @@
 -- произвольной фигуры. Заливка изображается веером линий из центра — дёшево
 -- и выглядит как закрашенный треугольник в играх с таким же виджетом.
 
-local addonName, ns = ...
+local addonName = ...
+local ns = TrialGearFinderNS -- общие данные ядра (Locale.lua): у модуля свой `...`
 
 local S = ns.Style or {}
 local C = S.C or {}

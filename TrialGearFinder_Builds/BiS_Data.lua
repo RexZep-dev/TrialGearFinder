@@ -9,7 +9,8 @@
 -- Не показывается приоритет у какого-то спека — значит id ниже разошёлся
 -- с игрой, сверить по warcraft.wiki.gg/wiki/SpecializationID.
 
-local addonName, ns = ...
+local addonName = ...
+local ns = TrialGearFinderNS -- общие данные ядра (Locale.lua): у модуля свой `...`
 
 ns.BiSPriority = {
     -- Рыцарь смерти

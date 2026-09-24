@@ -3851,7 +3851,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     local twArg = msg:match("^tw%s*(.*)$")
     if twArg then
         if not ns.DumpTimewalkLoot then
-            print(ns.L"|cFFFFD100[TGF]|r Журнал подземелий недоступен.")
+            print(ns.L"|cFFFFD100[TGF]|r Модуль «Журнал» выключен в списке аддонов.")
             return
         end
         ns.DumpTimewalkLoot({
@@ -3870,7 +3870,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     local djArg = msg:match("^dj%s*(.*)$") or msg:match("^данж%s*(.*)$")
     if djArg then
         if not ns.DumpDungeonLoot then
-            print(ns.L"|cFFFFD100[TGF]|r Журнал подземелий недоступен.")
+            print(ns.L"|cFFFFD100[TGF]|r Модуль «Журнал» выключен в списке аддонов.")
             return
         end
         ns.DumpDungeonLoot({
@@ -4058,9 +4058,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     end
 
     if msg == "simc" then
-        if ns.ExportSimC then ns.ExportSimC() else
-            print(ns.L"|cFF86C7BD[TGF]|r Окно BiS ещё не открывалось: /tgf bis")
-        end
+        if ns.ExportSimC then ns.ExportSimC() else print(ns.L"|cFFFFD100[TGF]|r Модуль «Сборки» выключен в списке аддонов.") end
         return
     end
 
@@ -4086,11 +4084,13 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         return
     end
     if msg == "compare" or msg == "сравнение" then
-        if ns.ToggleCompare then ns.ToggleCompare() end
+        -- Модули - отдельные аддоны (TrialGearFinder_Builds, _Journal):
+        -- выключен в списке аддонов - функции нет, говорим прямо.
+        if ns.ToggleCompare then ns.ToggleCompare() else print(ns.L"|cFFFFD100[TGF]|r Модуль «Сборки» выключен в списке аддонов.") end
         return
     end
     if msg == "bis" then
-        if ns.ToggleBiS then ns.ToggleBiS() end
+        if ns.ToggleBiS then ns.ToggleBiS() else print(ns.L"|cFFFFD100[TGF]|r Модуль «Сборки» выключен в списке аддонов.") end
         return
     end
     if frame:IsShown() then

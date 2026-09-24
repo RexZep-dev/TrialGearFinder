@@ -26,9 +26,10 @@ jobs:
       - name: Подставить версию из метки в .toc
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          sed -i "s/^## Version:.*/## Version: ${VERSION}/" TrialGearFinder.toc
+          # Номер - и в ядро, и в оба модуля.
+          sed -i "s/^## Version:.*/## Version: ${VERSION}/" TrialGearFinder.toc TrialGearFinder_*/TrialGearFinder_*.toc
           echo "Версия в архиве: ${VERSION}"
-          grep "^## Version:" TrialGearFinder.toc
+          grep "^## Version:" TrialGearFinder.toc TrialGearFinder_*/TrialGearFinder_*.toc
 
       # Версию подставляем здесь, а не держим в .toc как @project-version@,
       # хотя так принято. Причина местная: папка аддона в игре И ЕСТЬ рабочая

@@ -7,7 +7,8 @@
 -- Данжи не зашиты: у кого в меню сложности есть «Путешествие во времени».
 -- Штатные кнопки не прячем.
 
-local addonName, ns = ...
+local addonName = ...
+local ns = TrialGearFinderNS -- общие данные ядра (Locale.lua): у модуля свой `...`
 
 local TIMEWALK_CURRENCY = 1166
 

@@ -10,6 +10,10 @@
 -- дешевле не выходит.
 
 local ADDON_NAME, ns = ...
+-- Общие данные ядра - модулям. «Сборки» и «Журнал» - отдельные аддоны
+-- в списке аддонов (как у GatherMate2), и у каждого аддона свой `...`:
+-- свою таблицу ядра модуль иначе не увидит. Одна глобальная ссылка.
+TrialGearFinderNS = ns
 
 -- Перевод: [русская строка] = "English string".
 local enUS = {
@@ -427,6 +431,10 @@ local enUS = {
         "|cFFFFD100[TGF]|r No source containing %s in the database.",
     ["|cFFFFD100[TGF]|r Источник со словом «%s» в базе и в журнале не найден."] =
         "|cFFFFD100[TGF]|r No source containing %s in the database or the journal.",
+    ["|cFFFFD100[TGF]|r Модуль «Сборки» выключен в списке аддонов."] =
+        "|cFFFFD100[TGF]|r The Builds module is disabled in the AddOns list.",
+    ["|cFFFFD100[TGF]|r Модуль «Журнал» выключен в списке аддонов."] =
+        "|cFFFFD100[TGF]|r The Journal module is disabled in the AddOns list.",
     ["|cFFFFD100[TGF]|r Журнал подземелий недоступен."] =
         "|cFFFFD100[TGF]|r Encounter Journal is not available.",
     ["|cFFFFD100[TGF]|r В журнале %d подземелий: с меткой %d, без метки %d."] =

@@ -11,7 +11,8 @@
 -- Raidbots пишет «Unverified Input»; сим это не останавливает. Пометка
 -- «Low Level» тоже останется — так Raidbots помечает любого ниже максимума.
 
-local addonName, ns = ...
+local addonName = ...
+local ns = TrialGearFinderNS -- общие данные ядра (Locale.lua): у модуля свой `...`
 
 -- Номер спека → имя спека в SimC. Копия Simulationcraft.SpecNames.
 local SPEC_NAMES = {

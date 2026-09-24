@@ -1,0 +1,19 @@
+## Interface: 120007, 120100
+## Title: |cffc0c0c0Trial Gear Finder|r: Builds
+## Title-ruRU: |cffc0c0c0Trial Gear Finder|r: Сборки
+## Notes: BiS builds window, build totals, compare with equipped, talent codes.
+## Notes-ruRU: Окно BiS-сборок, итог сборки, сравнение с надетым, коды талантов.
+## Author: RexZep
+## Group: TrialGearFinder
+## Dependencies: TrialGearFinder
+## IconTexture: Interface\AddOns\TrialGearFinder\icon
+## Version: 1.0.1
+
+Gems.lua
+Enchants.lua
+Talents.lua
+SimC.lua
+BiS_Data.lua
+Radar.lua
+BiS.lua
+Compare.lua
