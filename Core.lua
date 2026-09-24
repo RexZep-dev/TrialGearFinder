@@ -378,9 +378,13 @@ ns.Style = {
 local frame = CreateFrame("Frame", "TrialGearFinderFrame", UIParent, "BasicFrameTemplateWithInset")
 frame:SetSize(880, 824)
 frame:SetPoint("CENTER")
-frame:SetFrameStrata("DIALOG") -- above plain HIGH-strata addon windows, which is
-                                -- apparently where some testers were seeing this
-                                -- get tucked behind other UI
+-- Слой HIGH, как у карты мира, а не DIALOG: из DIALOG окно всегда висело
+-- поверх карты, открытой щелчком по источнику (пользователь 24 сентября).
+-- В одном слое наверху то, по чему щёлкнули последним: окно всплывает
+-- само (SetToplevel), а при открытии ещё и Raise. Когда-то DIALOG ставили,
+-- чтобы окно не пряталось под чужими окнами слоя HIGH, - это тоже решает
+-- всплытие по щелчку.
+frame:SetFrameStrata("HIGH")
 frame:SetToplevel(true)
 frame:SetMovable(true)
 -- В пределах экрана, как окно сравнения. Без этого окно, частично ушедшее

@@ -569,10 +569,10 @@ local function Build()
     frame = CreateFrame("Frame", "TrialGearFinderCompare", UIParent)
     frame:SetSize(W, H)
     frame:SetPoint("CENTER")
-    frame:SetFrameStrata("DIALOG")
+    frame:SetFrameStrata("HIGH") -- как основное окно и карта мира: наверху то, по чему щёлкнули
     frame:SetClampedToScreen(true)
     -- Щелчок поднимает окно над основным, как и основное над ним: оба
-    -- в одном слое DIALOG, и открытое кнопкой «Сравнить» окно оказывалось
+    -- в одном слое HIGH, и открытое кнопкой «Сравнить» окно оказывалось
     -- под основным (пользователь 24 сентября).
     frame:SetToplevel(true)
     frame:SetMovable(true)

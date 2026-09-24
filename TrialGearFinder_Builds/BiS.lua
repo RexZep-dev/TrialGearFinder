@@ -2061,7 +2061,9 @@ local function MakeArrow()
     arrow = CreateFrame("Button", nil, main)
     arrow:SetSize(14, 36)
     arrow:SetPoint("RIGHT", main, "LEFT", 14, 0)
-    arrow:SetFrameStrata("FULLSCREEN_DIALOG")
+    -- Слой окна, а не FULLSCREEN_DIALOG: иначе язычок торчал поверх карты
+    -- мира. Уровнем выше панели - её он и сворачивает.
+    arrow:SetFrameLevel(main:GetFrameLevel() + 10)
     Bevel(arrow, C.block or { 0.06, 0.07, 0.08 }, C.border or { 0.18, 0.20, 0.22 })
 
     -- Тот же треугольник, что у фильтров, повёрнутый вбок: все стрелки окна
