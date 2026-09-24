@@ -1,5 +1,7 @@
 # Trial Gear Finder
 
+[![CurseForge downloads](https://img.shields.io/curseforge/dt/1681964?label=downloads&color=orange)](https://www.curseforge.com/wow/addons/trial-gear-finder) [![Release](https://img.shields.io/github/v/release/RexZep-dev/TrialGearFinder?label=release)](https://github.com/RexZep-dev/TrialGearFinder/releases) [![Last commit](https://img.shields.io/github/last-commit/RexZep-dev/TrialGearFinder?label=last%20commit)](https://github.com/RexZep-dev/TrialGearFinder/commits/master) [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/RexZep-dev/TrialGearFinder/blob/master/LICENSE.txt)
+
 Лучшие вещи для персонажей 20 уровня (триал) — прямо в игре, без альт-табов
 в браузер. Интерфейс на русском и английском.
 
