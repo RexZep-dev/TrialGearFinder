@@ -7,6 +7,6 @@
 ## Group: TrialGearFinder
 ## Dependencies: TrialGearFinder
 ## IconTexture: Interface\AddOns\TrialGearFinder\icon
-## Version: 1.0.1
+## Version: 1.1.0
 
 Journal.lua
