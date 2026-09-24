@@ -19,6 +19,9 @@
 **Основное окно** открывается без подвисаний, не уходит за край экрана; фильтр
 брони только у классов с выбором; шапка таблицы понятнее.
 
+**Модули.** Окно сборок и путеводитель — отдельные галочки под TrialGearFinder
+в списке аддонов: ненужное можно выключить.
+
 **Прочее:** /tgf copy — копирование из чата; правки статов и гнёзд в базе.
 
 Спасибо гильдии «Отвергнутые и Забытые» за исходный список вещей.
@@ -30,4 +33,4 @@ an item for all 16 slots per class and spec, with gems and enchants; build total
 as a chart or numbers; hover a stat to see which items give it; talent codes;
 "Community" toggle for community pre-BiS and Timewalking items (ilvl 32).
 **Compare with equipped (new)** — /tgf compare. **Adventure Guide:** Timewalking
-icons and the current-season tab. **English interface.** Faster main window.
+icons and the current-season tab. **Modules:** Builds and Journal can be turned off in the AddOns list. **English interface.** Faster main window.
