@@ -1995,7 +1995,8 @@ end
 local function UpdateArrow()
     if not arrow then return end
     -- свёрнуто → «<» (открыть, панель слева); развёрнуто → «>» (свернуть)
-    arrow.glyph:SetText(IsCollapsed() and "<" or ">")
+    -- Картинка смотрит вверх: влево - четверть оборота против часовой.
+    arrow.glyph:SetRotation(IsCollapsed() and math.pi / 2 or -math.pi / 2)
 end
 
 -- Два окна вместе шире одного, и на узком экране панель уезжала бы за край.
@@ -2063,9 +2064,14 @@ local function MakeArrow()
     arrow:SetFrameStrata("FULLSCREEN_DIALOG")
     Bevel(arrow, C.block or { 0.06, 0.07, 0.08 }, C.border or { 0.18, 0.20, 0.22 })
 
-    arrow.glyph = arrow:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    -- Тот же треугольник, что у фильтров, повёрнутый вбок: все стрелки окна
+    -- одного вида (пользователь 24 сентября). Было «<» / «>» шрифтом.
+    -- Цвет золотой, как прежде: язычок должен бросаться в глаза.
+    arrow.glyph = arrow:CreateTexture(nil, "OVERLAY")
+    arrow.glyph:SetTexture("Interface/AddOns/TrialGearFinder/arrow")
+    arrow.glyph:SetSize(12, 12)
     arrow.glyph:SetPoint("CENTER", 0, 0)
-    arrow.glyph:SetTextColor(GOLD[1], GOLD[2], GOLD[3]) -- золотом, как прежняя стрелка
+    arrow.glyph:SetVertexColor(GOLD[1], GOLD[2], GOLD[3])
 
     arrow:SetScript("OnClick", Toggle)
     arrow:SetScript("OnEnter", function(self)

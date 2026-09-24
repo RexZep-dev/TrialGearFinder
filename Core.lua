@@ -824,8 +824,9 @@ local function UpdateHeaderSortIndicators()
                     -- Под своей рамкой, по центру: за текстом стрелка наезжала
                     -- на соседнюю рамку, внутри рамки теснила подпись
                     -- (пользователь 24 сентября). Между шапкой и списком место есть.
-                    arrow:SetSize(8, 8)
-                    arrow:SetPoint("TOP", entry.box or entry.fs, "BOTTOM", 0, -1)
+                    -- 16: вдвое крупнее прежней восьмёрки (пользователь 24 сентября).
+                    arrow:SetSize(16, 16)
+                    arrow:SetPoint("TOP", entry.box or entry.fs, "BOTTOM", 0, 1)
                 elseif justify == "RIGHT" then
                     arrow:SetPoint("LEFT", entry.fs, "RIGHT", 3, 0)
                 else
@@ -1016,6 +1017,24 @@ local scrollBar = CreateFrame("EventFrame", nil, scrollArea, "MinimalScrollBar")
 scrollBar:SetPoint("TOPLEFT", scrollBox, "TOPRIGHT", 6, 0)
 scrollBar:SetPoint("BOTTOMLEFT", scrollBox, "BOTTOMRIGHT", 6, 0)
 if scrollBar.SetHideIfUnscrollable then scrollBar:SetHideIfUnscrollable(true) end
+
+-- Стрелки полосы - наш треугольник, как у фильтров: все стрелки окна одного
+-- вида (пользователь 24 сентября). Штатные картинки гасим прозрачностью,
+-- её игра не сбрасывает (правило «Оформление Окна»), свою рисуем поверх.
+for key, flip in pairs({ Back = false, Forward = true }) do
+    local btn = scrollBar[key]
+    if btn then
+        for _, region in ipairs({ btn:GetRegions() }) do
+            if region.GetObjectType and region:GetObjectType() == "Texture" then region:SetAlpha(0) end
+        end
+        local tex = btn:CreateTexture(nil, "OVERLAY")
+        tex:SetTexture(ARROW_TEXTURE)
+        tex:SetSize(ARROW_SIZE, ARROW_SIZE)
+        tex:SetPoint("CENTER")
+        if flip then tex:SetTexCoord(0, 1, 1, 0) end -- вершиной вниз
+        tex:SetVertexColor(C.text3[1], C.text3[2], C.text3[3])
+    end
+end
 
 -- Вид списка подключается ниже, после CreateRow и LayoutRow: заполнителю
 -- строк нужны обе, а объявлены они дальше по файлу.
