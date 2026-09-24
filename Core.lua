@@ -1409,6 +1409,9 @@ local DATIVE_STAT_LABELS = {
 -- everything matches.
 local function DiffData(dataItem, live)
     if not dataItem then return {} end
+    -- anyCopy: вещь берут ради эффекта, BiS - любая копия, со статами и гнездом
+    -- или без (Драгоценная петля из кровошипа, пользователь 24 сентября).
+    if dataItem.anyCopy then return {} end
 
     local diffs = {}
     if dataItem.ilvl and live.ilvl and dataItem.ilvl ~= live.ilvl then
