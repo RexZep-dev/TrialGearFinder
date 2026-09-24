@@ -565,6 +565,85 @@ local function GemByID(id)
     return gemByID[id]
 end
 
+-- Строки вставленных камней в подсказке вещи. Игра пишет у камня номинал:
+-- «+5 к интеллекту и +5 к вероятности критического удара», а на двадцатке
+-- тот же камень даёт 2 и 2 (таблица Харфа, сверена с армори; вики «Камни»).
+-- Переписываем эти строки числами из Gems.lua. Строку камня узнаём по типу
+-- строки в данных подсказки, а не по тексту: текст у разных камней разный.
+local GEM_STAT_RU = {
+    str = "к силе", agi = "к ловкости", int = "к интеллекту", stam = "к выносливости",
+    crit = "к критическому удару", haste = "к скорости", iskus = "к искусности",
+    vers = "к универсальности", dodge = "к уклонению", parry = "к парированию", armor = "к броне",
+}
+local GEM_STAT_EN = {
+    str = ITEM_MOD_STRENGTH_SHORT, agi = ITEM_MOD_AGILITY_SHORT, int = ITEM_MOD_INTELLECT_SHORT,
+    stam = ITEM_MOD_STAMINA_SHORT, crit = ITEM_MOD_CRIT_RATING_SHORT, haste = ITEM_MOD_HASTE_RATING_SHORT,
+    iskus = ITEM_MOD_MASTERY_RATING_SHORT, vers = ITEM_MOD_VERSATILITY,
+    dodge = ITEM_MOD_DODGE_RATING_SHORT, parry = ITEM_MOD_PARRY_RATING_SHORT, armor = RESISTANCE0_NAME,
+}
+local GEM_STAT_ORDER = { "str", "agi", "int", "stam", "crit", "haste", "iskus", "vers", "dodge", "parry", "armor" }
+
+local function GemText(g, primary)
+    local ru = ns.IsRussian and ns.IsRussian()
+    local parts = {}
+    for _, k in ipairs(GEM_STAT_ORDER) do
+        local v = g.stats[k]
+        if k == primary then v = v or g.stats.main end
+        if v then
+            local name = ru and GEM_STAT_RU[k] or GEM_STAT_EN[k] or k
+            parts[#parts + 1] = "+" .. v .. " " .. name
+        end
+    end
+    if #parts == 0 then return nil end
+    return table.concat(parts, ru and " и " or " and ")
+end
+
+function ns.FixTooltipGems(gemIDs, primary)
+    if not (gemIDs and GameTooltip.GetTooltipData and Enum.TooltipDataLineType) then return end
+    local data = GameTooltip:GetTooltipData()
+    if not (data and data.lines) then return end
+    local socketType = Enum.TooltipDataLineType.GemSocket
+    local n, touched = 0, false
+    for i, line in ipairs(data.lines) do
+        if line.type == socketType then
+            n = n + 1
+            local g = gemByID and gemByID[gemIDs[n] or 0] or GemByID(gemIDs[n] or 0)
+            local text = g and g.stats and GemText(g, primary)
+            local fs = _G["GameTooltipTextLeft" .. i]
+            if text and fs then
+                -- Белый у строки гнезда - код цвета внутри текста, а сама
+                -- строка жёлтая: без кода камни и шестерёнки желтели.
+                local orig = fs:GetText()
+                if issecretvalue and orig and issecretvalue(orig) then orig = nil end
+                local code = orig and orig:match("^|c%x%x%x%x%x%x%x%x") or "|cffffffff"
+                fs:SetText(code .. text .. "|r")
+                touched = true
+            end
+        end
+    end
+    if touched then GameTooltip:Show() end
+end
+
+-- Подсказка самого камня (значок в окне сравнения): та же беда, номинал.
+-- Переписываем первую строку вида «+N …» - это и есть действие камня.
+function ns.FixGemTooltip(gemID, primary)
+    local g = GemByID(gemID or 0)
+    local text = g and g.stats and GemText(g, primary)
+    if not text then return end
+    for i = 2, GameTooltip:NumLines() do
+        local fs = _G["GameTooltipTextLeft" .. i]
+        local t = fs and fs:GetText()
+        if issecretvalue and t and issecretvalue(t) then t = nil end
+        local code = t and t:match("^|c%x%x%x%x%x%x%x%x")
+        if code then t = t:sub(11) end
+        if t and t:find("^%s*%+%d") then
+            fs:SetText(code and (code .. text .. "|r") or text)
+            GameTooltip:Show()
+            return
+        end
+    end
+end
+
 -- Тип оружия для поля fit в Enchants.lua. Имена как у Харфа: Enchant Weapon,
 -- Enchant 2H Weapon, Scope, Enchant Off-Hand. Лук/ружьё/арбалет — не melee.
 -- Номера subclassID те же, что ниже у WEAPON_NORM.
@@ -723,9 +802,12 @@ local function GemPicks(item, w, running, role)
             if id then Count(id) end
         else
             local id
-            -- Первое обычное гнездо сборки — под уникальный +5 к основной.
-            -- Второго такого на персонаже не будет, поэтому флаг в running.
-            if primary and running and not running.uniqueGemUsed then
+            -- Уникальный +5 к основной (Кровавый камень, Профанит) — алгарийский,
+            -- триалу его не достать: сборка советует только 2/2 (пользователь,
+            -- 24 сентября). Ветка оставлена выключенной, чтобы вернуть одной
+            -- строкой, если появится фильтр «с подпиской».
+            local UNIQUE_PRIMARY_GEM = false
+            if UNIQUE_PRIMARY_GEM and primary and running and not running.uniqueGemUsed then
                 local uval
                 id, uval = UniquePrimaryGem(primary)
                 if id then
@@ -743,6 +825,21 @@ local function GemPicks(item, w, running, role)
                 -- Чистая основная остаётся запасным ходом: там, где пары
                 -- под нужный стат не отковали (сила и ловкость с версой).
                 local pairID = primary and AffordableGem(primary, NextStat()) or nil
+                -- Пары «ловкость/сила + универсальность» не отковали. Тогда
+                -- 2/2 со следующей вторичкой по весу, а не алгарийский +5:
+                -- тот триалу не достать.
+                if primary and not pairID then
+                    for _, k in ipairs(order) do
+                        if not running or (running[k] or 0) < (CAP[k] or math.huge) then
+                            pairID = AffordableGem(primary, k)
+                            if pairID then break end
+                        end
+                    end
+                    for _, k in ipairs(order) do
+                        if pairID then break end
+                        pairID = AffordableGem(primary, k)
+                    end
+                end
                 if pairID then
                     picks[i] = { key = primary, id = pairID }
                     Count(pairID)
@@ -758,7 +855,7 @@ local function GemPicks(item, w, running, role)
                 -- в 26 DPS у воина Неистовства (12 сентября).
                 local best, bestScore, bestRank
                 for _, g in ipairs(ns.Gems or {}) do
-                    if g.socket == "prismatic" and not g.unique and g.stats then
+                    if g.socket == "prismatic" and not g.unique and not g.expensive and g.stats then
                         local score = 0
                         for k, val in pairs(g.stats) do
                             local key = (k == "main" or k == "all") and primary or k
@@ -1021,6 +1118,7 @@ local function MakeSlotRow(parent, index, y)
         -- только основное окно, и Шлем удара духа показывал 6/8/5 там
         -- и 7/10/6 здесь.
         if ns.FixTooltipStats then ns.FixTooltipStats(self.entry and self.entry.stats) end
+        ns.FixTooltipGems(self.gemIDs, ns.LastBuild and ns.LastBuild.primary)
         if self.ench and not self.ench.enchantID then
             -- Номера нет — игра нарисовать не сможет, пишем сами.
             GameTooltip:AddLine(" ")
@@ -1104,6 +1202,7 @@ local function RenderRow(row, slot, item, mark, gems, ench)
         and ns.BuildItemLink(id, item.bonusIDs or {}, gems, ench and ench.enchantID)
         or ("item:" .. id)
     row.hyperlink, row.itemLink = link, link
+    row.gemIDs = gems
 
     local _, _, _, _, icon = C_Item.GetItemInfoInstant(id)
     row.icon:SetTexture(icon or 134400)
@@ -1572,7 +1671,7 @@ end
 function ns.ExportSimC()
     local b = ns.LastBuild
     if not (b and b.slots and #b.slots > 0) then
-        print(ns.L"|cFF86C7BD[TGF]|r Сначала открой окно BiS и выбери спек: /tgf bis")
+        print(ns.L"|cFF86C7BD[TGF]|r Сначала открой окно сборок и выбери спек: /tgf bis")
         return
     end
     local SIMC = {
@@ -1715,7 +1814,7 @@ local function BuildPanel()
     Bevel(header, C.block or { 0.06, 0.07, 0.08 }, C.border or { 0.18, 0.20, 0.22 })
     local title = header:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     title:SetPoint("CENTER", header, "CENTER", 0, 0)
-    title:SetText(ns.L"BiS-сборки")
+    title:SetText(ns.L"Сборки")
     if C.text then title:SetTextColor(C.text[1], C.text[2], C.text[3]) end
 
     -- Колонка классов — во всю высоту панели, иконки круглые.
@@ -2078,7 +2177,7 @@ local function MakeArrow()
     arrow:SetScript("OnClick", Toggle)
     arrow:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:AddLine(IsCollapsed() and ns.L"Открыть BiS-сборки" or ns.L"Свернуть BiS-сборки")
+        GameTooltip:AddLine(IsCollapsed() and ns.L"Открыть сборки" or ns.L"Свернуть сборки")
         GameTooltip:Show()
     end)
     arrow:SetScript("OnLeave", function() GameTooltip:Hide() end)

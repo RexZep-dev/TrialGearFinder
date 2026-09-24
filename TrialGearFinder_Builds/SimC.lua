@@ -130,7 +130,7 @@ function ns.SimCHeader(specID)
 
     local lines = {
         string.format("# %s - %s - %s - %s/%s", name, spec, date("%Y-%m-%d %H:%M"), Lower(region), realm),
-        string.format(ns.L"# TrialGearFinder: сборка BiS, %s %s", className or "?", specName or ""),
+        string.format(ns.L"# TrialGearFinder: сборка, %s %s", className or "?", specName or ""),
         ns.L"# Выгрузка TrialGearFinder, не аддона SimulationCraft: Raidbots пометит «Unverified Input».",
         -- Только Advanced Sim (решение пользователя, 16 сентября): Quick Sim
         -- комментирует строки ротации, и SimC бьёт одними автоатаками (200 вместо 1485).
@@ -186,7 +186,7 @@ function ns.SimCHeader(specID)
         lines[#lines + 1] = "target_level=23"
     else
         lines[#lines + 1] = ""
-        lines[#lines + 1] = ns.L"# Цель — моб 45 уровня: сборка BiS считается по самым сложным подземельям."
+        lines[#lines + 1] = ns.L"# Цель — моб 45 уровня: сборка считается по самым сложным подземельям."
         lines[#lines + 1] = "target_level=45"
         lines[#lines + 1] = ns.L"# Другое подземелье: старые героики — 30, Пандария — 38, Каз Алгар — 73."
     end

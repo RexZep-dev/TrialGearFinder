@@ -180,6 +180,9 @@ local function MakeSide(parent, y, left)
             GameTooltip:SetOwner(self, left and "ANCHOR_LEFT" or "ANCHOR_RIGHT")
             GameTooltip:SetHyperlink(self.ref)
             GameTooltip:Show()
+            if left and ns.FixGemTooltip then
+                ns.FixGemTooltip(tonumber(self.ref:match("item:(%d+)")), ns.LastBuild and ns.LastBuild.primary)
+            end
         end)
         g:SetScript("OnLeave", function() GameTooltip:Hide() end)
         side.gems[i] = g
@@ -215,6 +218,9 @@ local function MakeSide(parent, y, left)
         GameTooltip:SetOwner(self, left and "ANCHOR_LEFT" or "ANCHOR_RIGHT")
         GameTooltip:SetHyperlink(side.link)
         GameTooltip:Show()
+        if side.gemIDs and ns.FixTooltipGems then
+            ns.FixTooltipGems(side.gemIDs, ns.LastBuild and ns.LastBuild.primary)
+        end
     end)
     side.hit:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
@@ -407,7 +413,7 @@ function ns.RefreshCompare()
     local _, pClassFile = UnitClass("player")
     local cc = C_ClassColor and C_ClassColor.GetClassColor(classFile or pClassFile)
     local className = ns.ClassName and ns.ClassName(classFile or pClassFile) or ""
-    frame.lTitle:SetText(L"BiS-сборка")
+    frame.lTitle:SetText(L"Сборка")
     frame.lClass:SetText(string.format("%s (%s)", className, specName or ""))
     frame.rTitle:SetText(UnitName("player") or "")
     local ownIdx = GetSpecialization and GetSpecialization()
@@ -455,6 +461,7 @@ function ns.RefreshCompare()
         end
         PaintSide(row.l, bisLink, bisName or "…", s and s.item.ilvl, bisGems, bisEnch, false, row.emptyTex, mark)
         row.l.contrib = s and s.contrib or nil
+        row.l.gemIDs = s and s.gems or nil
 
         local curName, curIlvl, curGems, curEnch, curContrib
         if curLink then
@@ -788,7 +795,7 @@ function ns.ToggleCompare()
         return
     end
     if not EnsureSnapshot() then
-        print(L"|cFF86C7BD[TGF]|r Сначала открой окно BiS и выбери спек: /tgf bis")
+        print(L"|cFF86C7BD[TGF]|r Сначала открой окно сборок и выбери спек: /tgf bis")
         return
     end
     f.retries = 0

@@ -79,7 +79,7 @@ local enUS = {
     ["Дальнобойное"]       = "Ranged",
 
     -- Окно BiS-сборок
-    ["BiS-сборки"]         = "BiS Builds",
+    ["Сборки"]         = "Builds",
     ["ИТОГ СБОРКИ"]        = "BUILD TOTALS",
     ["Таланты"]            = "Talents",
     ["Кисти"]              = "Hands",
@@ -127,8 +127,8 @@ local enUS = {
     ["%d ур."]             = "ilvl %d",
 
     -- Сообщения в чат
-    ["|cFF86C7BD[TGF]|r Сначала открой окно BiS и выбери спек: /tgf bis"] =
-        "|cFF86C7BD[TGF]|r Open the BiS window and pick a spec first: /tgf bis",
+    ["|cFF86C7BD[TGF]|r Сначала открой окно сборок и выбери спек: /tgf bis"] =
+        "|cFF86C7BD[TGF]|r Open the builds window and pick a spec first: /tgf bis",
     ["|cFF86C7BD[TGF]|r Профиль SimC — в окне копирования: Ctrl+C и вставить в Advanced Sim на Raidbots."] =
         "|cFF86C7BD[TGF]|r The SimC profile is in the copy window: Ctrl+C, then paste into Advanced Sim on Raidbots.",
 
@@ -254,7 +254,7 @@ local enUS = {
 
 
     -- Окно сравнения со сборкой (Compare.lua)
-    ["BiS-сборка"] = "BiS build",
+    ["Сборка"] = "Build",
     ["%d-го уровня"] = "level %d",
     ["Нет чар"] = "No enchant",
     ["Диаграмма"] = "Chart",
@@ -394,8 +394,8 @@ local enUS = {
     ["Для этого спека кода пока нет."] = "No loadout for this spec yet.",
     ["Вставляется в игре: окно талантов — Загрузить сборку."] =
         "Paste in-game: talent window — Load Loadout.",
-    ["Открыть BiS-сборки"] = "Open BiS builds",
-    ["Свернуть BiS-сборки"] = "Collapse BiS builds",
+    ["Открыть сборки"] = "Open builds",
+    ["Свернуть сборки"] = "Collapse builds",
     ["|cFF86C7BD[TGF]|r Кода талантов для этого спека пока нет. Пришлите свой: окно талантов, кнопка «Экспорт»."] =
         "|cFF86C7BD[TGF]|r No talent code for this spec yet. Send yours: talent window, Export.",
 
@@ -520,8 +520,8 @@ local enUS = {
         "|cFFFFD100[TGF]|r Not in the database: %d %s (equipped, bags, bank if open). Copy: /tgf copy",
     ["|cFF86C7BD[TGF]|r Таланты не читаются: игра не отдала активную сборку."] =
         "|cFF86C7BD[TGF]|r Talents unread: the game did not return the active loadout.",
-    ["|cFF86C7BD[TGF]|r Окно BiS ещё не открывалось: /tgf bis"] =
-        "|cFF86C7BD[TGF]|r Open the BiS window first: /tgf bis",
+    ["|cFF86C7BD[TGF]|r Окно сборок ещё не открывалось: /tgf bis"] =
+        "|cFF86C7BD[TGF]|r Open the builds window first: /tgf bis",
     ["# TrialGearFinder: таланты, %s %s (спек %s)"] = "# TrialGearFinder: talents, %s %s (spec %s)",
     ["# код сборки игра не отдала — возьми его в окне талантов кнопкой «Экспорт»"] =
         "# the game did not return a loadout code — copy it from the talent window, Export",
@@ -533,7 +533,7 @@ local enUS = {
     ["[TGF] ссылка: "] = "[TGF] link: ",
 
     -- Выгрузка SimC (комментарии в профиле)
-    ["# TrialGearFinder: сборка BiS, %s %s"] = "# TrialGearFinder: BiS build, %s %s",
+    ["# TrialGearFinder: сборка, %s %s"] = "# TrialGearFinder: build, %s %s",
     ["# Выгрузка TrialGearFinder, не аддона SimulationCraft: Raidbots пометит «Unverified Input»."] =
         "# TrialGearFinder export, not the SimulationCraft addon: Raidbots will mark Unverified Input.",
     ["# Вставлять в Advanced Sim на Raidbots: Quick Sim выбрасывает строки ротации."] =
@@ -544,8 +544,8 @@ local enUS = {
         "# Max-level consumables are unavailable to level 20 — disabled.",
     ["# Цель — болванка 23 уровня: по высокой цели заклинания мажут все до одного."] =
         "# Target is a level-23 dummy: spells miss every hit on a high-level mob.",
-    ["# Цель — моб 45 уровня: сборка BiS считается по самым сложным подземельям."] =
-        "# Target is a level-45 mob: BiS is scored against the hardest dungeons.",
+    ["# Цель — моб 45 уровня: сборка считается по самым сложным подземельям."] =
+        "# Target is a level-45 mob: the build is scored against the hardest dungeons.",
     ["# Другое подземелье: старые героики — 30, Пандария — 38, Каз Алгар — 73."] =
         "# Other dungeons: old heroics 30, Pandaria 38, Khaz Algar 73.",
     ["# Таланты взяты из аддона, не с этого персонажа: код снят не на двадцатке."] =
