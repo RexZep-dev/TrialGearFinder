@@ -1,4 +1,7 @@
-## 1.1.0
+# Trial Gear Finder
+
+## [v1.1.0](https://github.com/RexZep-dev/TrialGearFinder/tree/v1.1.0) (2026-09-24)
+[Full Changelog](https://github.com/RexZep-dev/TrialGearFinder/compare/v1.0.1...v1.1.0) [Previous Releases](https://github.com/RexZep-dev/TrialGearFinder/releases)
 
 **Окно BiS-сборок (новое).** Язычок у левого края основного окна или /tgf bis.
 - Для каждого класса и спека — вещь в каждый из 16 слотов, камни и чары.
