@@ -821,12 +821,11 @@ local function UpdateHeaderSortIndicators()
                 local justify = entry.justify or "LEFT"
                 arrow:ClearAllPoints()
                 if justify == "CENTER" then
-                    -- Внутри своей рамки, у правого края: за текстом стрелка
-                    -- наезжала на соседнюю рамку (пользователь 24 сентября).
-                    -- Подпись на это время уже на 12 и уходит влево.
-                    entry.fs:SetWidth((entry.fs._baseWidth or entry.fs:GetWidth()) - 12)
+                    -- Под своей рамкой, по центру: за текстом стрелка наезжала
+                    -- на соседнюю рамку, внутри рамки теснила подпись
+                    -- (пользователь 24 сентября). Между шапкой и списком место есть.
                     arrow:SetSize(8, 8)
-                    arrow:SetPoint("RIGHT", entry.box or entry.fs, "RIGHT", -3, 0)
+                    arrow:SetPoint("TOP", entry.box or entry.fs, "BOTTOM", 0, -1)
                 elseif justify == "RIGHT" then
                     arrow:SetPoint("LEFT", entry.fs, "RIGHT", 3, 0)
                 else
