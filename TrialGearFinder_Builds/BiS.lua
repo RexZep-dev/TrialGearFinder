@@ -2069,7 +2069,7 @@ local function MakeArrow()
     -- Цвет золотой, как прежде: язычок должен бросаться в глаза.
     arrow.glyph = arrow:CreateTexture(nil, "OVERLAY")
     arrow.glyph:SetTexture("Interface/AddOns/TrialGearFinder/arrow")
-    arrow.glyph:SetSize(12, 12)
+    arrow.glyph:SetSize(24, 24) -- как стрелки фильтров (ARROW_SIZE в Core.lua)
     arrow.glyph:SetPoint("CENTER", 0, 0)
     arrow.glyph:SetVertexColor(GOLD[1], GOLD[2], GOLD[3])
 

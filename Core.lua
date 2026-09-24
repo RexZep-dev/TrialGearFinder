@@ -251,7 +251,7 @@ local PILL_TEXTURE = "Interface/AddOns/TrialGearFinder/pill"
 -- через SetTexCoord - вторую рисовать незачем.
 local ARROW_TEXTURE = "Interface/AddOns/TrialGearFinder/arrow"
 -- Размер стрелок фильтров и прокрутки. Одним именем, чтобы не разъезжались.
-local ARROW_SIZE = 12
+local ARROW_SIZE = 24 -- было 12: мелковато (пользователь 24 сентября); сам треугольник в картинке меньше неё
 -- Точка-отметка выбранного пункта в выпадающем списке.
 local DOT_TEXTURE = "Interface/AddOns/TrialGearFinder/dot"
 -- Кольцо: скруглённый контур в один пиксель, середина прозрачная. Отдельная
@@ -600,7 +600,7 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
 
     button.text = button:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     button.text:SetPoint("LEFT", button, "LEFT", 8, 0)
-    button.text:SetPoint("RIGHT", button, "RIGHT", -22, 0)
+    button.text:SetPoint("RIGHT", button, "RIGHT", -30, 0) -- место под стрелку 24
     button.text:SetJustifyH("LEFT")
     button.text:SetTextColor(C.text2[1], C.text2[2], C.text2[3])
     button.text:SetText(button.label .. ns.L": Все")
