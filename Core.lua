@@ -3105,8 +3105,16 @@ frame:RegisterEvent("PLAYER_REGEN_ENABLED")
 frame:SetScript("OnEvent", function(self, event, addonName)
     if event == "PLAYER_TARGET_CHANGED" or event == "UPDATE_MOUSEOVER_UNIT"
         or event == "LOOT_OPENED" or event == "PLAYER_REGEN_ENABLED" then
+        -- Рарники в открытом мире. В подземельях ответы о чужих юнитах
+        -- бывают «секретными» уже на UnitIsDead — там и не спрашиваем.
+        if IsInInstance() then return end
         for _, unit in ipairs({ "target", "mouseover" }) do
-            if UnitExists(unit) and UnitIsDead(unit) then MarkKilledByName(UnitName(unit)) end
+            if UnitExists(unit) then
+                local dead = UnitIsDead(unit)
+                if not (issecretvalue and issecretvalue(dead)) and dead then
+                    MarkKilledByName(UnitName(unit))
+                end
+            end
         end
         return
     end
