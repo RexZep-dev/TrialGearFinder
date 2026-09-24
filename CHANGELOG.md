@@ -1,39 +1,27 @@
 # Trial Gear Finder
 
-## [v1.1.0](https://github.com/RexZep-dev/TrialGearFinder/tree/v1.1.0) (2026-09-24)
-[Full Changelog](https://github.com/RexZep-dev/TrialGearFinder/compare/v1.0.1...v1.1.0) [Previous Releases](https://github.com/RexZep-dev/TrialGearFinder/releases)
+## [v1.1.1](https://github.com/RexZep-dev/TrialGearFinder/tree/v1.1.1) (2026-09-24)
+[Full Changelog](https://github.com/RexZep-dev/TrialGearFinder/compare/v1.1.0...v1.1.1) [Previous Releases](https://github.com/RexZep-dev/TrialGearFinder/releases)
 
-**Окно BiS-сборок (новое).** Язычок у левого края основного окна или /tgf bis.
-- Для каждого класса и спека — вещь в каждый из 16 слотов, камни и чары.
-- Итог сборки диаграммой или цифрами, перебор после 30% подсвечен красным.
-- Наведи на стат — подсветятся вещи, которые его дают, и сколько каждая.
-- Кнопка «Таланты» — код сборки для окна талантов.
-- Тумблер «Комьюнити» — пред-BiS от игроков и вещи Путешествия во времени (32 ур.).
+**Камни — только те, что триалу реально достать.**
+- В сборках больше нет алгарийских камней на +5 (в том числе Кровавого камня):
+  во всех гнёздах камни «2 к основной + 2 к вторичке».
+- В подсказке вещи игра пишет у старых камней «+5 и +5», а на 20 уровне
+  они дают 2 и 2. Окна сборок и сравнения теперь показывают настоящие числа.
 
-**Сравнение с надетым (новое).** Кнопка «Сравнить» или /tgf compare: сборка
-слева, твой персонаж справа — вещи, камни, чары и разница по статам.
+**Окно «Сборки»** — так теперь называется бывшее окно BiS-сборок.
 
-**Путеводитель по приключениям.** Значок у подземелий с Путешествием во времени;
-вкладка «Текущий сезон» показывает подземелья недели Путешествия или дату следующей.
-Выключается в Параметрах.
-
-**Английский язык** — сам по языку клиента или вручную в Параметрах.
-
-**Основное окно** открывается без подвисаний, не уходит за край экрана; фильтр
-брони только у классов с выбором; шапка таблицы понятнее.
-
-**Модули.** Окно сборок и путеводитель — отдельные галочки под TrialGearFinder
-в списке аддонов: ненужное можно выключить.
-
-**Прочее:** /tgf copy — копирование из чата; правки статов и гнёзд в базе.
+**Исправления**
+- Ошибка Lua при наведении мыши на мобов в подземельях.
+- Кольцо ритуалиста и Заряженное песчаниковое кольцо — одно гнездо, а не два.
 
 Спасибо гильдии «Отвергнутые и Забытые» за исходный список вещей.
 
 ---
 
-**BiS builds window (new).** Tab on the left edge of the main window or /tgf bis:
-an item for all 16 slots per class and spec, with gems and enchants; build totals
-as a chart or numbers; hover a stat to see which items give it; talent codes;
-"Community" toggle for community pre-BiS and Timewalking items (ilvl 32).
-**Compare with equipped (new)** — /tgf compare. **Adventure Guide:** Timewalking
-icons and the current-season tab. **Modules:** Builds and Journal can be turned off in the AddOns list. **English interface.** Faster main window.
+**Gems — only ones a trial account can get.** Builds no longer suggest +5 Algari
+gems (Bloodstones included): every socket gets a "2 primary + 2 secondary" gem.
+Item tooltips show old gems as "+5 and +5", but at level 20 they give 2 and 2 —
+the Builds and Compare windows now show the real numbers.
+**"Builds" window** — the former BiS builds window. **Fixes:** Lua error when
+hovering mobs in dungeons; two BfA Timewalking rings have one socket, not two.
