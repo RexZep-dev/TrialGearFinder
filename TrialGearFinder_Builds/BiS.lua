@@ -144,6 +144,10 @@ end
 -- Кандидаты в слоты из базы аддона
 -- ---------------------------------------------------------------------------
 local function ClassAllowed(item, classFile)
+    -- Оружие и щит - только те, которыми класс владеет (таблица в Core.lua):
+    -- у вещей Путешествия во времени classes нет, и охотнику на демонов
+    -- шло копьё (пользователь 25 сентября).
+    if ns.ClassCanWield and not ns.ClassCanWield(classFile, item.itemID) then return false end
     -- item.classes == nil у трынек и проков — их пускаем всем.
     if not item.classes then return true end
     for _, c in ipairs(item.classes) do

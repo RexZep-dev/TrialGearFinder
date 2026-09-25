@@ -2636,11 +2636,46 @@ local function InferClassesFromStats(stats)
     return nil
 end
 
+-- Каким оружием и щитами класс вообще может пользоваться. Вещи Путешествия
+-- во времени в базе без classes, и охотнику на демонов шли копья и секиры
+-- (пользователь 25 сентября: «копьё, хотя они не могут его одеть»).
+-- Таблица - warcraft.wiki.gg, страница Proficiency, снята браузером 25 сентября.
+-- Ключ - subclassID оружия (GetItemInfoInstant): 0 топор, 1 двуручный топор,
+-- 2 лук, 3 ружьё, 4 булава, 5 двуручная булава, 6 древковое, 7 меч,
+-- 8 двуручный меч, 9 боевой клинок, 10 посох, 13 кистевое, 15 кинжал,
+-- 18 арбалет, 19 жезл. 14 (разное) и 20 (удочка) не ограничиваем.
+ns.WeaponSkill = {
+    DEATHKNIGHT = { [0] = true, [1] = true, [4] = true, [5] = true, [6] = true, [7] = true, [8] = true },
+    DEMONHUNTER = { [0] = true, [7] = true, [9] = true, [13] = true },
+    DRUID       = { [4] = true, [5] = true, [6] = true, [10] = true, [13] = true, [15] = true },
+    EVOKER      = { [0] = true, [1] = true, [4] = true, [5] = true, [7] = true, [8] = true, [10] = true, [13] = true, [15] = true },
+    HUNTER      = { [0] = true, [1] = true, [2] = true, [3] = true, [6] = true, [7] = true, [8] = true, [10] = true, [13] = true, [15] = true, [18] = true },
+    MAGE        = { [7] = true, [10] = true, [15] = true, [19] = true },
+    MONK        = { [0] = true, [4] = true, [6] = true, [7] = true, [10] = true, [13] = true },
+    PALADIN     = { [0] = true, [1] = true, [4] = true, [5] = true, [6] = true, [7] = true, [8] = true },
+    PRIEST      = { [4] = true, [10] = true, [15] = true, [19] = true },
+    ROGUE       = { [0] = true, [2] = true, [3] = true, [4] = true, [7] = true, [13] = true, [15] = true, [18] = true },
+    SHAMAN      = { [0] = true, [1] = true, [4] = true, [5] = true, [10] = true, [13] = true, [15] = true },
+    WARLOCK     = { [7] = true, [10] = true, [15] = true, [19] = true },
+    WARRIOR     = { [0] = true, [1] = true, [2] = true, [3] = true, [4] = true, [5] = true, [6] = true, [7] = true, [8] = true, [10] = true, [13] = true, [15] = true, [18] = true },
+}
+-- Щит (броня, подкласс 6) - только паладину, шаману и воину.
+ns.ShieldClasses = { PALADIN = true, SHAMAN = true, WARRIOR = true }
+function ns.ClassCanWield(classFile, itemID)
+    local skill = classFile and ns.WeaponSkill[classFile]
+    if not (skill and itemID) then return true end
+    local _, _, _, _, _, classID, subclassID = C_Item.GetItemInfoInstant(itemID)
+    if classID == 2 and subclassID ~= 14 and subclassID ~= 20 then return skill[subclassID] == true end
+    if classID == 4 and subclassID == 6 then return ns.ShieldClasses[classFile] == true end
+    return true
+end
+
 -- Cheap check using only static Data.lua fields (no item API calls). item.classes
 -- comes straight from Wowhead's "players can loot this by picking these specs"
 -- list; when that's missing, fall back to the primary-stat inference above.
 local function PassesStaticFilters(item)
     if filters.class ~= "ALL" then
+        if not ns.ClassCanWield(filters.class, item.itemID) then return false end
         local classes = item.classes or InferClassesFromStats(item.stats or {})
         if classes then
             local allowed = false
