@@ -1,20 +1,33 @@
 # Trial Gear Finder
 
-## [v1.1.2](https://github.com/RexZep-dev/TrialGearFinder/tree/v1.1.2) (2026-09-25)
-[Full Changelog](https://github.com/RexZep-dev/TrialGearFinder/compare/v1.1.1...v1.1.2) [Previous Releases](https://github.com/RexZep-dev/TrialGearFinder/releases)
+## [v1.1.3](https://github.com/RexZep-dev/TrialGearFinder/tree/v1.1.3) (2026-09-26)
+[Full Changelog](https://github.com/RexZep-dev/TrialGearFinder/compare/v1.1.2...v1.1.3) [Previous Releases](https://github.com/RexZep-dev/TrialGearFinder/releases)
+
+**Инженерные очки Пандарии** — все семь «ретинальных защит» в базе (ткань,
+кожа, кольчуга, латы), с верными статами. Надеть может только инженер.
+
+**Шестерёнки без повторов.** Шестерёнки уникальны на персонажа, поэтому
+окно «Сборки» больше не ставит одну и ту же в очки и в Дракончика: если
+лучшие +10 уже стоят, вторая вещь получает +8 того же стата или +10
+следующего.
+
+**Окно сравнения**
+- Справа теперь только снаряжение: раса и таланты больше не раздувают
+  статы (у танков выносливость была в разы выше сборки).
+- Кнопка «Сравнить» в чужом классе выключена — сравнение идёт со сборкой
+  своего спека.
 
 **Исправления**
-- Сборки больше не предлагают оружие, которым класс не владеет: охотнику
-  на демонов — копья и древковое, щиты — никому, кроме паладина, шамана
-  и воина. Правило действует и в основном списке при выбранном классе.
-- Плащ трусишки теперь виден охотникам, а кольчужные наручи — паладину
-  в основном списке: раньше они были только в окне «Сборки».
+- Ошибка «пыталась вызвать защищённую функцию» при щелчке по источнику
+  в бою: в бою ставится только метка, карта не открывается.
 
 Спасибо гильдии «Отвергнутые и Забытые» за исходный список вещей.
 
 ---
 
-**Fixes:** Builds no longer suggest weapons a class can't use (polearms for
-Demon Hunters; shields only for Paladin, Shaman and Warrior) — the main list
-follows the same rule when a class is selected. The cowardly cloak now shows
-for Hunters and the mail bracers for Paladins in the main list, as in Builds.
+**Pandaria engineering goggles** — all seven Retinal Armor helms are in the
+database with correct stats (engineers only). **Cogwheels never repeat**
+across the build (goggles and Dragonling). **Compare window:** the equipped
+side now counts gear only — race and talents no longer inflate it; the
+Compare button is disabled for other classes. **Fix:** clicking a source in
+combat no longer triggers a blocked-action error.
