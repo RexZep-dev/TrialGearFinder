@@ -1972,7 +1972,12 @@ local function SetSourceWaypoint(sourceName, sourceType, itemID)
     -- SetPassThroughButtons, та не срабатывает, и игра винит в этом нас -
     -- ADDON_ACTION_BLOCKED с нашим именем в чужой цепочке вызовов.
     -- C_Map.OpenWorldMap открывает карту из защищённого слоя, и цепочка чистая.
-    if C_Map.OpenWorldMap then
+    -- Но и она с ограничениями (HasRestrictions в документации Blizzard):
+    -- в бою игра её блокирует и опять пишет ADDON_ACTION_BLOCKED на нас
+    -- (пользователь 26 сентября). В бою только метка и стрелка, без карты.
+    if InCombatLockdown() then
+        -- метка уже стоит, карту не трогаем
+    elseif C_Map.OpenWorldMap then
         C_Map.OpenWorldMap(uiMapID)
     elseif OpenWorldMap then
         OpenWorldMap(uiMapID)
