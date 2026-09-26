@@ -55,11 +55,6 @@ local HAND = { MAINHAND = "MAINHANDSLOT", OFFHAND = "SECONDARYHANDSLOT" }
 
 -- Плашки внизу. Основная характеристика подставляется по спеку сборки.
 local BOX_KEYS = { "stam", "primary", "crit", "haste", "iskus", "vers" }
-local UNIT_STAT = { str = 1, agi = 2, stam = 3, int = 4 }
-local RATING = {
-    crit = CR_CRIT_MELEE or 9, haste = CR_HASTE_MELEE or 18,
-    iskus = CR_MASTERY or 26, vers = CR_VERSATILITY_DAMAGE_DONE or 29,
-}
 
 local GREEN = { 0.30, 0.85, 0.35 }
 local YELLOW = { 0.95, 0.80, 0.30 }
@@ -373,12 +368,14 @@ local function MakeBox(parent)
     return b
 end
 
+-- Статы надетого - только со снаряжения: сумма подсказок вещей (curTotal
+-- собирается при заполнении строк). Раньше брали UnitStat и рейтинги
+-- персонажа, и туда входили раса и таланты: у рыцаря Крови выносливость
+-- 749 против 97 в сборке (Ветеран Третьей войны +20 %, Кровавая стойкость
+-- +40 %; пользователь 26 сентября: «пусть будет чисто учёт снаряжения»).
+local curTotal = {}
 local function CurrentStat(key)
-    if UNIT_STAT[key] then
-        local _, _, pos = UnitStat("player", UNIT_STAT[key])
-        return math.floor((pos or 0) + 0.5)
-    end
-    return math.floor((GetCombatRating(RATING[key]) or 0) + 0.5)
+    return math.floor((curTotal[key] or 0) + 0.5)
 end
 
 -- ── Заполнение ─────────────────────────────────────────────────────────────
@@ -426,6 +423,7 @@ function ns.RefreshCompare()
     end
 
     local sumBis, nBis = 0, 0
+    wipe(curTotal)
     local model = frame.lModel
     model:SetUnit("player")
     if model.Undress then model:Undress() end
@@ -475,6 +473,7 @@ function ns.RefreshCompare()
             end
             curEnch = TooltipMatch(tip, ENCH_PAT)
             curContrib = ns.StatsFromTooltip(tip)
+            for k, v in pairs(curContrib) do curTotal[k] = (curTotal[k] or 0) + v end
         end
         PaintSide(row.r, curLink, curName, curIlvl, curGems, curEnch, s and s.ench ~= nil, row.emptyTex, mark)
         row.r.contrib = curContrib
