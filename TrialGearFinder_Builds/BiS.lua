@@ -378,6 +378,30 @@ local COGWHEEL_IDS = {
     -- Дракончике 10 и 8 искусности плюс 10 скорости, не виридий.
     iskus = { 59480, 77547 },
 }
+-- Запас: MoP +8. Идут в дело, только когда верхние +10 этого стата уже
+-- стоят в другой вещи сборки: шестерёнки «Уникальный использующийся» на
+-- весь персонаж, а гнёзда есть и у Дракончика, и у инженерных очков
+-- (пользователь 26 сентября: две скорости по 10 заняты - ставь ещё 8 скорости).
+local COGWHEEL_SPARE = {
+    crit  = { 77541, 77545 }, -- Плавная, Прочная
+    haste = { 77542, 77543 }, -- Подвижная, Точная
+    vers  = { 77546 },        -- Блестящая
+}
+
+-- Свободные шестерёнки стата: верхние, которых ещё нет в сборке, а если
+-- хоть одну верхнюю уже заняли - добавляются свободные запасные.
+local function FreeCogs(stat, used)
+    local out, taken = {}, false
+    for _, id in ipairs(COGWHEEL_IDS[stat] or {}) do
+        if used and used[id] then taken = true else out[#out + 1] = id end
+    end
+    if taken then
+        for _, id in ipairs(COGWHEEL_SPARE[stat] or {}) do
+            if not used[id] then out[#out + 1] = id end
+        end
+    end
+    return out
+end
 
 -- Какие шестерёнки поставить под спек. Первая проверенная версия давала по
 -- одной на три разных стата - оказалось, не лучший выбор по умолчанию.
@@ -407,7 +431,7 @@ local COGWHEEL_IDS = {
 --
 -- Возвращает список { key = "haste", id = 59479 }, а не просто ключи стата:
 -- вызывающему нужен именно itemID для вставки в ссылку.
-local function CogwheelPicks(item, w)
+local function CogwheelPicks(item, w, used)
     local n = 0
     for _, t in ipairs(item.socketTypes or {}) do
         if t == "cogwheel" then n = n + 1 end
@@ -420,12 +444,13 @@ local function CogwheelPicks(item, w)
     table.sort(order, function(a, b) return w[a] > w[b] end)
     if #order == 0 then return nil end
 
-    local topShare = math.ceil(n / 2)
+    -- Два гнезда (очки) - оба под топ: по той же арифметике, что выше.
+    local topShare = math.max(math.ceil(n / 2), math.min(n, 2))
     local picks = {}
     for i = 1, #order do
         if #picks >= n then break end
         local stat = order[i]
-        local ids = COGWHEEL_IDS[stat] or {}
+        local ids = FreeCogs(stat, used)
         local want = (i == 1) and topShare or (n - #picks)
         want = math.min(want, #ids, n - #picks)
         for j = 1, want do picks[#picks + 1] = { key = stat, id = ids[j] } end
@@ -435,10 +460,12 @@ local function CogwheelPicks(item, w)
     -- хоть что-то, чем ничего.
     local i = 1
     while #picks < n do
-        local ids = COGWHEEL_IDS[order[1]] or {}
+        local ids = FreeCogs(order[1], used)
+        if #ids == 0 then break end -- все шестерёнки топа уже в сборке: гнездо пустое
         picks[#picks + 1] = { key = order[1], id = ids[((i - 1) % math.max(1, #ids)) + 1] }
         i = i + 1
     end
+    if used then for _, p in ipairs(picks) do if p.id then used[p.id] = true end end end
     return picks
 end
 
@@ -742,10 +769,10 @@ end
 -- уникальный Профанит или Кровавый камень, по одному на персонажа. Что из
 -- двух выгоднее на двадцатке - 5 основной или 5 вторички - НЕ ИЗМЕРЕНО,
 -- поэтому окно советует вторичку, а уникальные идут отдельным списком.
-local function GemPicks(item, w, running, role)
+local function GemPicks(item, w, running, role, cogUsed)
     local types = item.socketTypes or {}
     if #types == 0 or not w then return nil end
-    local cog = CogwheelPicks(item, w)
+    local cog = CogwheelPicks(item, w, cogUsed)
     local cogAt = 1
 
     local order = {}
@@ -1388,13 +1415,14 @@ local function RenderSlots()
     -- Выгрузке нужна та же основная: в stats= идёт только она (SimC.lua).
     ns.LastBuild.primary = primary
 
+    local cogUsed = {} -- шестерёнки уникальны на персонаж, не на вещь
     for i, slot in ipairs(SLOTS) do
         local c = chosen[i]
         local row = panel.slotRows[i]
         -- Сумма до камней и чары слота: разница после них - их вклад.
         local before = {}
         for k, v in pairs(total) do if type(v) == "number" then before[k] = v end end
-        local gems = c.pick and GemPicks(c.pick, w, total, role) or nil
+        local gems = c.pick and GemPicks(c.pick, w, total, role, cogUsed) or nil
         local ench = c.pick and PickEnchant(slot.key, w, primary, total, c.pick, state.specID) or nil
         if ench then
             -- Чара идёт в сумму сборки наравне со шмотом и камнями.
@@ -1604,6 +1632,12 @@ SelectClass = function(classID, classFile, preferSpecID)
     for _, b in ipairs(panel.classButtons or {}) do
         b.ring:SetShown(b.classID == classID)
     end
+    -- Сравнение берёт сборку СВОЕГО спека, поэтому в чужом классе кнопка
+    -- выключена (пользователь 26 сентября: жал в чужом классе, а открывался свой).
+    if panel.cmpBtn then
+        panel.cmpBtn:SetEnabled(classFile == select(2, UnitClass("player")))
+        panel.cmpBtn:Paint()
+    end
     local r, g, b = ClassColor(classFile)
     panel.classTitle:SetText(ClassName(classID))
     panel.classTitle:SetTextColor(r, g, b)
@@ -1654,9 +1688,12 @@ local function FlatButton(parent, text, width)
     btn.fs:SetText(text)
 
     local function Paint(self)
-        local lit = self.active or self:IsMouseOver()
+        -- Выключенная кнопка не загорается под мышью и темнее обычной:
+        -- по виду сразу понятно, что жать её нельзя.
+        local lit = self:IsEnabled() and (self.active or self:IsMouseOver())
         local e = lit and (C.warm or { 0.85, 0.72, 0.42 }) or (C.borderSoft or { 0.13, 0.14, 0.16 })
-        local t = lit and (C.text or { 0.96, 0.96, 0.96 }) or (C.text2 or { 0.68, 0.71, 0.74 })
+        local t = lit and (C.text or { 0.96, 0.96, 0.96 })
+            or (self:IsEnabled() and (C.text2 or { 0.68, 0.71, 0.74 }) or { 0.35, 0.36, 0.38 })
         if self.edge then self.edge:SetVertexColor(e[1], e[2], e[3], 1) end
         self.fs:SetTextColor(t[1], t[2], t[3])
     end
@@ -2006,6 +2043,9 @@ local function BuildPanel()
             GameTooltip:SetOwner(self, "ANCHOR_LEFT")
             GameTooltip:AddLine(ns.L"Сравнить сборку с надетым")
             GameTooltip:AddLine(ns.L"Слева сборка твоего спека, справа то, что на тебе. То же окно - /tgf compare.", 0.8, 0.8, 0.8, true)
+            if not self:IsEnabled() then
+                GameTooltip:AddLine(ns.L"Только для своего класса: чужую сборку с твоими вещами не сравнить.", 1, 0.45, 0.4, true)
+            end
             GameTooltip:Show()
         end)
         cmp:HookScript("OnLeave", function() GameTooltip:Hide() end)
