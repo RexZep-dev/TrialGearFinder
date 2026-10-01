@@ -435,8 +435,14 @@ function ns.RefreshCompare()
         local curID = curLink and C_Item.GetItemInfoInstant(curLink)
 
         -- Полоска: зелёная - надето то же, что в сборке, жёлтая - другое.
+        -- Кольца и аксессуары: вещь сборки, надетая во втором слоте пары, -
+        -- тоже совпадение (игроки переставляют их местами, отзыв 1 октября).
         local mark = GREY
-        if s then mark = (curID == s.item.itemID) and GREEN or YELLOW end
+        if s then
+            local pairInv = ({ [11] = 12, [12] = 11, [13] = 14, [14] = 13 })[row.invID or 0]
+            local pairID = pairInv and GetInventoryItemID("player", pairInv)
+            mark = (curID == s.item.itemID or pairID == s.item.itemID) and GREEN or YELLOW
+        end
 
         local bisLink, bisName, bisEnch, bisGems = nil, nil, nil, {}
         if s then

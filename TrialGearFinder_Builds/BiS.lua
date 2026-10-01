@@ -1239,9 +1239,15 @@ local function RenderRow(row, slot, item, mark, gems, ench)
     row.icon:SetTexture(icon or 134400)
     row.icon:Show()
 
-    local invName = SLOT_INV[slot.key]
-    local sid = invName and GetInventorySlotInfo(invName)
-    row.check:SetShown(sid ~= nil and GetInventoryItemID("player", sid) == id)
+    -- Кольца и аксессуары считаются надетыми в любом из двух слотов пары:
+    -- игроки переставляют их местами, и галочка пропадала (отзыв 1 октября).
+    local function WornIn(key)
+        local invName = SLOT_INV[key]
+        local sid = invName and GetInventorySlotInfo(invName)
+        return sid ~= nil and GetInventoryItemID("player", sid) == id
+    end
+    local PAIR = { FINGER1 = "FINGER2", FINGER2 = "FINGER1", TRINKET1 = "TRINKET2", TRINKET2 = "TRINKET1" }
+    row.check:SetShown(WornIn(slot.key) or (PAIR[slot.key] ~= nil and WornIn(PAIR[slot.key])))
 
     row.valueFS:SetText("…")
     row.valueFS:SetTextColor(0.7, 0.7, 0.7)
