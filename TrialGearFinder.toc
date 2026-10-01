@@ -15,6 +15,7 @@ Locale.lua
 Data.lua
 BiS_Community.lua
 Timewalk.lua
+TrinketTiers.lua
 Pins.lua
 Core.lua
 Copy.lua

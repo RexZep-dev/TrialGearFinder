@@ -628,16 +628,16 @@ local function Lower(s)
 end
 
 local TW_ERAS = {
-    { ru = "Классика",         cmd = "классика",  words = { "classic", "классика", "классик", "класика" } },
-    { ru = "Burning Crusade",  cmd = "bc",        words = { "burning crusade", "burning", "crusade", "tbc", "bc", "пылающий", "поход" } },
-    { ru = "Гнев Короля-лича", cmd = "гнев",      words = { "wrath of the lich king", "wrath", "lich", "wotlk", "гнев", "лича", "лич" } },
-    { ru = "Катаклизм",        cmd = "катаклизм", words = { "cataclysm", "cata", "катаклизм" } },
-    { ru = "Пандария",         cmd = "пандария",  words = { "mists of pandaria", "pandaria", "mists", "mop", "пандария", "пандар" } },
-    { ru = "Дренор",           cmd = "дренор",    words = { "warlords of draenor", "draenor", "warlords", "wod", "дренор", "вождей" } },
-    { ru = "Легион",           cmd = "легион",    words = { "legion", "легион" } },
-    { ru = "Битва за Азерот",  cmd = "азерот",    words = { "battle for azeroth", "azeroth", "bfa", "азерот", "битва" } },
-    { ru = "Темные земли",     cmd = "темные",    words = { "shadowlands", "shadow", "sl", "темных земель", "темные", "земель" } },
-    { ru = "Драконы",          cmd = "драконы",   words = { "dragonflight", "dragon", "df", "драконов", "дракон", "драконы" } },
+    { ru = "Классика",         cmd = "классика", cmdEN = "classic",  words = { "classic", "классика", "классик", "класика" } },
+    { ru = "Burning Crusade",  cmd = "bc", cmdEN = "bc",        words = { "burning crusade", "burning", "crusade", "tbc", "bc", "пылающий", "поход" } },
+    { ru = "Гнев Короля-лича", cmd = "гнев", cmdEN = "wrath",      words = { "wrath of the lich king", "wrath", "lich", "wotlk", "гнев", "лича", "лич" } },
+    { ru = "Катаклизм",        cmd = "катаклизм", cmdEN = "cata", words = { "cataclysm", "cata", "катаклизм" } },
+    { ru = "Пандария",         cmd = "пандария", cmdEN = "mop",  words = { "mists of pandaria", "pandaria", "mists", "mop", "пандария", "пандар" } },
+    { ru = "Дренор",           cmd = "дренор", cmdEN = "wod",    words = { "warlords of draenor", "draenor", "warlords", "wod", "дренор", "вождей" } },
+    { ru = "Легион",           cmd = "легион", cmdEN = "legion",    words = { "legion", "легион" } },
+    { ru = "Битва за Азерот",  cmd = "азерот", cmdEN = "bfa",    words = { "battle for azeroth", "azeroth", "bfa", "азерот", "битва" } },
+    { ru = "Темные земли",     cmd = "темные", cmdEN = "sl",    words = { "shadowlands", "shadow", "sl", "темных земель", "темные", "земель" } },
+    { ru = "Драконы",          cmd = "драконы", cmdEN = "df",   words = { "dragonflight", "dragon", "df", "драконов", "дракон", "драконы" } },
 }
 
 -- Обычные данжи: те же эпохи плюс текущие вкладки журнала. Время Хроми
@@ -646,8 +646,8 @@ local TW_ERAS = {
 local DJ_ERAS = {
     TW_ERAS[1], TW_ERAS[2], TW_ERAS[3], TW_ERAS[4], TW_ERAS[5],
     TW_ERAS[6], TW_ERAS[7], TW_ERAS[8], TW_ERAS[9], TW_ERAS[10],
-    { ru = "The War Within", cmd = "война",   needsChromie = false, words = { "the war within", "war within", "tww", "война" } },
-    { ru = "Midnight",       cmd = "полночь", needsChromie = false, words = { "midnight", "полночь" } },
+    { ru = "The War Within", cmd = "война", cmdEN = "tww",   needsChromie = false, words = { "the war within", "war within", "tww", "война" } },
+    { ru = "Midnight",       cmd = "полночь", cmdEN = "midnight", needsChromie = false, words = { "midnight", "полночь" } },
 }
 
 local function FindEra(want, eras)
@@ -692,7 +692,9 @@ local function PrintTwHelp(unknown)
         print(ns.L"|cFF86C7BD[TGF]|r Какую экспансию снять — одна команда, не все сразу:")
     end
     for i = 1, #TW_ERAS do
-        print("|cFFFFD100[TGF]|r /tgf tw " .. TW_ERAS[i].cmd)
+        -- Слово команды на языке аддона: по-английски аддон их тоже понимает.
+        local era = TW_ERAS[i]
+        print("|cFFFFD100[TGF]|r /tgf tw " .. ((ns.AddonLang and ns.AddonLang() ~= "ruRU") and era.cmdEN or era.cmd))
     end
     print(ns.L"|cFFFFD100[TGF]|r /tgf tw все  — все экспансии сразу")
 end
@@ -704,7 +706,9 @@ local function PrintDjHelp(unknown)
         print(ns.L"|cFF86C7BD[TGF]|r Обычные подземелья — одно дополнение или один данж:")
     end
     for i = 1, #DJ_ERAS do
-        print("|cFFFFD100[TGF]|r /tgf dj " .. DJ_ERAS[i].cmd)
+        -- Слово команды на языке аддона: по-английски аддон их тоже понимает.
+        local era = DJ_ERAS[i]
+        print("|cFFFFD100[TGF]|r /tgf dj " .. ((ns.AddonLang and ns.AddonLang() ~= "ruRU") and era.cmdEN or era.cmd))
     end
     print(ns.L"|cFFFFD100[TGF]|r /tgf dj кузня душ  — один данж")
     print(ns.L"|cFFFFD100[TGF]|r /tgf dj список  — чеклист по данжам")
@@ -1098,7 +1102,7 @@ function ns.DumpTimewalkLoot(opts)
         return
     end
     if era then
-        print(string.format(ns.L"|cFFFFD100[TGF]|r Снимаю %s.", era.ru))
+        print(string.format(ns.L"|cFFFFD100[TGF]|r Снимаю %s.", ns.L(era.ru)))
     else
         print(ns.L"|cFFFFD100[TGF]|r Снимаю все экспансии.")
     end
@@ -1195,7 +1199,7 @@ function ns.DumpTimewalkLoot(opts)
 
     if nDungeons == 0 then
         if era then
-            print(string.format(ns.L"|cFFFFD100[TGF]|r В журнале нет подземелий Путешествия во времени для «%s».", era.ru))
+            print(string.format(ns.L"|cFFFFD100[TGF]|r В журнале нет подземелий Путешествия во времени для «%s».", ns.L(era.ru)))
         else
             print(ns.L"|cFFFFD100[TGF]|r В журнале нет подземелий с Путешествием во времени.")
         end
@@ -1284,20 +1288,20 @@ function ns.DumpDungeonLoot(opts)
         print(ns.L"|cFFFFD100[TGF]|r Время Хроми одно на все экспансии — снимай по одной, иначе чужие данжи будут не того уровня.")
     elseif era and EraNeedsChromie(era) then
         if not chromieOn then
-            print(string.format(ns.L"|cFFFFD100[TGF]|r Время Хроми выкл. Для «%s» включи историю этой эпохи, иначе лут вроде Террасы магистров не того уровня.", era.ru))
+            print(string.format(ns.L"|cFFFFD100[TGF]|r Время Хроми выкл. Для «%s» включи историю этой эпохи, иначе лут вроде Террасы магистров не того уровня.", ns.L(era.ru)))
         elseif not ChromieMatchesEra(era, chromieName) then
-            print(string.format(ns.L"|cFFFFD100[TGF]|r Снимаю %s, а Время Хроми — %s. Включи историю этой эпохи.", era.ru, chromieName))
+            print(string.format(ns.L"|cFFFFD100[TGF]|r Снимаю %s, а Время Хроми — %s. Включи историю этой эпохи.", ns.L(era.ru), chromieName))
         end
     end
 
     if how == "dungeon" and wantInst then
         if era then
-            print(string.format(ns.L"|cFFFFD100[TGF]|r Данж: %s (%s).", wantInst.name, era.ru))
+            print(string.format(ns.L"|cFFFFD100[TGF]|r Данж: %s (%s).", wantInst.name, ns.L(era.ru)))
         else
             print(string.format(ns.L"|cFFFFD100[TGF]|r Данж: %s.", wantInst.name))
         end
     elseif era then
-        print(string.format(ns.L"|cFFFFD100[TGF]|r Снимаю %s.", era.ru))
+        print(string.format(ns.L"|cFFFFD100[TGF]|r Снимаю %s.", ns.L(era.ru)))
     else
         print(ns.L"|cFFFFD100[TGF]|r Снимаю все экспансии.")
     end
@@ -1416,7 +1420,7 @@ function ns.DumpDungeonLoot(opts)
         if how == "dungeon" and wantInst then
             print(string.format(ns.L"|cFFFFD100[TGF]|r В журнале нет обычной сложности у «%s».", wantInst.name))
         elseif era then
-            print(string.format(ns.L"|cFFFFD100[TGF]|r В журнале нет обычных подземелий для «%s».", era.ru))
+            print(string.format(ns.L"|cFFFFD100[TGF]|r В журнале нет обычных подземелий для «%s».", ns.L(era.ru)))
         else
             print(ns.L"|cFFFFD100[TGF]|r В журнале нет обычных подземелий.")
         end

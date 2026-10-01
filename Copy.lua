@@ -249,7 +249,6 @@ function ns.MakeChatCopyButton()
     if chatBtn then return end
     chatBtn = CreateFrame("Button", "TrialGearFinderCopyButton", UIParent, "BackdropTemplate")
     chatBtn:SetSize(26, 24)
-    chatBtn:SetFrameStrata("HIGH")
     chatBtn:SetBackdrop({ bgFile = WHITE, edgeFile = WHITE, edgeSize = 1 })
     local bb = C.block or { 0.06, 0.07, 0.08 }
     chatBtn:SetBackdropColor(bb[1], bb[2], bb[3], 0.9)
@@ -280,6 +279,10 @@ function ns.MakeChatCopyButton()
         if not cf then return end
         chatBtn:ClearAllPoints()
         chatBtn:SetPoint("BOTTOMLEFT", cf, "BOTTOMRIGHT", 3, 0)
+        -- Слой - как у самого чата, а не HIGH: иначе значок вылезал поверх
+        -- окна сравнения, открытого над чатом (пользователь 1 октября).
+        chatBtn:SetFrameStrata(cf:GetFrameStrata())
+        chatBtn:SetFrameLevel(cf:GetFrameLevel() + 10)
         chatBtn:Show()
     end
     place()

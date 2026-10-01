@@ -1153,7 +1153,7 @@ local function MakeSlotRow(parent, index, y)
         if self.ench and not self.ench.enchantID then
             -- Номера нет — игра нарисовать не сможет, пишем сами.
             GameTooltip:AddLine(" ")
-            GameTooltip:AddLine(ns.L"Чара: " .. self.ench.ru, 0.55, 0.78, 1, true)
+            GameTooltip:AddLine(ns.L"Чара: " .. ns.L(self.ench.ru), 0.55, 0.78, 1, true)
             if self.ench.proc then
                 GameTooltip:AddLine(ns.L"Прок; в счёт идёт средний вклад за бой.", 0.6, 0.6, 0.6, true)
             end
@@ -1169,7 +1169,7 @@ local function MakeSlotRow(parent, index, y)
                 GameTooltip:AddLine(ns.L"Источник: " .. ns.L(self.entry.source), 0.55, 0.78, 1, true)
             end
             if self.entry.note then
-                GameTooltip:AddLine(ns.L(self.entry.note), 0.7, 0.7, 0.7, true)
+                GameTooltip:AddLine(ns.Note(self.entry.note), 0.7, 0.7, 0.7, true)
             end
             -- Рекомендованные шестерёнки для Дракончика показывать отдельной
             -- строкой больше не нужно: они теперь вставлены в саму ссылку
@@ -1546,6 +1546,10 @@ end
 
 local function SelectSpec(specID)
     state.specID = specID
+    -- Буквы рангов аксессуаров в основном списке берут этот спек, когда
+    -- в фильтре чужой класс (TrinketTiers.lua).
+    ns.BuildsSpecID = specID
+    if ns.RefreshMainList then ns.RefreshMainList() end
     -- Выбранная вкладка — золотой обводкой и текстом, как подземелья
     -- в основном окне. Тонкая заливка 0.14 была почти не видна.
     local border = C.border or { 0.25, 0.25, 0.28 }
@@ -1785,6 +1789,10 @@ local function BuildPanel()
     -- правые скруглённые углы, и чужая левая рамка. Иначе на стыке видно
     -- то две линии подряд, то вмятины от скругления.
     panel = CreateFrame("Frame", "TrialGearFinderBiSFrame", main, "BackdropTemplate")
+    -- Пока окно открыто, ранги аксессуаров в основном списке идут по его
+    -- спеку; закрыли - снова по своему. Список перерисовываем в оба конца.
+    panel:HookScript("OnShow", function() if ns.RefreshMainList then ns.RefreshMainList() end end)
+    panel:HookScript("OnHide", function() if ns.RefreshMainList then ns.RefreshMainList() end end)
     panel:SetWidth(PANEL_W + SEAM)
     -- Панель ровно той же высоты, что основное окно: блок итога живёт
     -- ВНУТРИ неё, а окно подросло на его высоту (Core.lua, 13 строк списка).
@@ -2028,7 +2036,7 @@ local function BuildPanel()
             GameTooltip:SetOwner(self, "ANCHOR_LEFT")
             local t = ns.TalentCodes and ns.TalentCodes[state.specID]
             GameTooltip:AddLine(ns.L"Код талантов")
-            GameTooltip:AddLine(t and (t.note or "") or ns.L"Для этого спека кода пока нет.", 0.8, 0.8, 0.8, true)
+            GameTooltip:AddLine(t and (t.note and ns.L(t.note) or "") or ns.L"Для этого спека кода пока нет.", 0.8, 0.8, 0.8, true)
             GameTooltip:AddLine(ns.L"Вставляется в игре: окно талантов — Загрузить сборку.", 0.6, 0.6, 0.6, true)
             GameTooltip:Show()
         end)

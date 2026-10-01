@@ -496,6 +496,8 @@ frame.title:SetTextColor(C.text[1], C.text[2], C.text[3])
 ------------------------------------------------------------
 
 local RefreshResults -- forward declare, the search box and dropdowns call it
+-- Окну «Сборки»: сменили спек - буквы рангов аксессуаров в списке другие.
+ns.RefreshMainList = function() if RefreshResults then RefreshResults() end end
 
 -- SearchBoxTemplate is Blizzard's own (used by the Auction House, Adventure Guide,
 -- etc.) - it already draws the magnifying-glass icon and the clear-text "x"
@@ -945,7 +947,10 @@ local function AddHeaderLabel(x, width, ru, justify, sortKey, fullRU)
     return fs
 end
 
-local COL_ICON_X = 6
+-- Колонка ранга аксессуара (S/A/B/C) перед иконкой, как у Class Codex
+-- (пользователь 27 сентября: «слева от картинки, по центру, побольше»).
+local COL_RANK_W = 34
+local COL_ICON_X = 6 + COL_RANK_W
 local ICON_SIZE = 32
 local COL_NAME_X = COL_ICON_X + ICON_SIZE + 8
 local COL_NAME_W = 150
@@ -962,6 +967,7 @@ local COL_VERS_X = COL_ISKUS_X + COL_STAT_W + COL_STAT_GAP
 local COL_SOURCE_X = COL_VERS_X + COL_STAT_W + 16
 local COL_SOURCE_W = ROW_WIDTH - COL_SOURCE_X - 10
 
+AddHeaderLabel(4, COL_RANK_W, "Ранг", "CENTER", "tier", "Ранг аксессуара для спека: S лучший, дальше A, B, C")
 AddHeaderLabel(COL_NAME_X, COL_NAME_W, "Предмет", "CENTER") -- по центру своей рамки, как «Источник»
 AddHeaderLabel(COL_STR_X, COL_STAT_W, "Сила", "CENTER", "str", "Сила")
 AddHeaderLabel(COL_AGI_X, COL_STAT_W, "Ловк.", "CENTER", "agi", "Ловкость")
@@ -1982,7 +1988,7 @@ local function SetSourceWaypoint(sourceName, sourceType, itemID)
     elseif OpenWorldMap then
         OpenWorldMap(uiMapID)
     end
-    print("|cFFFFD100[TGF]|r " .. sourceName .. ": " .. WaypointLink(uiMapID, x, y, ns.L"метка на карте"))
+    print("|cFFFFD100[TGF]|r " .. ns.L(sourceName) .. ": " .. WaypointLink(uiMapID, x, y, ns.L"метка на карте"))
 end
 
 -- Ctrl-click on a source stores whatever user waypoint is currently on the map
@@ -2031,7 +2037,13 @@ local function CreateRow(row)
     -- и через неё же видно скругление у первой и последней строки.
     row.bgAlt:SetColorTexture(0, 0, 0, 0) -- оттенок по чётности ставит SetListIndex
 
-    row.bg = row:CreateTexture(nil, "BACKGROUND", nil, 1)
+    -- Полупрозрачный фон строки цветом ранга аксессуара (пользователь
+    -- 27 сентября). Под заливкой наведения, над чередованием строк.
+    row.tierBg = row:CreateTexture(nil, "BACKGROUND", nil, 1)
+    row.tierBg:SetPoint("TOPLEFT", row, "TOPLEFT", 1, 0)
+    row.tierBg:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", -1, 0)
+    row.tierBg:Hide()
+    row.bg = row:CreateTexture(nil, "BACKGROUND", nil, 2)
     row.bg:SetPoint("TOPLEFT", row, "TOPLEFT", 1, 0) -- тоже мимо рамки подложки
     row.bg:SetPoint("BOTTOMRIGHT", row, "BOTTOMRIGHT", -1, 0)
     row.bg:SetColorTexture(0, 0, 0, 0)
@@ -2153,6 +2165,9 @@ local function CreateRow(row)
             DressUpItemLink(row.hyperlink)
         end
     end)
+
+    row.rank = row:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+    row.rank:SetPoint("CENTER", row, "TOPLEFT", 4 + COL_RANK_W / 2, -6 - ICON_SIZE / 2)
 
     row.name = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     row.name:SetPoint("TOPLEFT", row, "TOPLEFT", COL_NAME_X, -4)
@@ -2327,6 +2342,11 @@ local function CreateRow(row)
         local qc = data.qualityColor
         if qc then self.iconRing:SetVertexColor(qc[1], qc[2], qc[3], 1) end
         self.name:SetText(data.name)
+        -- Буква ранга аксессуара (TrinketTiers.lua), посчитана при сортировке.
+        self.rank:SetText(data.tierText or "")
+        local tc = data.tierRGB
+        if tc then self.tierBg:SetColorTexture(tc[1], tc[2], tc[3], 0.07) end
+        self.tierBg:SetShown(tc ~= nil)
         self.type:SetText(data.type)
         self.str:SetText(ColorStat(data.str))
         self.agi:SetText(ColorStat(data.agi))
@@ -2637,8 +2657,17 @@ local function InferClassesFromStats(stats)
     for _, key in ipairs({ "str", "agi", "int" }) do
         if stats[key] and stats[key] > 0 then table.insert(present, key) end
     end
-    if #present == 1 then return STAT_TO_CLASSES[present[1]] end
-    return nil
+    if #present == 0 then return nil end
+    -- Две-три основные характеристики - объединение их классов. Раньше
+    -- здесь сдавались и пускали вещь всем: воину шли аксессуары на ловкость
+    -- и интеллект (пользователь 27 сентября). Все три - это и так все классы.
+    local union, seen = {}, {}
+    for _, key in ipairs(present) do
+        for _, cls in ipairs(STAT_TO_CLASSES[key]) do
+            if not seen[cls] then seen[cls] = true; union[#union + 1] = cls end
+        end
+    end
+    return union
 end
 
 -- Каким оружием и щитами класс вообще может пользоваться. Вещи Путешествия
@@ -2987,11 +3016,23 @@ RefreshResults = function()
         return
     end
 
+    for _, e in ipairs(matches) do
+        local tier, color = nil, nil
+        if ns.TrinketTier then tier, color = ns.TrinketTier(e.itemID, filters.class) end
+        e.tier = tier and ({ S = 1, A = 2, B = 3, C = 4 })[tier] or 9
+        e.tierText = tier and ("|cff" .. color .. tier .. "|r") or nil
+        e.tierRGB = tier and { tonumber(color:sub(1, 2), 16) / 255, tonumber(color:sub(3, 4), 16) / 255,
+            tonumber(color:sub(5, 6), 16) / 255 } or nil
+    end
+
     if sortState.key then
         local key = sortState.key
         local ascending = sortState.dir == "ASC"
         local function value(entry)
             if key == "source" then return entry.source or "" end
+            -- Ранг: меньше - лучше, а первый щелчок сортирует по убыванию -
+            -- переворачиваем, чтобы S оказался сверху.
+            if key == "tier" then return -(entry.tier or 9) end
             return entry[key] or 0
         end
         table.sort(matches, function(a, b)
@@ -3021,6 +3062,8 @@ RefreshResults = function()
             -- own id order already matches that sequence) before by-name.
             local subA, subB = a.subclassID or 99, b.subclassID or 99
             if subA ~= subB then return subA < subB end
+            -- Аксессуары с рангом - от S к C, без ранга - после них.
+            if a.tier ~= b.tier then return a.tier < b.tier end
             -- Затем по полезности. Сначала ручной rank из Data.lua: он бьёт
             -- любую догадку, потому что какая вещь лучшая в слоте - знание
             -- игры, а не свойство данных.
@@ -3536,7 +3579,8 @@ end
 SLASH_TRIALGEARFINDER1 = "/tgf"
 -- Команды разработчика. В релизе они не удалены, а спрятаны за флагом:
 -- держать вторую сборку дороже, чем один переключатель, и расходятся сборки
--- ровно тогда, когда про них забудут. Включается /tgf dev, флаг живёт
+-- ровно тогда, когда про них забудут. Включается галочкой «Отладка» в игровых
+-- Параметрах или /tgf dev - это один и тот же флаг, он живёт
 -- в SavedVariables, так что делается это один раз на аккаунт.
 --
 -- scan и gems наружу оставлены намеренно: по ним пользователи присылают
@@ -3548,14 +3592,14 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     if msg == "dev" then
         TrialGearFinderDB = TrialGearFinderDB or {}
         TrialGearFinderDB.dev = not TrialGearFinderDB.dev
-        print(string.format("|cFFFFD100[TGF]|r Команды разработчика: %s",
-            TrialGearFinderDB.dev and "включены" or "выключены"))
+        print(string.format(ns.L"|cFFFFD100[TGF]|r Команды разработчика: %s",
+            TrialGearFinderDB.dev and ns.L"включены" or ns.L"выключены"))
         if ns.ApplyDevButtons then ns.ApplyDevButtons() end -- кнопка SimC в окне BiS
         return
     end
     if not (TrialGearFinderDB and TrialGearFinderDB.dev) then
         if DEV_ONLY[msg] then
-            print("|cFFFFD100[TGF]|r Неизвестная команда.")
+            print(ns.L"|cFFFFD100[TGF]|r Неизвестная команда. Команды разработчика включаются галочкой «Отладка» в Параметрах.")
             return
         end
     end
@@ -3674,7 +3718,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
                 -- (в поле 4 чары). По этим полям CountGemsInLink и считает.
                 local g = {}
                 for f = 5, 8 do if parts[f] and parts[f] ~= "" and parts[f] ~= "0" then g[#g + 1] = parts[f] end end
-                print(string.format("[TGF] %s | гн %d/%d | sb %s | камни %s",
+                print(string.format(ns.L"[TGF] %s | гн %d/%d | sb %s | камни %s",
                     C_Item.GetItemNameByID(item.itemID) or ("id " .. item.itemID),
                     item.sockets or 0, live.sockets or 0,
                     sb and (sb.key .. sb.value) or "-",
@@ -3705,10 +3749,10 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
                     local live = ScanItemLink(link)
                     local sp = {}
                     for _, k in ipairs(ORD) do
-                        if live.stats[k] then sp[#sp + 1] = k .. live.stats[k] end
+                        if live.stats[k] then sp[#sp + 1] = ns.L(k) .. live.stats[k] end
                     end
                     local sb = live.socketBonus
-                    print(string.format("[TGF] %d %s | ур%s | %s | гн%d%s",
+                    print(string.format(ns.L"[TGF] %d %s | ур%s | %s | гн%d%s",
                         item.itemID,
                         C_Item.GetItemNameByID(item.itemID) or "?",
                         tostring(live.ilvl or "?"),
