@@ -38,8 +38,8 @@ local CAPPED = { crit = true, haste = true, vers = true, iskus = true }
 -- Подписи по-русски служат ключами словаря в Locale.lua: перевод берётся
 -- при отрисовке, а не здесь, иначе выбранный язык бы не доехал.
 local LABEL_RU = {
-    str = "Сила", agi = "Ловкость", int = "Интеллект", stam = "Вын.",
-    crit = "Крит", haste = "Скор.", vers = "Унив.", iskus = "Иск.",
+    str = "STRENGTH", agi = "AGILITY", int = "INTELLECT", stam = "COL_STA",
+    crit = "COL_CRIT", haste = "COL_HASTE", vers = "COL_VERS", iskus = "COL_MAST",
 }
 local LABEL = setmetatable({}, { __index = function(_, k) return ns.L(LABEL_RU[k] or k) end })
 
@@ -78,8 +78,8 @@ end
 -- в шапке таблицы основного окна (пользователь 24 сентября: «Уни», «Иск»
 -- непонятны). Ключи словаря - те же, что у столбцов основного окна.
 local FULL_RU = {
-    str = "Сила", agi = "Ловкость", int = "Интеллект", stam = "Выносливость",
-    crit = "Критический удар", haste = "Скорость", iskus = "Искусность", vers = "Универсальность",
+    str = "STRENGTH", agi = "AGILITY", int = "INTELLECT", stam = "STAMINA",
+    crit = "CRITICAL_STRIKE", haste = "HASTE", iskus = "MASTERY", vers = "VERSATILITY",
 }
 function ns.StatFullName(key) return ns.L(FULL_RU[key] or key) end
 function ns.ShowStatTooltip(owner, key)

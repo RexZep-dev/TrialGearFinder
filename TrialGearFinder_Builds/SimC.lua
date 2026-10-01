@@ -130,15 +130,15 @@ function ns.SimCHeader(specID)
 
     local lines = {
         string.format("# %s - %s - %s - %s/%s", name, spec, date("%Y-%m-%d %H:%M"), Lower(region), realm),
-        string.format(ns.L"# TrialGearFinder: сборка, %s %s", className or "?", specName or ""),
-        ns.L"# Выгрузка TrialGearFinder, не аддона SimulationCraft: Raidbots пометит «Unverified Input».",
+        string.format(ns.L"TRIALGEARFINDER_BUILD", className or "?", specName or ""),
+        ns.L"TRIALGEARFINDER_EXPORT_NOT_SIMULATIONCRAFT_ADDON",
         -- Только Advanced Sim (решение пользователя, 16 сентября): Quick Sim
         -- комментирует строки ротации, и SimC бьёт одними автоатаками (200 вместо 1485).
-        ns.L"# Вставлять в Advanced Sim на Raidbots: Quick Sim выбрасывает строки ротации.",
+        ns.L"PASTE_INTO_ADVANCED_SIM_RAIDBOTS",
         -- Advanced Sim печатает только урон сборки. Веса статов — отдельный
         -- инструмент, та же вставка; он же выдаёт строку для аддона Pawn.
         -- Проверено на жреце 16 сентября: веса сошлись с локальными до сотых.
-        ns.L"# Нужны веса статов — та же вставка в Stat Weights: raidbots.com/simbot/stats.",
+        ns.L"STAT_WEIGHTS_PASTE_SAME_TEXT",
         "",
         string.format('%s="%s"', Lower(classFile), name),
         "level=20",
@@ -151,7 +151,7 @@ function ns.SimCHeader(specID)
         -- SimC по умолчанию выдаёт флягу, еду, зелье и руну максимального уровня:
         -- у жреца Тьмы это 1892 против 1578 (+20 %), а двадцатке они недоступны
         -- (у Фляги алхимического хаоса требование 71 уровень). 16 сентября.
-        ns.L"# Расходники максимального уровня двадцатке недоступны — выключены.",
+        ns.L"MAX_LEVEL_CONSUMABLES_ARE_UNAVAILABLE",
         "potion=disabled",
         "flask=disabled",
         "food=disabled",
@@ -182,31 +182,31 @@ function ns.SimCHeader(specID)
     -- 88 % по 31, а с 33 и выше все заклинания мимо и урон ноль.
     if role == "spell" or HEALERS[specID] or gameRole == "HEALER" then
         lines[#lines + 1] = ""
-        lines[#lines + 1] = ns.L"# Цель — болванка 23 уровня: по высокой цели заклинания мажут все до одного."
+        lines[#lines + 1] = ns.L"TARGET_LEVEL_23_DUMMY_SPELLS"
         lines[#lines + 1] = "target_level=23"
     else
         lines[#lines + 1] = ""
-        lines[#lines + 1] = ns.L"# Цель — моб 45 уровня: сборка считается по самым сложным подземельям."
+        lines[#lines + 1] = ns.L"TARGET_LEVEL_45_MOB_BUILD"
         lines[#lines + 1] = "target_level=45"
-        lines[#lines + 1] = ns.L"# Другое подземелье: старые героики — 30, Пандария — 38, Каз Алгар — 73."
+        lines[#lines + 1] = ns.L"OTHER_DUNGEONS_OLD_HEROICS_30"
     end
     local code, fromGame = TalentCode(specID)
     if code then
         if not fromGame then
-            lines[#lines + 1] = ns.L"# Таланты взяты из аддона, не с этого персонажа: код снят не на двадцатке."
+            lines[#lines + 1] = ns.L"TALENTS_COME_FROM_ADDON_NOT"
         end
         lines[#lines + 1] = "talents=" .. code
     else
-        lines[#lines + 1] = ns.L"# Талантов нет: зайди этим спеком — выгрузка возьмёт их из игры."
+        lines[#lines + 1] = ns.L"NO_TALENTS_LOG_SPEC_EXPORT"
     end
     -- Танцующий с ветром: данные сима расходятся с деревом двадцатки.
     -- Острые рефлексы в DBC с 23 уровня, а у двадцатки талант есть.
     -- Боевые инстинкты и Эффективная тренировка на 20 нет — сим их всё равно
     -- вешает на ауру спека. Тестер, 22 сентября.
     if specID == 269 then
-        lines[#lines + 1] = ns.L"# Острые рефлексы: в данных сима с 23 уровня, на двадцатке талант есть."
+        lines[#lines + 1] = ns.L"SHARP_REFLEXES_SPELL_DATA_SAYS"
         lines[#lines + 1] = "override.spell_data=spell.261917.spell_level=1"
-        lines[#lines + 1] = ns.L"# Боевые инстинкты и Эффективная тренировка на 20 уровне нет."
+        lines[#lines + 1] = ns.L"MARTIAL_INSTINCTS_EFFICIENT_TRAINING_DO"
         lines[#lines + 1] = "override.spell_data=spell.450989.spell_level=90"
         lines[#lines + 1] = "override.spell_data=spell.450427.spell_level=90"
     end
@@ -540,21 +540,21 @@ end
 function ns.SimCActions(specID)
     local lines = {
         "",
-        ns.L"# Пачка из трёх целей: убери решётку в начале следующей строки.",
+        ns.L"THREE_TARGET_PACK_REMOVE_HASH",
         "# desired_targets=3",
         "",
     }
     local list = ACTIONS[specID]
     if list then
-        lines[#lines + 1] = ns.L"# Ротация двадцатки из TrialGearFinder, сверена с логами рейтинга."
+        lines[#lines + 1] = ns.L"LEVEL_20_ROTATION_FROM_TRIALGEARFINDER"
         for _, l in ipairs(list) do lines[#lines + 1] = l end
     else
         -- Не «занижен в разы» у всех: у воинов и Хмелевара штатная ротация на двадцатке
         -- почти не жмёт приёмы, у жреца Тьмы работает как надо, а у Танцующего с ветром
         -- жала, но слабо — своя дала +12,5 % (16 сентября), теперь она здесь же.
-        lines[#lines + 1] = ns.L"# Ротации двадцатки для этого спека в аддоне нет: SimC возьмёт свою,"
-        lines[#lines + 1] = ns.L"# под максимальный уровень. У одних спеков она на двадцатке почти не жмёт"
-        lines[#lines + 1] = ns.L"# приёмы, у других работает — цифре верить с оглядкой."
+        lines[#lines + 1] = ns.L"NO_LEVEL_20_ROTATION_SPEC"
+        lines[#lines + 1] = ns.L"WRITTEN_MAX_LEVEL_SOME_SPECS"
+        lines[#lines + 1] = ns.L"ABILITIES_OTHERS_WORKS_TREAT_NUMBER"
     end
     return lines
 end

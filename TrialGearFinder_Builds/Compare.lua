@@ -270,7 +270,7 @@ local function PaintSide(side, link, name, ilvl, gems, ench, needEnch, emptyTex,
         side.ench:SetText(ench)
         side.ench:SetTextColor(GREEN[1], GREEN[2], GREEN[3])
     elseif link and needEnch then
-        side.ench:SetText(L"Нет чар")
+        side.ench:SetText(L"NO_ENCHANT")
         side.ench:SetTextColor(RED[1], RED[2], RED[3])
     else
         side.ench:SetText("")
@@ -410,13 +410,13 @@ function ns.RefreshCompare()
     local _, pClassFile = UnitClass("player")
     local cc = C_ClassColor and C_ClassColor.GetClassColor(classFile or pClassFile)
     local className = ns.ClassName and ns.ClassName(classFile or pClassFile) or ""
-    frame.lTitle:SetText(L"Сборка")
+    frame.lTitle:SetText(L"BUILD")
     frame.lClass:SetText(string.format("%s (%s)", className, specName or ""))
     frame.rTitle:SetText(UnitName("player") or "")
     local ownIdx = GetSpecialization and GetSpecialization()
     local ownSpecID = ownIdx and GetSpecializationInfo(ownIdx)
     local ownSpec = ownSpecID and ns.SpecName and ns.SpecName(ownSpecID) or ""
-    frame.rClass:SetText(string.format("%s (%s) " .. L"%d-го уровня", className, ownSpec, UnitLevel("player") or 0))
+    frame.rClass:SetText(string.format("%s (%s) " .. L"LEVEL", className, ownSpec, UnitLevel("player") or 0))
     if cc then
         frame.lClass:SetTextColor(cc.r, cc.g, cc.b)
         frame.rClass:SetTextColor(cc.r, cc.g, cc.b)
@@ -451,7 +451,7 @@ function ns.RefreshCompare()
                 if gid and gid ~= 0 then bisGems[#bisGems + 1] = { icon = IconOf(gid), ref = "item:" .. gid } end
             end
             bisEnch = C_TooltipInfo and TooltipMatch(C_TooltipInfo.GetHyperlink(bisLink), ENCH_PAT)
-            if not bisEnch and s.ench then bisEnch = L(s.ench.ru or "") end
+            if not bisEnch and s.ench then bisEnch = ns.D(s.ench.ru or "") end
             local ok = HAND[key] and pcall(model.TryOn, model, bisLink, HAND[key])
             if not ok then pcall(model.TryOn, model, bisLink) end
             sumBis = sumBis + (s.item.ilvl or 0)
@@ -650,8 +650,8 @@ local function Build()
         end)
         return t
     end
-    frame.modelToggle = MakeToggle("Персонажи", "compareHideModels")
-    frame.radarToggle = MakeToggle("Диаграммы", "compareHideRadars")
+    frame.modelToggle = MakeToggle("CHARACTERS", "compareHideModels")
+    frame.radarToggle = MakeToggle("CHARTS", "compareHideRadars")
 
     -- Разделитель посередине.
     local line = content:CreateTexture(nil, "BACKGROUND", nil, 2)
@@ -794,7 +794,7 @@ function ns.ToggleCompare()
         return
     end
     if not EnsureSnapshot() then
-        print(L"|cFF86C7BD[TGF]|r Сначала открой окно сборок и выбери спек: /tgf bis")
+        print(L"OPEN_BUILDS_WINDOW_PICK_SPEC")
         return
     end
     f.retries = 0

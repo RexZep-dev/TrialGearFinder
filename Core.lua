@@ -103,10 +103,10 @@ end
 -- display/dropdown only.
 local ARMOR_CLASS_ID = 4 -- Enum.ItemClass.Armor
 local ARMOR_SUBCLASSES = {
-    { id = 1, labelRU = "Ткань" },
-    { id = 2, labelRU = "Кожа" },
-    { id = 3, labelRU = "Кольчуга" },
-    { id = 4, labelRU = "Латы" },
+    { id = 1, labelRU = "CLOTH" },
+    { id = 2, labelRU = "LEATHER" },
+    { id = 3, labelRU = "MAIL" },
+    { id = 4, labelRU = "PLATE" },
 }
 
 -- Самая тяжёлая броня, которую класс может надеть (номера как выше): латники
@@ -127,11 +127,11 @@ local ARMOR_BY_CLASS = {
 -- две фамильные вещи нельзя было отобрать никак, они показывались только
 -- в «Все». Проверяется хуком pre-commit, чтобы не разошлось снова.
 local SOURCE_TYPES = {
-    { key = "Dungeon", labelRU = "Подземелье" },
-    { key = "Quest", labelRU = "Квест" },
-    { key = "World", labelRU = "Рарники" },
-    { key = "Craft", labelRU = "Крафт" },
-    { key = "PvP", labelRU = "Фамильные вещи" },
+    { key = "Dungeon", labelRU = "DUNGEON_3" },
+    { key = "Quest", labelRU = "QUEST" },
+    { key = "World", labelRU = "RARE_MOBS" },
+    { key = "Craft", labelRU = "CRAFTED" },
+    { key = "PvP", labelRU = "HEIRLOOMS" },
 }
 
 local filters = { slot = "ALL", class = "ALL", armor = "ALL", sourceType = "ALL", search = "" }
@@ -486,8 +486,8 @@ RoundedPanel(frame.titleBg, C.block, C.border)
 -- отрисовки задаётся не слоем, и подложка могла бы закрыть текст.
 frame.title = frame.titleBg:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 frame.title:SetPoint("TOP", frame.titleBg, "TOP", 0, -18)
-frame.title:SetText(ns.L"ПОИСК ШМОТА ДЛЯ ТРИАЛА")
-ns.OnLocaleReady(function() frame.title:SetText(ns.L"ПОИСК ШМОТА ДЛЯ ТРИАЛА") end)
+frame.title:SetText(ns.L"TRIAL_GEAR_FINDER")
+ns.OnLocaleReady(function() frame.title:SetText(ns.L"TRIAL_GEAR_FINDER") end)
 frame.title:SetTextColor(C.text[1], C.text[2], C.text[3])
 
 ------------------------------------------------------------
@@ -508,8 +508,8 @@ local searchBox = CreateFrame("EditBox", nil, frame, "SearchBoxTemplate")
 searchBox:SetSize(300, 26) -- одна высота с кнопками фильтров внизу
 searchBox:SetPoint("TOP", frame.title, "BOTTOM", 0, -10)
 searchBox:SetAutoFocus(false)
-searchBox.Instructions:SetText(ns.L"Поиск")
-ns.OnLocaleReady(function() searchBox.Instructions:SetText(ns.L"Поиск") end)
+searchBox.Instructions:SetText(ns.L"SEARCH")
+ns.OnLocaleReady(function() searchBox.Instructions:SetText(ns.L"SEARCH") end)
 searchBox:SetScript("OnEscapePressed", searchBox.ClearFocus)
 
 -- Обшивка шаблона - золотистая рамка с объёмными торцами, для плоской тёмной
@@ -611,7 +611,7 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
     button.text:SetPoint("RIGHT", button, "RIGHT", -30, 0) -- место под стрелку 24
     button.text:SetJustifyH("LEFT")
     button.text:SetTextColor(C.text2[1], C.text2[2], C.text2[3])
-    button.text:SetText(button.label .. ns.L": Все")
+    button.text:SetText(button.label .. ns.L"ALL")
 
     button.arrow = button:CreateTexture(nil, "OVERLAY")
     button.arrow:SetTexture(ARROW_TEXTURE)
@@ -637,7 +637,7 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
 
     -- Пункты. Строятся один раз: наборы у нас фиксированные, слотов и классов
     -- в игре не прибавится.
-    local entries = { { key = "ALL", label = ns.L"Все" } }
+    local entries = { { key = "ALL", label = ns.L"ALL_2" } }
     for _, option in ipairs(options) do
         table.insert(entries, { key = getKey(option), label = getLabel(option) })
     end
@@ -727,7 +727,7 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
     -- когда прячем колонки статов.
     function button:SetSelected(key)
         self.selectedKey = key or "ALL"
-        local caption = ns.L"Все"
+        local caption = ns.L"ALL_2"
         for _, row in ipairs(menu.rows) do
             if row.entryKey == self.selectedKey then
                 caption = row.text:GetText()
@@ -739,7 +739,7 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
 
     ns.OnLocaleReady(function()
         button.label = ns.L(button.labelRU)
-        if menu.rows[1] then menu.rows[1].text:SetText(ns.L"Все") end
+        if menu.rows[1] then menu.rows[1].text:SetText(ns.L"ALL_2") end
         for i, option in ipairs(options) do
             local row = menu.rows[i + 1]
             if row then row.text:SetText(getLabel(option)) end
@@ -757,11 +757,11 @@ local function CreateSelect(name, anchorTo, label, options, getKey, getLabel, on
     return button
 end
 
-local slotDrop = CreateSelect("TrialGearFinderSlotDrop", nil, "Слот", VISIBLE_SLOT_DEFS,
+local slotDrop = CreateSelect("TrialGearFinderSlotDrop", nil, "SLOT", VISIBLE_SLOT_DEFS,
     function(o) return o.key end, function(o) return ns.SlotName(o.slotType) end,
     function(key) filters.slot = key; RefreshResults() end)
 
-local classDrop = CreateSelect("TrialGearFinderClassDrop", slotDrop, "Класс", CLASS_SORT_ORDER,
+local classDrop = CreateSelect("TrialGearFinderClassDrop", slotDrop, "CLASS", CLASS_SORT_ORDER,
     function(c) return c end,
     function(c) return ns.ClassName(c) end,
     function(key)
@@ -771,14 +771,14 @@ local classDrop = CreateSelect("TrialGearFinderClassDrop", slotDrop, "Класс
         RefreshResults()
     end)
 
-local armorDrop = CreateSelect("TrialGearFinderArmorDrop", classDrop, "Броня", ARMOR_SUBCLASSES,
+local armorDrop = CreateSelect("TrialGearFinderArmorDrop", classDrop, "ARMOR", ARMOR_SUBCLASSES,
     function(a) return a.id end, function(a) return ns.L(a.labelRU) end,
     function(key) filters.armor = key; RefreshResults() end)
 armorDrop.available = function(key)
     return key == "ALL" or key <= (ARMOR_BY_CLASS[filters.class] or 4)
 end
 
-local sourceDrop = CreateSelect("TrialGearFinderSourceDrop", armorDrop, "Источник", SOURCE_TYPES,
+local sourceDrop = CreateSelect("TrialGearFinderSourceDrop", armorDrop, "SOURCE", SOURCE_TYPES,
     function(s) return s.key end, function(s) return ns.L(s.labelRU) end,
     function(key) filters.sourceType = key; RefreshResults() end)
 
@@ -967,17 +967,17 @@ local COL_VERS_X = COL_ISKUS_X + COL_STAT_W + COL_STAT_GAP
 local COL_SOURCE_X = COL_VERS_X + COL_STAT_W + 16
 local COL_SOURCE_W = ROW_WIDTH - COL_SOURCE_X - 10
 
-AddHeaderLabel(4, COL_RANK_W, "Ранг", "CENTER", "tier", "Ранг аксессуара для спека: S лучший, дальше A, B, C")
-AddHeaderLabel(COL_NAME_X, COL_NAME_W, "Предмет", "CENTER") -- по центру своей рамки, как «Источник»
-AddHeaderLabel(COL_STR_X, COL_STAT_W, "Сила", "CENTER", "str", "Сила")
-AddHeaderLabel(COL_AGI_X, COL_STAT_W, "Ловк.", "CENTER", "agi", "Ловкость")
-AddHeaderLabel(COL_INT_X, COL_STAT_W, "Инт.", "CENTER", "int", "Интеллект")
-AddHeaderLabel(COL_STAM_X, COL_STAT_W, "Вын.", "CENTER", "stam", "Выносливость")
-AddHeaderLabel(COL_CRIT_X, COL_STAT_W, "Крит", "CENTER", "crit", "Критический удар")
-AddHeaderLabel(COL_HASTE_X, COL_STAT_W, "Скор.", "CENTER", "haste", "Скорость")
-AddHeaderLabel(COL_ISKUS_X, COL_STAT_W, "Иск.", "CENTER", "iskus", "Искусность")
-AddHeaderLabel(COL_VERS_X, COL_STAT_W, "Унив.", "CENTER", "vers", "Универсальность")
-AddHeaderLabel(COL_SOURCE_X, COL_SOURCE_W, "Источник", "CENTER", "source")
+AddHeaderLabel(4, COL_RANK_W, "TIER", "CENTER", "tier", "TRINKET_TIER_SPEC_S_BEST")
+AddHeaderLabel(COL_NAME_X, COL_NAME_W, "ITEM", "CENTER") -- по центру своей рамки, как «Источник»
+AddHeaderLabel(COL_STR_X, COL_STAT_W, "COL_STR", "CENTER", "str", "STRENGTH")
+AddHeaderLabel(COL_AGI_X, COL_STAT_W, "COL_AGI", "CENTER", "agi", "AGILITY")
+AddHeaderLabel(COL_INT_X, COL_STAT_W, "COL_INT", "CENTER", "int", "INTELLECT")
+AddHeaderLabel(COL_STAM_X, COL_STAT_W, "COL_STA", "CENTER", "stam", "STAMINA")
+AddHeaderLabel(COL_CRIT_X, COL_STAT_W, "COL_CRIT", "CENTER", "crit", "CRITICAL_STRIKE")
+AddHeaderLabel(COL_HASTE_X, COL_STAT_W, "COL_HASTE", "CENTER", "haste", "HASTE")
+AddHeaderLabel(COL_ISKUS_X, COL_STAT_W, "COL_MAST", "CENTER", "iskus", "MASTERY")
+AddHeaderLabel(COL_VERS_X, COL_STAT_W, "COL_VERS", "CENTER", "vers", "VERSATILITY")
+AddHeaderLabel(COL_SOURCE_X, COL_SOURCE_W, "SOURCE", "CENTER", "source")
 ns.OnLocaleReady(function()
     for _, fs in ipairs(headerFontStrings) do
         local text = ns.ShortLabel(fs._tgfRU)
@@ -1291,7 +1291,7 @@ function ns.FixTooltipStats(base)
     end
     if touched then
         GameTooltip:AddLine(" ")
-        GameTooltip:AddLine(ns.L"Статы поправлены по базе — клиент масштабирует эту ссылку неточно.",
+        GameTooltip:AddLine(ns.L"STATS_CORRECTED_FROM_DATABASE_CLIENT",
             0.85, 0.72, 0.42, true)
         GameTooltip:Show() -- пересчитать размер после правки строк
     end
@@ -1552,10 +1552,10 @@ local function FormatDiffLine(diff)
     if diff.isSocket then
         local iconPath = SOCKET_ICON_PATHS[diff.socketType]
         if iconPath then
-            return string.format("%s |T%s:16:16|t %s", number, iconPath, ns.L(diff.label))
+            return string.format("%s |T%s:16:16|t %s", number, iconPath, ns.D(diff.label))
         end
     end
-    return string.format("%s %s", number, ns.L(diff.label))
+    return string.format("%s %s", number, ns.D(diff.label))
 end
 
 -- Two side-by-side columns, same layout as the game's own "if you replace this
@@ -1951,18 +1951,18 @@ local function SetSourceWaypoint(sourceName, sourceType, itemID)
         -- только в неделю события и собираются через поиск подземелий. Метка
         -- на карте им не нужна, и «координаты не заданы» тут сбивало бы с толку.
         if sourceName:find(TIMEWALKING_MARK, 1, true) then
-            print(ns.L"|cFFFFD100[TGF]|r Путешествие во времени: вход только через поиск подземелий, в неделю события.")
+            print(ns.L"TIMEWALKING_ENTERED_THROUGH_DUNGEON_FINDER")
         elseif PinIsFactionSplit(key) then
-            print(string.format(ns.L"|cFFFFD100[TGF]|r Для «%s» вход вашей фракции ещё не снят. Метка на входе, потом /tgf pin жила орда  или  /tgf pin жила альянс.", ns.L(sourceName)))
+            print(string.format(ns.L"NO_ENTRANCE_YOUR_FACTION_YET", ns.D(sourceName)))
         else
-            print(string.format(ns.L"|cFFFFD100[TGF]|r Координаты для «%s» ещё не заданы.", ns.L(sourceName)))
+            print(string.format(ns.L"NO_COORDINATES_SET_YET", ns.D(sourceName)))
         end
         return
     end
 
     local uiMapID, x, y = pin[1], pin[2], pin[3]
     if not C_Map.CanSetUserWaypointOnMap(uiMapID) then
-        print(ns.L"|cFFFFD100[TGF]|r На этой карте игра не разрешает ставить метку.")
+        print(ns.L"GAME_DOES_NOT_ALLOW_MARKERS")
         return
     end
 
@@ -1988,7 +1988,7 @@ local function SetSourceWaypoint(sourceName, sourceType, itemID)
     elseif OpenWorldMap then
         OpenWorldMap(uiMapID)
     end
-    print("|cFFFFD100[TGF]|r " .. ns.L(sourceName) .. ": " .. WaypointLink(uiMapID, x, y, ns.L"метка на карте"))
+    print("|cFFFFD100[TGF]|r " .. ns.D(sourceName) .. ": " .. WaypointLink(uiMapID, x, y, ns.L"MAP_PIN"))
 end
 
 -- Ctrl-click on a source stores whatever user waypoint is currently on the map
@@ -2000,22 +2000,22 @@ local function SaveSourceWaypoint(sourceName, sourceType, itemID)
 
     local point = C_Map.GetUserWaypoint()
     if not point then
-        print(ns.L"|cFFFFD100[TGF]|r Сначала поставь метку на карте (Ctrl+щелчок по карте), потом Ctrl+щелчок по источнику.")
+        print(ns.L"PUT_MARKER_MAP_FIRST_CTRL")
         return
     end
 
     local mapID = point.uiMapID
     local x, y = point.position.x * 100, point.position.y * 100
     if not StoreCapturedPin(key, mapID, x, y) then return end
-    local label = ns.L(sourceName)
+    local label = ns.D(sourceName)
     if PinIsFactionSplit(key) and playerFaction == "Alliance" then
-        label = label .. " (" .. ns.L"Альянс" .. ")"
+        label = label .. " (" .. ns.L"ALLIANCE" .. ")"
     elseif PinIsFactionSplit(key) and playerFaction == "Horde" then
-        label = label .. " (" .. ns.L"Орда" .. ")"
+        label = label .. " (" .. ns.L"HORDE" .. ")"
     end
-    print(string.format(ns.L"|cFFFFD100[TGF]|r Запомнено: %s = %s", label,
+    print(string.format(ns.L"SAVED", label,
         WaypointLink(mapID, x, y,
-            string.format(ns.L"карта %d: %.1f, %.1f", mapID, x, y))))
+            string.format(ns.L"MAP", mapID, x, y))))
 end
 
 -- Кадр строки даёт список (см. вид ниже), здесь он только обрастает деталями.
@@ -2150,8 +2150,8 @@ local function CreateRow(row)
             GameTooltip:AddLine(self.fullNote, 1, 1, 1, true)
         end
         GameTooltip:AddLine(" ")
-        GameTooltip:AddLine(ns.L"Щелчок - поставить метку на карте", 0.6, 0.6, 0.6)
-        GameTooltip:AddLine(ns.L"Ctrl+щелчок - запомнить текущую метку для этого источника", 0.6, 0.6, 0.6)
+        GameTooltip:AddLine(ns.L"CLICK_PUT_MARKER_MAP", 0.6, 0.6, 0.6)
+        GameTooltip:AddLine(ns.L"CTRL_CLICK_REMEMBER_CURRENT_MARKER", 0.6, 0.6, 0.6)
         GameTooltip:Show()
     end
 
@@ -2258,38 +2258,38 @@ local function CreateRow(row)
         -- считается в BuildRowData от того, что случилось в этот заход к рарнику.
         local st = row.markState
         if st == "bis" then
-            GameTooltip:AddLine(ns.L"BiS-версия на руках", 0.2, 1, 0.2)
-            GameTooltip:AddLine(ns.L"Отметка залипла навсегда: к этому рарнику можно больше не ходить.",
+            GameTooltip:AddLine(ns.L"BIS_VERSION_BAGS", 0.2, 1, 0.2)
+            GameTooltip:AddLine(ns.L"MARK_STAYS_FOREVER_NO_NEED",
                 1, 1, 1, true)
         elseif st == "worse" then
-            GameTooltip:AddLine(ns.L"Выпала не BiS-версия", 1, 0.2, 0.2)
+            GameTooltip:AddLine(ns.L"NON_BIS_VERSION_DROPPED", 1, 0.2, 0.2)
             if type(row.ownedDiffs) == "table" then
                 for _, d in ipairs(row.ownedDiffs) do
                     GameTooltip:AddLine("  " .. FormatDiffLine(d), 1, 1, 1)
                 end
             elseif (row.ownedCount or 0) > 0 then
-                GameTooltip:AddLine(ns.L"Копия где-то есть, но прочитать её не удалось - похоже, в закрытом банке или у другого персонажа.",
+                GameTooltip:AddLine(ns.L"COPY_EXISTS_SOMEWHERE_BUT_COULD",
                     0.7, 0.72, 0.75, true)
             end
             if row.daily then
-                GameTooltip:AddLine(ns.L"Рарник ежедневный: на дневном сбросе кружок опустеет, можно прийти снова за BiS-версией.",
+                GameTooltip:AddLine(ns.L"DAILY_RARE_MARK_CLEARS_DAILY",
                     0.7, 0.72, 0.75, true)
             else
-                GameTooltip:AddLine(ns.L"Рарник даётся раз на персонажа - BiS-версии уже не будет. Отметил по ошибке: Ctrl+щелчок.",
+                GameTooltip:AddLine(ns.L"ONCE_PER_CHARACTER_BIS_VERSION",
                     0.7, 0.72, 0.75, true)
             end
         elseif st == "nodrop" then
-            GameTooltip:AddLine(ns.L"Рарник убит, нужная вещь не выпала", 1, 0.82, 0)
+            GameTooltip:AddLine(ns.L"RARE_KILLED_ITEM_DID_NOT", 1, 0.82, 0)
             if row.daily then
-                GameTooltip:AddLine(ns.L"На дневном сбросе кружок опустеет - можно прийти снова.",
+                GameTooltip:AddLine(ns.L"MARK_CLEARS_DAILY_RESET_YOU",
                     1, 1, 1, true)
             else
-                GameTooltip:AddLine(ns.L"Рарник даётся раз на персонажа, вещь не выпала - слот придётся закрывать другой. Отметил по ошибке: Ctrl+щелчок.",
+                GameTooltip:AddLine(ns.L"ONCE_PER_CHARACTER_ITEM_DID",
                     0.7, 0.72, 0.75, true)
             end
         else
-            GameTooltip:AddLine(ns.L"Отметить: рарник убит, нужная вещь не выпала", 1, 0.82, 0)
-            GameTooltip:AddLine(ns.L"Ставится сама при убийстве. Старые вещи в сумке на цвет не влияют - пока не сходишь к рарнику, кружок пуст.",
+            GameTooltip:AddLine(ns.L"MARK_RARE_KILLED_ITEM_DID", 1, 0.82, 0)
+            GameTooltip:AddLine(ns.L"SET_AUTOMATICALLY_KILL_OLD_COPIES",
                 0.7, 0.72, 0.75, true)
         end
         GameTooltip:Show()
@@ -2309,7 +2309,7 @@ local function CreateRow(row)
             GameTooltip:AddLine(self.fullNote, 1, 1, 1, true)
         end
         GameTooltip:AddLine(" ")
-        GameTooltip:AddLine(ns.L"Щелчок - поставить метку на карте", 0.6, 0.6, 0.6)
+        GameTooltip:AddLine(ns.L"CLICK_PUT_MARKER_MAP", 0.6, 0.6, 0.6)
         GameTooltip:Show()
     end
     row.sourceHitbox:SetScript("OnMouseUp", function()
@@ -2356,7 +2356,7 @@ local function CreateRow(row)
         self.haste:SetText(ColorStat(data.haste))
         self.iskus:SetText(ColorStat(data.iskus))
         self.vers:SetText(ColorStat(data.vers))
-        self.source:SetText(data.source and ns.L(data.source) or "")
+        self.source:SetText(data.source and ns.D(data.source) or "")
         -- Золото - цвет подземелий в Обзоре приключений, и рарникам оно не идёт:
         -- источник там не подземелье, а точка в открытом мире. Делим по тому же
         -- признаку, по которому ставится галочка «уже был», - так две пометки
@@ -2364,7 +2364,7 @@ local function CreateRow(row)
         local srcColor = (data.sourceType == "World") and C.silver or C.gold
         self.source:SetTextColor(srcColor[1], srcColor[2], srcColor[3], 1)
         self.srcColor = srcColor -- тем же цветом источник пишется и в подсказке
-        self.sourceboss:SetText(data.sourceboss and ns.Note(data.sourceboss) or "")
+        self.sourceboss:SetText(data.sourceboss and ns.Note(data.sourceboss, data.itemID) or "")
         -- Галочка только у рарников и сокровищ (sourceType == "World"): они берутся
         -- раз в день или раз на персонажа, и есть смысл помнить, где уже был.
         -- Подземелья ходятся сколько угодно, там отмечать нечего.
@@ -2408,9 +2408,9 @@ local function CreateRow(row)
         -- sourceKey - русское название, оно же ключ точки на карте и в базе.
         -- fullSource - то же самое для показа, уже переведённое.
         self.sourceKey = data.source
-        self.fullSource = data.source and ns.L(data.source) or nil
+        self.fullSource = data.source and ns.D(data.source) or nil
         self.sourceType = data.sourceType
-        self.fullNote = data.sourceboss and ns.Note(data.sourceboss) or nil
+        self.fullNote = data.sourceboss and ns.Note(data.sourceboss, data.itemID) or nil
         self.hyperlink = data.hyperlink
         self.itemID = data.itemID
         self.twink = data.twink
@@ -2477,8 +2477,8 @@ statsToggle.label = frame.titleBg:CreateFontString(nil, "OVERLAY", "GameFontNorm
 -- шире квадратика), и стоять по её центру.
 statsToggle.label:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -20, -48)
 statsToggle:SetPoint("TOP", statsToggle.label, "BOTTOM", 0, -2)
-statsToggle.label:SetText(ns.L"Мин-Макс")
-ns.OnLocaleReady(function() statsToggle.label:SetText(ns.L"Мин-Макс") end)
+statsToggle.label:SetText(ns.L"MIN_MAX")
+ns.OnLocaleReady(function() statsToggle.label:SetText(ns.L"MIN_MAX") end)
 -- Шрифт GameFontNormalSmall золотой - единственное золото в окне после перехода
 -- на свою палитру. Белым, как подписи колонок.
 statsToggle.label:SetTextColor(C.text[1], C.text[2], C.text[3])
@@ -2491,8 +2491,8 @@ StyleCheckBox(commToggle, 11)
 commToggle.label = frame.titleBg:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 commToggle.label:SetPoint("TOPRIGHT", statsToggle.label, "TOPLEFT", -16, 0)
 commToggle:SetPoint("TOP", commToggle.label, "BOTTOM", 0, -2)
-commToggle.label:SetText(ns.L"Комьюнити")
-ns.OnLocaleReady(function() commToggle.label:SetText(ns.L"Комьюнити") end)
+commToggle.label:SetText(ns.L"COMMUNITY")
+ns.OnLocaleReady(function() commToggle.label:SetText(ns.L"COMMUNITY") end)
 commToggle.label:SetTextColor(C.text[1], C.text[2], C.text[3])
 commToggle:SetScript("OnClick", function()
     local t0 = ns.profOpen and debugprofilestop()
@@ -2822,7 +2822,7 @@ local function BuildRowData(item)
     -- Уровень тоже убираем, как только включён любой фильтр: строка под
     -- названием должна быть тихой, а не повторять то, что и так выбрано сверху.
     if item.ilvl and armorFree and slotFree then
-        local lvl = string.format(ns.L"%d ур.", item.ilvl)
+        local lvl = string.format(ns.L"ILVL", item.ilvl)
         typeLabel = typeLabel ~= "" and (typeLabel .. " | " .. lvl) or lvl
     end
     local stats = item.stats or {}
@@ -3011,8 +3011,8 @@ RefreshResults = function()
     if #matches == 0 then
         scrollBox:SetDataProvider(CreateDataProvider(), ScrollBoxConstants.RetainScrollPosition)
         emptyText:Show()
-        emptyText:SetText(pending and ns.L"|cFF888888Загрузка данных...|r"
-            or ns.L"|cFF888888Нет предметов под эти фильтры.|r")
+        emptyText:SetText(pending and ns.L"LOADING"
+            or ns.L"NO_ITEMS_MATCH_THESE_FILTERS")
         return
     end
 
@@ -3168,7 +3168,7 @@ local function MarkKilledByName(name)
         end
     end
     if marked then
-        print(string.format(ns.L"|cFFFFD100[TGF]|r Отмечен как убитый: %s", marked))
+        print(string.format(ns.L"MARKED_AS_KILLED", marked))
         if frame:IsShown() then RefreshResults() end
     end
 end
@@ -3257,7 +3257,7 @@ frame:SetScript("OnEvent", function(self, event, addonName)
         -- дальше TrialGearFinderDB уже существует и старое не перетрёт новое.
         if TrialGearFinderDB == nil and TwinkGearFinderDB ~= nil then
             TrialGearFinderDB = TwinkGearFinderDB
-            print(ns.L"|cFFFFD100[TGF]|r Настройки перенесены со старого имени аддона.")
+            print(ns.L"SETTINGS_MOVED_FROM_OLD_ADDON")
         end
         TrialGearFinderDB = TrialGearFinderDB or {}
         if TrialGearFinderDB.showStats == nil then TrialGearFinderDB.showStats = false end
@@ -3347,7 +3347,7 @@ local function ClearExpiredDailyMarks()
     end
     db.dailyResetAt = NextDailyReset()
     if cleared > 0 then
-        print(string.format(ns.L"|cFFFFD100[TGF]|r Дневной сброс: снято отметок с ежедневных рарников - %d", cleared))
+        print(string.format(ns.L"DAILY_RESET_CLEARED_MARKS_DAILY", cleared))
     end
 end
 
@@ -3453,8 +3453,8 @@ end)
 minimapButton:SetScript("OnEnter", function(self)
     GameTooltip:SetOwner(self, "ANCHOR_LEFT")
     GameTooltip:AddLine("Trial Gear Finder")
-    GameTooltip:AddLine(ns.L"Щелчок - открыть окно", 0.6, 0.6, 0.6)
-    GameTooltip:AddLine(ns.L"Перетаскивание - двигать по краю карты", 0.6, 0.6, 0.6)
+    GameTooltip:AddLine(ns.L"CLICK_OPEN_WINDOW", 0.6, 0.6, 0.6)
+    GameTooltip:AddLine(ns.L"DRAG_MOVE_AROUND_MINIMAP", 0.6, 0.6, 0.6)
     GameTooltip:Show()
 end)
 minimapButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -3569,7 +3569,7 @@ local function ScanOwnedItems()
         end
     end
 
-    print(string.format(ns.L"|cFFFFD100[TGF]|r Проверено %d предметов из базы (надето, сумки, банк если открыт), расхождений: %d", checked, mismatched))
+    print(string.format(ns.L"CHECKED_DATABASE_ITEMS_EQUIPPED_BAGS", checked, mismatched))
 end
 
 ------------------------------------------------------------
@@ -3592,14 +3592,14 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     if msg == "dev" then
         TrialGearFinderDB = TrialGearFinderDB or {}
         TrialGearFinderDB.dev = not TrialGearFinderDB.dev
-        print(string.format(ns.L"|cFFFFD100[TGF]|r Команды разработчика: %s",
-            TrialGearFinderDB.dev and ns.L"включены" or ns.L"выключены"))
+        print(string.format(ns.L"DEVELOPER_COMMANDS",
+            TrialGearFinderDB.dev and ns.L"ON" or ns.L"OFF"))
         if ns.ApplyDevButtons then ns.ApplyDevButtons() end -- кнопка SimC в окне BiS
         return
     end
     if not (TrialGearFinderDB and TrialGearFinderDB.dev) then
         if DEV_ONLY[msg] then
-            print(ns.L"|cFFFFD100[TGF]|r Неизвестная команда. Команды разработчика включаются галочкой «Отладка» в Параметрах.")
+            print(ns.L"UNKNOWN_COMMAND_DEVELOPER_COMMANDS_ARE")
             return
         end
     end
@@ -3705,7 +3705,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     if msg == "gems" then
         if ns.CaptureStart then ns.CaptureStart("gems") end
         if UnitLevel("player") ~= 20 then
-            print(ns.L"[TGF] ВНИМАНИЕ: не 20 уровня. Число гнёзд верно, статы и уровень — нет.")
+            print(ns.L"WARNING_NOT_LEVEL_20_SOCKET")
         end
         local ok, err = pcall(function()
         for _, item in ipairs(ns.Items) do
@@ -3718,7 +3718,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
                 -- (в поле 4 чары). По этим полям CountGemsInLink и считает.
                 local g = {}
                 for f = 5, 8 do if parts[f] and parts[f] ~= "" and parts[f] ~= "0" then g[#g + 1] = parts[f] end end
-                print(string.format(ns.L"[TGF] %s | гн %d/%d | sb %s | камни %s",
+                print(string.format(ns.L"SOCKETS_SB_GEMS",
                     C_Item.GetItemNameByID(item.itemID) or ("id " .. item.itemID),
                     item.sockets or 0, live.sockets or 0,
                     sb and (sb.key .. sb.value) or "-",
@@ -3728,7 +3728,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         end)
         if ns.CaptureStop then ns.CaptureStop() end
         if not ok then error(err) end
-        print(ns.L"|cFF86C7BD[TGF]|r Скопировать: /tgf copy")
+        print(ns.L"COPY")
         return
     end
 
@@ -3738,7 +3738,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     if msg == "ref" then
         if ns.CaptureStart then ns.CaptureStart("ref") end
         if UnitLevel("player") ~= 20 then
-            print(ns.L"[TGF] ВНИМАНИЕ: персонаж не 20 уровня — статы и уровни предметов неточны. Слепок годен только с двадцатки.")
+            print(ns.L"WARNING_CHARACTER_NOT_LEVEL_20")
         end
         local ok, err = pcall(function()
             local ORD = { "int", "agi", "str", "stam", "crit", "haste", "iskus", "vers" }
@@ -3752,7 +3752,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
                         if live.stats[k] then sp[#sp + 1] = ns.L(k) .. live.stats[k] end
                     end
                     local sb = live.socketBonus
-                    print(string.format(ns.L"[TGF] %d %s | ур%s | %s | гн%d%s",
+                    print(string.format(ns.L"ILVL_SOCKETS",
                         item.itemID,
                         C_Item.GetItemNameByID(item.itemID) or "?",
                         tostring(live.ilvl or "?"),
@@ -3762,11 +3762,11 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
                     n = n + 1
                 end
             end
-            print(string.format(ns.L"[TGF] ref: %d предметов из базы у персонажа", n))
+            print(string.format(ns.L"REF_DATABASE_ITEMS_CHARACTER", n))
         end)
         if ns.CaptureStop then ns.CaptureStop() end
         if not ok then error(err) end
-        print(ns.L"|cFF86C7BD[TGF]|r Скопировать: /tgf copy")
+        print(ns.L"COPY")
         return
     end
 
@@ -3781,7 +3781,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     if msg == "pins" then
         local saved = TrialGearFinderDB and TrialGearFinderDB.pins
         if not saved or not next(saved) then
-            print(ns.L"|cFFFFD100[TGF]|r Меток пока не запомнено.")
+            print(ns.L"NO_PINS_SAVED_YET")
             return
         end
         local names = {}
@@ -3826,7 +3826,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         local listWord = FoldCase((pinName:match("^%s*(.-)%s*$") or ""))
         if listWord == "список" or listWord == "нет" or listWord == "list" then
             if not ns.ForEachJournalDungeon then
-                print(ns.L"|cFFFFD100[TGF]|r Журнал подземелий недоступен.")
+                print(ns.L"ENCOUNTER_JOURNAL_NOT_AVAILABLE")
                 return
             end
             local have, missing, byTier = 0, 0, {}
@@ -3845,10 +3845,10 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
                 end
             end)
             if not ok then
-                print(ns.L"|cFFFFD100[TGF]|r Журнал подземелий недоступен.")
+                print(ns.L"ENCOUNTER_JOURNAL_NOT_AVAILABLE")
                 return
             end
-            print(string.format(ns.L"|cFFFFD100[TGF]|r В журнале %d подземелий: с меткой %d, без метки %d.",
+            print(string.format(ns.L"JOURNAL_HAS_DUNGEONS_PINNED_WITHOUT",
                 have + missing, have, missing))
             for _, tier in ipairs(byTier) do
                 local bucket = byTier[tier]
@@ -3862,7 +3862,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
 
         local point = C_Map.GetUserWaypoint()
         if not point then
-            print(ns.L"|cFFFFD100[TGF]|r Метки на карте нет. Поставь её Ctrl+щелчком по карте и повтори.")
+            print(ns.L"NO_MAP_PIN_CTRL_CLICK")
             return
         end
 
@@ -3870,10 +3870,10 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         local x, y = point.position.x * 100, point.position.y * 100
 
         if pinName == "" then
-            print(string.format(ns.L"|cFFFFD100[TGF]|r Текущая метка: карта %d, %.1f, %.1f", mapID, x, y))
-            print(ns.L"|cFFFFD100[TGF]|r Привязать: /tgf pin <часть названия подземелья>")
-            print(ns.L"|cFFFFD100[TGF]|r Два входа Жилы: /tgf pin жила орда  или  /tgf pin жила альянс")
-            print(ns.L"|cFFFFD100[TGF]|r Без метки из журнала: /tgf pin список")
+            print(string.format(ns.L"CURRENT_PIN_MAP", mapID, x, y))
+            print(ns.L"BIND_PART_DUNGEON_NAME")
+            print(ns.L"MOTHERLODE_HAS_TWO_ENTRANCES_HORDE")
+            print(ns.L"UNPINNED_FROM_JOURNAL_LIST")
             return
         end
 
@@ -3891,7 +3891,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
             needle = needle:gsub("%s+альянс$", ""):gsub("%s+alliance$", "")
         end
         if needle == "" then
-            print(ns.L"|cFFFFD100[TGF]|r Укажи сторону: /tgf pin жила орда  или  /tgf pin жила альянс")
+            print(ns.L"SAY_WHICH_SIDE_HORDE_ALLIANCE")
             return
         end
         local matches, seen = {}, {}
@@ -3939,29 +3939,29 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         end
 
         if #matches == 0 then
-            print(string.format(ns.L"|cFFFFD100[TGF]|r Источник со словом «%s» в базе и в журнале не найден.", pinName))
+            print(string.format(ns.L"NO_SOURCE_CONTAINING_DATABASE_JOURNAL", pinName))
             return
         end
         if #matches > 1 then
-            print(string.format(ns.L"|cFFFFD100[TGF]|r Подходит несколько, уточни (%d):", #matches))
+            print(string.format(ns.L"SEVERAL_MATCHES_BE_MORE_SPECIFIC", #matches))
             for _, m in ipairs(matches) do print("    " .. m.label) end
             return
         end
         local matched = matches[1]
         if PinIsFactionSplit(matched.key) and not forcedSide and not playerFaction then
-            print(ns.L"|cFFFFD100[TGF]|r Укажи сторону: /tgf pin жила орда  или  /tgf pin жила альянс")
+            print(ns.L"SAY_WHICH_SIDE_HORDE_ALLIANCE")
             return
         end
 
         if not StoreCapturedPin(matched.key, mapID, x, y, forcedSide) then return end
         local storedSide = forcedSide or playerFaction
-        local label = ns.L(matched.label)
+        local label = ns.D(matched.label)
         if PinIsFactionSplit(matched.key) and storedSide == "Alliance" then
-            label = label .. " (" .. ns.L"Альянс" .. ")"
+            label = label .. " (" .. ns.L"ALLIANCE" .. ")"
         elseif PinIsFactionSplit(matched.key) and storedSide == "Horde" then
-            label = label .. " (" .. ns.L"Орда" .. ")"
+            label = label .. " (" .. ns.L"HORDE" .. ")"
         end
-        print(string.format(ns.L"|cFFFFD100[TGF]|r Запомнено: %s = карта %d, %.1f, %.1f", label, mapID, x, y))
+        print(string.format(ns.L"SAVED_MAP", label, mapID, x, y))
         return
     end
 
@@ -3970,7 +3970,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     local twArg = msg:match("^tw%s*(.*)$")
     if twArg then
         if not ns.DumpTimewalkLoot then
-            print(ns.L"|cFFFFD100[TGF]|r Модуль «Журнал» выключен в списке аддонов.")
+            print(ns.L"JOURNAL_MODULE_DISABLED_ADDONS_LIST")
             return
         end
         ns.DumpTimewalkLoot({
@@ -3989,7 +3989,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     local djArg = msg:match("^dj%s*(.*)$") or msg:match("^данж%s*(.*)$")
     if djArg then
         if not ns.DumpDungeonLoot then
-            print(ns.L"|cFFFFD100[TGF]|r Модуль «Журнал» выключен в списке аддонов.")
+            print(ns.L"JOURNAL_MODULE_DISABLED_ADDONS_LIST")
             return
         end
         ns.DumpDungeonLoot({
@@ -4023,7 +4023,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
             ["аксессуар"]  = "INVTYPE_TRINKET",
         }
         if SLOT_WORD[newArg] == nil then
-            print(ns.L"|cFF86C7BD[TGF]|r /tgf new [шея|кольцо|аксессуар] — без слова покажет все вещи, которых нет в базе")
+            print(ns.L"NECK_FINGER_TRINKET_NO_WORD")
             return
         end
         local want = SLOT_WORD[newArg]
@@ -4050,7 +4050,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
                 (#sp > 0) and table.concat(sp, ", ") or "статов нет",
                 #live.socketTypes,
                 live.socketBonus and (" | бонус за цвет: " .. live.socketBonus.key .. " " .. live.socketBonus.value) or ""))
-            print(ns.L"[TGF] ссылка: " .. (link:gsub("|", "!")))
+            print(ns.L"LINK" .. (link:gsub("|", "!")))
         end
 
         for slot = INVSLOT_FIRST_EQUIPPED, INVSLOT_LAST_EQUIPPED do
@@ -4064,7 +4064,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         end
 
         if ns.CaptureStop then ns.CaptureStop() end
-        print(string.format(ns.L"|cFFFFD100[TGF]|r Не из базы: %d %s (надето, сумки, банк если открыт). Скопировать: /tgf copy",
+        print(string.format(ns.L"NOT_DATABASE_EQUIPPED_BAGS_BANK",
             found, (newArg ~= "") and newArg or "вещей"))
         return
     end
@@ -4097,20 +4097,20 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         local dumpAll = (msg == "talents all")
         local configID = C_ClassTalents and C_ClassTalents.GetActiveConfigID and C_ClassTalents.GetActiveConfigID()
         if not configID then
-            print(ns.L"|cFF86C7BD[TGF]|r Таланты не читаются: игра не отдала активную сборку.")
+            print(ns.L"TALENTS_UNREAD_GAME_DID_NOT")
             return
         end
         if ns.CaptureStart then ns.CaptureStart("talents") end
         local specID = GetSpecializationInfo(GetSpecialization() or 0)
         local _, specName = GetSpecializationInfoByID(specID or 0)
-        print(string.format(ns.L"# TrialGearFinder: таланты, %s %s (спек %s)",
+        print(string.format(ns.L"TRIALGEARFINDER_TALENTS_SPEC",
             UnitClass("player") or "?", specName or "?", tostring(specID)))
 
         local ok, code = pcall(function() return C_Traits.GenerateImportString(configID) end)
         if ok and code and code ~= "" then
             print(code)
         else
-            print(ns.L"# код сборки игра не отдала — возьми его в окне талантов кнопкой «Экспорт»")
+            print(ns.L"GAME_DID_NOT_RETURN_LOADOUT")
         end
 
         local cfg = C_Traits.GetConfigInfo(configID)
@@ -4132,7 +4132,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
             end
         end
         if ns.CaptureStop then ns.CaptureStop() end
-        print(string.format(ns.L"|cFFFFD100[TGF]|r %s: %d. Скопировать: /tgf copy",
+        print(string.format(ns.L"COPY_2",
             dumpAll and "Узлов в дереве" or "Взято талантов", taken))
         return
     end
@@ -4172,24 +4172,24 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
             end
         end
         if ns.CaptureStop then ns.CaptureStop() end
-        print(string.format(ns.L"|cFFFFD100[TGF]|r Зачарованных вещей: %d. Наведи на них в сумке или на себе, чтобы увидеть текст чары. Скопировать: /tgf copy", found))
+        print(string.format(ns.L"ENCHANTED_ITEMS_HOVER_THEM_BAGS", found))
         return
     end
 
     if msg == "simc" then
-        if ns.ExportSimC then ns.ExportSimC() else print(ns.L"|cFFFFD100[TGF]|r Модуль «Сборки» выключен в списке аддонов.") end
+        if ns.ExportSimC then ns.ExportSimC() else print(ns.L"BUILDS_MODULE_DISABLED_ADDONS_LIST") end
         return
     end
 
     if msg == "scan" then
         if ns.CaptureStart then ns.CaptureStart("scan") end
         if UnitLevel("player") ~= 20 then
-            print(ns.L"[TGF] ВНИМАНИЕ: персонаж не 20 уровня — статы масштабируются по уровню, сверка неточна. Прогонять только двадцаткой.")
+            print(ns.L"WARNING_CHARACTER_NOT_LEVEL_20_2")
         end
         local ok, err = pcall(ScanOwnedItems)
         if ns.CaptureStop then ns.CaptureStop() end -- вернуть print даже при ошибке
         if not ok then error(err) end
-        print(ns.L"|cFF86C7BD[TGF]|r Скопировать отчёт: /tgf copy")
+        print(ns.L"COPY_REPORT")
         return
     end
     if msg == "copy" then
@@ -4205,11 +4205,11 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
     if msg == "compare" or msg == "сравнение" then
         -- Модули - отдельные аддоны (TrialGearFinder_Builds, _Journal):
         -- выключен в списке аддонов - функции нет, говорим прямо.
-        if ns.ToggleCompare then ns.ToggleCompare() else print(ns.L"|cFFFFD100[TGF]|r Модуль «Сборки» выключен в списке аддонов.") end
+        if ns.ToggleCompare then ns.ToggleCompare() else print(ns.L"BUILDS_MODULE_DISABLED_ADDONS_LIST") end
         return
     end
     if msg == "bis" then
-        if ns.ToggleBiS then ns.ToggleBiS() else print(ns.L"|cFFFFD100[TGF]|r Модуль «Сборки» выключен в списке аддонов.") end
+        if ns.ToggleBiS then ns.ToggleBiS() else print(ns.L"BUILDS_MODULE_DISABLED_ADDONS_LIST") end
         return
     end
     if frame:IsShown() then

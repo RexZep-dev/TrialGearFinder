@@ -160,21 +160,21 @@ end
 -- Месяц и эпоха — словарь аддона, не календарь клиента: иначе при
 -- английском окне на русском клиенте объявление остаётся русским.
 local MONTH_GENITIVE = {
-    "января", "февраля", "марта", "апреля", "мая", "июня",
-    "июля", "августа", "сентября", "октября", "ноября", "декабря",
+    "JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
+    "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER",
 }
 
 local TIER_LABEL = {
-    [1]  = "Классика",
+    [1]  = "CLASSIC",
     [2]  = "Burning Crusade",
-    [3]  = "Гнев Короля-лича",
-    [4]  = "Катаклизм",
-    [5]  = "Пандария",
-    [6]  = "Дренор",
-    [7]  = "Легион",
-    [8]  = "Битва за Азерот",
-    [9]  = "Темные земли",
-    [10] = "Драконы",
+    [3]  = "WRATH_LICH_KING",
+    [4]  = "CATACLYSM",
+    [5]  = "PANDARIA",
+    [6]  = "DRAENOR",
+    [7]  = "LEGION",
+    [8]  = "BATTLE_AZEROTH",
+    [9]  = "SHADOWLANDS",
+    [10] = "DRAGONFLIGHT",
     [11] = "The War Within",
     [12] = "Midnight",
 }
@@ -354,11 +354,11 @@ local function UpdateSeasonMessage(active)
     local upcoming = NextTimewalk()
     if upcoming then
         local which = ExpansionLabel(upcoming.tier, upcoming.title)
-        text = ns.L("Сейчас нет Путешествия во времени") .. "\n\n"
-            .. ns.L("Следующее: %s"):format(which) .. "\n"
+        text = ns.L("NO_TIMEWALKING_EVENT_ACTIVE") .. "\n\n"
+            .. ns.L("NEXT"):format(which) .. "\n"
             .. FormatDay(upcoming.startTime)
     else
-        text = ns.L("В календаре пока нет ближайшего Путешествия во времени")
+        text = ns.L("NO_UPCOMING_TIMEWALKING_EVENT_CALENDAR")
     end
     emptyText:SetText(text)
     emptyPanel:Show()
@@ -628,16 +628,16 @@ local function Lower(s)
 end
 
 local TW_ERAS = {
-    { ru = "Классика",         cmd = "классика", cmdEN = "classic",  words = { "classic", "классика", "классик", "класика" } },
+    { ru = "CLASSIC",         cmd = "классика", cmdEN = "classic",  words = { "classic", "классика", "классик", "класика" } },
     { ru = "Burning Crusade",  cmd = "bc", cmdEN = "bc",        words = { "burning crusade", "burning", "crusade", "tbc", "bc", "пылающий", "поход" } },
-    { ru = "Гнев Короля-лича", cmd = "гнев", cmdEN = "wrath",      words = { "wrath of the lich king", "wrath", "lich", "wotlk", "гнев", "лича", "лич" } },
-    { ru = "Катаклизм",        cmd = "катаклизм", cmdEN = "cata", words = { "cataclysm", "cata", "катаклизм" } },
-    { ru = "Пандария",         cmd = "пандария", cmdEN = "mop",  words = { "mists of pandaria", "pandaria", "mists", "mop", "пандария", "пандар" } },
-    { ru = "Дренор",           cmd = "дренор", cmdEN = "wod",    words = { "warlords of draenor", "draenor", "warlords", "wod", "дренор", "вождей" } },
-    { ru = "Легион",           cmd = "легион", cmdEN = "legion",    words = { "legion", "легион" } },
-    { ru = "Битва за Азерот",  cmd = "азерот", cmdEN = "bfa",    words = { "battle for azeroth", "azeroth", "bfa", "азерот", "битва" } },
-    { ru = "Темные земли",     cmd = "темные", cmdEN = "sl",    words = { "shadowlands", "shadow", "sl", "темных земель", "темные", "земель" } },
-    { ru = "Драконы",          cmd = "драконы", cmdEN = "df",   words = { "dragonflight", "dragon", "df", "драконов", "дракон", "драконы" } },
+    { ru = "WRATH_LICH_KING", cmd = "гнев", cmdEN = "wrath",      words = { "wrath of the lich king", "wrath", "lich", "wotlk", "гнев", "лича", "лич" } },
+    { ru = "CATACLYSM",        cmd = "катаклизм", cmdEN = "cata", words = { "cataclysm", "cata", "катаклизм" } },
+    { ru = "PANDARIA",         cmd = "пандария", cmdEN = "mop",  words = { "mists of pandaria", "pandaria", "mists", "mop", "пандария", "пандар" } },
+    { ru = "DRAENOR",           cmd = "дренор", cmdEN = "wod",    words = { "warlords of draenor", "draenor", "warlords", "wod", "дренор", "вождей" } },
+    { ru = "LEGION",           cmd = "легион", cmdEN = "legion",    words = { "legion", "легион" } },
+    { ru = "BATTLE_AZEROTH",  cmd = "азерот", cmdEN = "bfa",    words = { "battle for azeroth", "azeroth", "bfa", "азерот", "битва" } },
+    { ru = "SHADOWLANDS",     cmd = "темные", cmdEN = "sl",    words = { "shadowlands", "shadow", "sl", "темных земель", "темные", "земель" } },
+    { ru = "DRAGONFLIGHT",          cmd = "драконы", cmdEN = "df",   words = { "dragonflight", "dragon", "df", "драконов", "дракон", "драконы" } },
 }
 
 -- Обычные данжи: те же эпохи плюс текущие вкладки журнала. Время Хроми
@@ -687,33 +687,33 @@ end
 
 local function PrintTwHelp(unknown)
     if unknown and unknown ~= "" then
-        print(string.format(ns.L"|cFFFFD100[TGF]|r Не знаю экспансию «%s». Так:", unknown))
+        print(string.format(ns.L"UNKNOWN_EXPANSION_TRY", unknown))
     else
-        print(ns.L"|cFF86C7BD[TGF]|r Какую экспансию снять — одна команда, не все сразу:")
+        print(ns.L"PICK_EXPANSION_ONE_COMMAND_NOT")
     end
     for i = 1, #TW_ERAS do
         -- Слово команды на языке аддона: по-английски аддон их тоже понимает.
         local era = TW_ERAS[i]
         print("|cFFFFD100[TGF]|r /tgf tw " .. ((ns.AddonLang and ns.AddonLang() ~= "ruRU") and era.cmdEN or era.cmd))
     end
-    print(ns.L"|cFFFFD100[TGF]|r /tgf tw все  — все экспансии сразу")
+    print(ns.L"ALL_EVERY_EXPANSION_ONCE_2")
 end
 
 local function PrintDjHelp(unknown)
     if unknown and unknown ~= "" then
-        print(string.format(ns.L"|cFFFFD100[TGF]|r Не знаю экспансию или данж «%s». Так:", unknown))
+        print(string.format(ns.L"UNKNOWN_EXPANSION_DUNGEON_TRY", unknown))
     else
-        print(ns.L"|cFF86C7BD[TGF]|r Обычные подземелья — одно дополнение или один данж:")
+        print(ns.L"REGULAR_DUNGEONS_ONE_EXPANSION_ONE")
     end
     for i = 1, #DJ_ERAS do
         -- Слово команды на языке аддона: по-английски аддон их тоже понимает.
         local era = DJ_ERAS[i]
         print("|cFFFFD100[TGF]|r /tgf dj " .. ((ns.AddonLang and ns.AddonLang() ~= "ruRU") and era.cmdEN or era.cmd))
     end
-    print(ns.L"|cFFFFD100[TGF]|r /tgf dj кузня душ  — один данж")
-    print(ns.L"|cFFFFD100[TGF]|r /tgf dj список  — чеклист по данжам")
-    print(ns.L"|cFFFFD100[TGF]|r /tgf dj все  — все экспансии сразу")
-    print(ns.L"|cFFFFD100[TGF]|r Старые экспансии снимай со включённым Временем Хроми той же эпохи: без него лут вроде Террасы магистров не того уровня.")
+    print(ns.L"FORGE_SOULS_ONE_DUNGEON")
+    print(ns.L"LIST_DUNGEON_CHECKLIST")
+    print(ns.L"ALL_EVERY_EXPANSION_ONCE")
+    print(ns.L"OLD_EXPANSIONS_TURN_CHROMIE_TIME")
 end
 
 local function ChromieState()
@@ -722,7 +722,7 @@ local function ChromieState()
         on = C_PlayerInfo.IsPlayerInChromieTime() and true or false
     end
     local id = UnitChromieTimeID and UnitChromieTimeID("player") or 0
-    local name = ns.L"Настоящее"
+    local name = ns.L"PRESENT"
     if on and C_ChromieTime and C_ChromieTime.GetChromieTimeExpansionOptions then
         local options = C_ChromieTime.GetChromieTimeExpansionOptions()
         if options then
@@ -822,7 +822,7 @@ end
 
 local function PrintDungeonChecklist()
     if not LoadJournalAddon() then
-        print(ns.L"|cFFFFD100[TGF]|r Журнал подземелий недоступен.")
+        print(ns.L"ENCOUNTER_JOURNAL_NOT_AVAILABLE")
         return
     end
     local chromieOn, chromieName = ChromieState()
@@ -859,7 +859,7 @@ local function PrintDungeonChecklist()
         end
     end
     if saved then EJ_SelectTier(saved) end
-    print(string.format(ns.L"|cFFFFD100[TGF]|r Чеклист: %d данжей. Скопировать: Ctrl+C в открывшемся окне.", n))
+    print(string.format(ns.L"CHECKLIST_DUNGEONS_COPY_CTRL_C", n))
     if ns.ShowCopyText then
         ns.ShowCopyText(table.concat(lines, "\n"), #lines)
     end
@@ -887,7 +887,7 @@ local function BeginDumpScan(ctx)
     local tails = ctx.tails
     local opts = ctx.opts
     dumpBusy = true
-    print(string.format(ns.L"|cFFFFD100[TGF]|r Гружу %d вещей из журнала, подожди несколько секунд.", #rows))
+    print(string.format(ns.L"LOADING_JOURNAL_ITEMS_WAIT_FEW", #rows))
 
     local left = #rows
     local finishing
@@ -1094,17 +1094,17 @@ function ns.DumpTimewalkLoot(opts)
         return
     end
     if dumpBusy then
-        print(ns.L"|cFFFFD100[TGF]|r Дамп уже идёт, подожди.")
+        print(ns.L"DUMP_ALREADY_RUNNING_WAIT")
         return
     end
     if not LoadJournalAddon() then
-        print(ns.L"|cFFFFD100[TGF]|r Журнал подземелий недоступен.")
+        print(ns.L"ENCOUNTER_JOURNAL_NOT_AVAILABLE")
         return
     end
     if era then
-        print(string.format(ns.L"|cFFFFD100[TGF]|r Снимаю %s.", ns.L(era.ru)))
+        print(string.format(ns.L"DUMPING", ns.L(era.ru)))
     else
-        print(ns.L"|cFFFFD100[TGF]|r Снимаю все экспансии.")
+        print(ns.L"DUMPING_ALL_EXPANSIONS")
     end
 
     local savedTier = EJ_GetCurrentTier and EJ_GetCurrentTier()
@@ -1199,18 +1199,18 @@ function ns.DumpTimewalkLoot(opts)
 
     if nDungeons == 0 then
         if era then
-            print(string.format(ns.L"|cFFFFD100[TGF]|r В журнале нет подземелий Путешествия во времени для «%s».", ns.L(era.ru)))
+            print(string.format(ns.L"JOURNAL_HAS_NO_TIMEWALKING_DUNGEONS", ns.L(era.ru)))
         else
-            print(ns.L"|cFFFFD100[TGF]|r В журнале нет подземелий с Путешествием во времени.")
+            print(ns.L"JOURNAL_HAS_NO_TIMEWALKING_DUNGEONS_2")
         end
         return
     end
     if nLooted == 0 then
-        print(ns.L"|cFFFFD100[TGF]|r Журнал не отдал добычу. Открой Путеводитель приключений и повтори /tgf tw.")
+        print(ns.L"JOURNAL_RETURNED_NO_LOOT_OPEN_2")
         return
     end
     if #rows == 0 then
-        print(string.format(ns.L"|cFFFFD100[TGF]|r Путешествие во времени: %d новых из %d. Скопировать: Ctrl+C в открывшемся окне.",
+        print(string.format(ns.L"TIMEWALKING_NEW_COPY_CTRL_C",
             0, nLooted))
         return
     end
@@ -1247,7 +1247,7 @@ function ns.DumpDungeonLoot(opts)
     local wantInst
     if how == "unknown" then
         if not LoadJournalAddon() then
-            print(ns.L"|cFFFFD100[TGF]|r Журнал подземелий недоступен.")
+            print(ns.L"ENCOUNTER_JOURNAL_NOT_AVAILABLE")
             return
         end
         local matches = FindJournalDungeons(opts.want)
@@ -1256,7 +1256,7 @@ function ns.DumpDungeonLoot(opts)
             return
         end
         if #matches > 1 then
-            print(string.format(ns.L"|cFFFFD100[TGF]|r Подходит несколько, уточни (%d):", #matches))
+            print(string.format(ns.L"SEVERAL_MATCHES_BE_MORE_SPECIFIC", #matches))
             for i = 1, #matches do
                 print("|cFFFFD100[TGF]|r /tgf dj " .. matches[i].name)
             end
@@ -1275,40 +1275,40 @@ function ns.DumpDungeonLoot(opts)
         return
     end
     if dumpBusy then
-        print(ns.L"|cFFFFD100[TGF]|r Дамп уже идёт, подожди.")
+        print(ns.L"DUMP_ALREADY_RUNNING_WAIT")
         return
     end
     if not LoadJournalAddon() then
-        print(ns.L"|cFFFFD100[TGF]|r Журнал подземелий недоступен.")
+        print(ns.L"ENCOUNTER_JOURNAL_NOT_AVAILABLE")
         return
     end
 
     local chromieOn, chromieName = ChromieState()
     if how == "all" then
-        print(ns.L"|cFFFFD100[TGF]|r Время Хроми одно на все экспансии — снимай по одной, иначе чужие данжи будут не того уровня.")
+        print(ns.L"CHROMIE_TIME_ONE_EXPANSION_TIME")
     elseif era and EraNeedsChromie(era) then
         if not chromieOn then
-            print(string.format(ns.L"|cFFFFD100[TGF]|r Время Хроми выкл. Для «%s» включи историю этой эпохи, иначе лут вроде Террасы магистров не того уровня.", ns.L(era.ru)))
+            print(string.format(ns.L"CHROMIE_TIME_OFF_TURN_THAT", ns.L(era.ru)))
         elseif not ChromieMatchesEra(era, chromieName) then
-            print(string.format(ns.L"|cFFFFD100[TGF]|r Снимаю %s, а Время Хроми — %s. Включи историю этой эпохи.", ns.L(era.ru), chromieName))
+            print(string.format(ns.L"DUMPING_BUT_CHROMIE_TIME_TURN", ns.L(era.ru), chromieName))
         end
     end
 
     if how == "dungeon" and wantInst then
         if era then
-            print(string.format(ns.L"|cFFFFD100[TGF]|r Данж: %s (%s).", wantInst.name, ns.L(era.ru)))
+            print(string.format(ns.L"DUNGEON", wantInst.name, ns.L(era.ru)))
         else
-            print(string.format(ns.L"|cFFFFD100[TGF]|r Данж: %s.", wantInst.name))
+            print(string.format(ns.L"DUNGEON_2", wantInst.name))
         end
     elseif era then
-        print(string.format(ns.L"|cFFFFD100[TGF]|r Снимаю %s.", ns.L(era.ru)))
+        print(string.format(ns.L"DUMPING", ns.L(era.ru)))
     else
-        print(ns.L"|cFFFFD100[TGF]|r Снимаю все экспансии.")
+        print(ns.L"DUMPING_ALL_EXPANSIONS")
     end
     if chromieOn then
-        print(string.format(ns.L"|cFFFFD100[TGF]|r Время Хроми: %s.", chromieName))
+        print(string.format(ns.L"CHROMIE_TIME", chromieName))
     else
-        print(ns.L"|cFFFFD100[TGF]|r Время Хроми: Настоящее.")
+        print(ns.L"CHROMIE_TIME_PRESENT")
     end
 
     local savedTier = EJ_GetCurrentTier and EJ_GetCurrentTier()
@@ -1410,28 +1410,28 @@ function ns.DumpDungeonLoot(opts)
     if savedDiff and EJ_SetDifficulty then pcall(EJ_SetDifficulty, savedDiff) end
 
     if nNoNormal > 0 then
-        print(string.format(ns.L"|cFFFFD100[TGF]|r Без обычной сложности пропущено данжей: %d.", nNoNormal))
+        print(string.format(ns.L"SKIPPED_DUNGEONS_NO_NORMAL_DIFFICULTY", nNoNormal))
     end
     if nCataSkip > 0 then
-        print(string.format(ns.L"|cFFFFD100[TGF]|r Катаклизм: броню и оружие не снимал, только аксессуары (%d пропущено).", nCataSkip))
+        print(string.format(ns.L"CATACLYSM_SKIPPED_ARMOR_WEAPONS_TRINKETS", nCataSkip))
     end
 
     if nDungeons == 0 then
         if how == "dungeon" and wantInst then
-            print(string.format(ns.L"|cFFFFD100[TGF]|r В журнале нет обычной сложности у «%s».", wantInst.name))
+            print(string.format(ns.L"JOURNAL_HAS_NO_NORMAL_DIFFICULTY", wantInst.name))
         elseif era then
-            print(string.format(ns.L"|cFFFFD100[TGF]|r В журнале нет обычных подземелий для «%s».", ns.L(era.ru)))
+            print(string.format(ns.L"JOURNAL_HAS_NO_REGULAR_DUNGEONS", ns.L(era.ru)))
         else
-            print(ns.L"|cFFFFD100[TGF]|r В журнале нет обычных подземелий.")
+            print(ns.L"JOURNAL_HAS_NO_REGULAR_DUNGEONS_2")
         end
         return
     end
     if nLooted == 0 then
-        print(ns.L"|cFFFFD100[TGF]|r Журнал не отдал добычу. Открой Путеводитель приключений и повтори /tgf dj.")
+        print(ns.L"JOURNAL_RETURNED_NO_LOOT_OPEN")
         return
     end
     if #rows == 0 then
-        print(string.format(ns.L"|cFFFFD100[TGF]|r Обычные подземелья: %d новых из %d. Скопировать: Ctrl+C в открывшемся окне.",
+        print(string.format(ns.L"REGULAR_DUNGEONS_NEW_COPY_CTRL",
             0, nLooted))
         return
     end

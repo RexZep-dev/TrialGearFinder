@@ -12,6 +12,8 @@
 ## SavedVariablesPerCharacter: TrialGearFinderCharDB
 
 Locale.lua
+Locales\enUS.lua
+Locales\[TextLocale].lua
 Data.lua
 BiS_Community.lua
 Timewalk.lua
