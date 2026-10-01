@@ -738,6 +738,30 @@ local function ChromieState()
     return on, name, id
 end
 
+-- «Экскурс в историю» (Ли Ли) — не время Хроми: IsPlayerInChromieTime его не видит,
+-- своего вызова у игры нет. Признак — плашка под миникартой с рамкой
+-- lorewalking-scenario и активной кнопкой. Способ из Level20 (semyon422), с разрешения автора.
+local function LorewalkingActive()
+    if not C_UIWidgetManager or not C_UIWidgetManager.GetBelowMinimapWidgetSetID then return false end
+    local setID = C_UIWidgetManager.GetBelowMinimapWidgetSetID()
+    if not setID then return false end
+    local widgets = C_UIWidgetManager.GetAllWidgetsBySetID(setID) or {}
+    for _, w in ipairs(widgets) do
+        if w.widgetType == Enum.UIWidgetVisualizationType.ButtonHeader then
+            local info = C_UIWidgetManager.GetButtonHeaderWidgetVisualizationInfo(w.widgetID)
+            if info and info.shownState ~= Enum.WidgetShownState.Hidden
+                and info.frameTextureKit == "lorewalking-scenario" then
+                for _, b in ipairs(info.buttons or {}) do
+                    if b.enabledState == Enum.UIWidgetButtonEnabledState.Enabled then
+                        return true
+                    end
+                end
+            end
+        end
+    end
+    return false
+end
+
 local function ChromieMatchesEra(era, chromieName)
     if not era then return false end
     local n = Lower(chromieName)
@@ -1251,6 +1275,20 @@ function ns.DumpDungeonLoot(opts)
             return
         end
         local matches = FindJournalDungeons(opts.want)
+        -- Одноимённые данжи разных эпох (Терраса Магистров — BC и Midnight):
+        -- последнее слово команды может быть эпохой, «/tgf dj терраса магистров bc».
+        if #matches ~= 1 then
+            local namePart, eraWord = opts.want:match("^(.-)%s+(%S+)%s*$")
+            local wantEra = namePart and namePart ~= "" and FindDjEra(eraWord)
+            if wantEra then
+                local picked = {}
+                local byName = FindJournalDungeons(namePart)
+                for i = 1, #byName do
+                    if TierInEra(byName[i].tierName, wantEra) then picked[#picked + 1] = byName[i] end
+                end
+                if #picked > 0 then matches = picked end
+            end
+        end
         if #matches == 0 then
             PrintDjHelp(opts.want)
             return
@@ -1258,7 +1296,10 @@ function ns.DumpDungeonLoot(opts)
         if #matches > 1 then
             print(string.format(ns.L"SEVERAL_MATCHES_BE_MORE_SPECIFIC", #matches))
             for i = 1, #matches do
-                print("|cFFFFD100[TGF]|r /tgf dj " .. matches[i].name)
+                local m = matches[i]
+                local mEra = EraForTierName(m.tierName)
+                print(string.format("|cFFFFD100[TGF]|r /tgf dj %s %s  — %s",
+                    m.name, mEra and mEra.cmd or "", m.tierName or "?"))
             end
             return
         end
@@ -1325,6 +1366,10 @@ function ns.DumpDungeonLoot(opts)
     local rows, seen = {}, {}
     local tails = {}
     local nKnown, nDungeons, nLooted, nNoNormal, nCataSkip = 0, 0, 0, 0, 0
+    -- Вещи из Timewalk.lua не пропускаем: там версия Путешествия во времени (тир 32),
+    -- у обычной сложности свой уровень и статы.
+    local twItem = {}
+    for _, it in ipairs(ns.TimewalkItems or {}) do twItem[it.itemID] = true end
 
     local function RememberTail(dungeon, tierName, link)
         local tail = LinkTail(link)
@@ -1334,7 +1379,7 @@ function ns.DumpDungeonLoot(opts)
         if not tails[tk] then tails[tk] = tail end
     end
 
-    local function TakeLoot(dungeon, tierName, tier)
+    local function TakeLoot(dungeon, tierName, tier, instanceID)
         local cataTrinketsOnly = IsCataclysmTier(tierName)
         local n = (EJ_GetNumLoot and EJ_GetNumLoot()) or 0
         for i = 1, n do
@@ -1342,7 +1387,7 @@ function ns.DumpDungeonLoot(opts)
             if info and info.itemID and not seen[info.itemID] then
                 seen[info.itemID] = true
                 nLooted = nLooted + 1
-                if opts.known and opts.known(info.itemID) then
+                if opts.known and opts.known(info.itemID) and not twItem[info.itemID] then
                     nKnown = nKnown + 1
                 else
                     local _, _, _, equipLoc = C_Item.GetItemInfoInstant(info.itemID)
@@ -1358,6 +1403,7 @@ function ns.DumpDungeonLoot(opts)
                             rows[#rows + 1] = {
                                 tierName = tierName,
                                 tier = tier,
+                                instanceID = instanceID,
                                 dungeon = dungeon,
                                 boss = boss,
                                 itemID = info.itemID,
@@ -1386,14 +1432,14 @@ function ns.DumpDungeonLoot(opts)
                     if SelectedHasNormal(dungeonNormal) then
                         nDungeons = nDungeons + 1
                         if EJ_SelectEncounter then pcall(EJ_SelectEncounter, 0) end
-                        local got = TakeLoot(inst.name, tierName, tier)
+                        local got = TakeLoot(inst.name, tierName, tier, inst.instanceID)
                         if got == 0 and EJ_GetEncounterInfoByIndex then
                             local e = 1
                             while true do
                                 local encName, _, encID = EJ_GetEncounterInfoByIndex(e)
                                 if not encName then break end
                                 if encID and EJ_SelectEncounter then EJ_SelectEncounter(encID) end
-                                TakeLoot(inst.name, tierName, tier)
+                                TakeLoot(inst.name, tierName, tier, inst.instanceID)
                                 e = e + 1
                             end
                         end
@@ -1442,25 +1488,97 @@ function ns.DumpDungeonLoot(opts)
     else
         chromieLine = "# время хроми: выкл"
     end
+    local lorewalkLine = LorewalkingActive() and "# экскурс в историю: вкл" or "# экскурс в историю: выкл"
 
-    BeginDumpScan({
-        rows = rows,
-        tails = tails,
-        nDungeons = nDungeons,
-        nLooted = nLooted,
-        nKnown = nKnown,
-        opts = opts,
-        headers = {
-            "# TrialGearFinder: добыча обычных подземелий из журнала",
-            "# сложность обычная, не путешествие во времени",
-            "# статы — тултип ссылки журнала на этом персонаже, не армори",
-            chromieLine,
-            "# Катаклизм — в базу только аксессуары (отображение как у шлема Кузни Душ)",
-            "# Кузня Душ — шлем (Шлем удара духа): тултип врёт вверх",
-            "# только вещи, которых нет в Data.lua, BiS_Community.lua и Timewalk.lua",
-        },
-        resultL = "|cFFFFD100[TGF]|r Обычные подземелья: %d новых из %d. Скопировать: Ctrl+C в открывшемся окне.",
-    })
+    local function Scan()
+        local nNoLink = 0
+        for r = 1, #rows do
+            if not rows[r].link then nNoLink = nNoLink + 1 end
+        end
+        BeginDumpScan({
+            rows = rows,
+            tails = tails,
+            nDungeons = nDungeons,
+            nLooted = nLooted,
+            nKnown = nKnown,
+            opts = opts,
+            headers = {
+                "# TrialGearFinder: добыча обычных подземелий из журнала",
+                "# сложность обычная, не путешествие во времени",
+                "# статы — тултип ссылки журнала на этом персонаже, не армори",
+                chromieLine,
+                lorewalkLine,
+                string.format("# без ссылки журнала (шаблон, уровень и статы под сомнением): %d", nNoLink),
+                "# Катаклизм — в базу только аксессуары (отображение как у шлема Кузни Душ)",
+                "# Кузня Душ — шлем (Шлем удара духа): тултип врёт вверх",
+                "# только вещи, которых нет в Data.lua и BiS_Community.lua; из Timewalk.lua — обычная версия заново",
+            },
+            resultL = "|cFFFFD100[TGF]|r Обычные подземелья: %d новых из %d. Скопировать: Ctrl+C в открывшемся окне.",
+        })
+    end
+
+    -- Журнал присылает ссылки не сразу после EJ_SelectInstance. Без ссылки вещь
+    -- строится из шаблона PlayerTail, а он не знает экскурса в историю: так весь
+    -- Нордскол вышел 32 уровня вместо 23. Второе открытие данжа берёт уже присланное.
+    local missing, nMissing = {}, 0
+    for r = 1, #rows do
+        local row = rows[r]
+        if not row.link and row.instanceID then
+            local m = missing[row.instanceID]
+            if not m then
+                m = { tier = row.tier, rows = {} }
+                missing[row.instanceID] = m
+            end
+            m.rows[row.itemID] = row
+            nMissing = nMissing + 1
+        end
+    end
+    if nMissing == 0 or not (C_Timer and C_Timer.After) then
+        Scan()
+        return
+    end
+    print(string.format("|cFFFFD100[TGF]|r Журнал не прислал ссылки у %d вещей, перечитываю.", nMissing))
+    C_Timer.After(1.5, function()
+        local tier2 = EJ_GetCurrentTier and EJ_GetCurrentTier()
+        local diff2 = EJ_GetDifficulty and EJ_GetDifficulty()
+        local class2, spec2
+        if EJ_GetLootFilter then class2, spec2 = EJ_GetLootFilter() end
+        if EJ_SetLootFilter then pcall(EJ_SetLootFilter, 0, 0) end
+        local cur
+        local function Refill()
+            local n = (EJ_GetNumLoot and EJ_GetNumLoot()) or 0
+            for i = 1, n do
+                local info = LootAt(i)
+                local row = info and info.itemID and info.link and cur[info.itemID]
+                if row and not row.link then
+                    row.link = info.link
+                    RememberTail(row.dungeon, row.tierName, info.link)
+                end
+            end
+        end
+        for instanceID, m in pairs(missing) do
+            cur = m.rows
+            if EJ_SelectTier and m.tier then EJ_SelectTier(m.tier) end
+            EJ_SelectInstance(instanceID)
+            if EJ_SetDifficulty then EJ_SetDifficulty(dungeonNormal) end
+            if EJ_SelectEncounter then pcall(EJ_SelectEncounter, 0) end
+            Refill()
+            if EJ_GetEncounterInfoByIndex then
+                local e = 1
+                while true do
+                    local encName, _, encID = EJ_GetEncounterInfoByIndex(e)
+                    if not encName then break end
+                    if encID and EJ_SelectEncounter then EJ_SelectEncounter(encID) end
+                    Refill()
+                    e = e + 1
+                end
+            end
+        end
+        if class2 and EJ_SetLootFilter then EJ_SetLootFilter(class2, spec2 or 0) end
+        if tier2 and EJ_SelectTier then EJ_SelectTier(tier2) end
+        if diff2 and EJ_SetDifficulty then pcall(EJ_SetDifficulty, diff2) end
+        Scan()
+    end)
 end
 
 -- Параметры аддона: тумблеры значка и текущего сезона. Журнал уже открыт —
