@@ -249,4 +249,17 @@ ns.CommunityItems = {
     { itemID = 77539, bonusIDs = { 7175 }, classes = { "DEATHKNIGHT", "PALADIN", "WARRIOR" }, sourceType = "Craft", source = "Инженерия", note = "крафт (инженерия Пандарии, надеть может только инженер); Усиленная ретинальная защита: латный шлем, особое гнездо и два для зубчатого колеса", ilvl = 18, armor = 15, sockets = 3, socketTypes = { "meta", "cogwheel", "cogwheel" }, socketBonus = { key = "str", value = 2 }, stats = { int = 5, str = 5, stam = 8 } },
     { itemID = 188509, bonusIDs = { 13828, 7756 }, classes = { "DEATHKNIGHT", "PALADIN", "WARRIOR" }, sourceType = "Dungeon", source = "Пещеры Черной горы", note = "падает с Ром'огга Костекрушителя; Щит железной леди: Путешествие во времени, уровень 32. Статы двадцатки в игре не сняты", ilvl = 32, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { str = 4, int = 4, stam = 6, vers = 4, iskus = 3 } },
     { itemID = 133246, bonusIDs = { 13828, 7756 }, classes = { "DEATHKNIGHT", "DEMONHUNTER", "DRUID", "MONK", "PALADIN", "WARRIOR" }, sourceType = "Dungeon", source = "Вершина Смерча", note = "[Танк] падает с Асаада; Сердце грома: версия Путешествия во времени, уровень 32. Данжевая копия в гайде — другая вещь, уровень 23", ilvl = 32, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { vers = 9 } },
+
+    -- От тестера Коли (florole), 29-30 сентября. Статы - армори двадцаток.
+    -- Плащ лекарям и всем: гнездо, скорость и искусность, вместо единственного
+    -- плаща с гнездом у рарника Йала. Гнездо выпадает не всегда - у обоих
+    -- носящих в армори оно есть.
+    { itemID = 158375, bonusIDs = { 6710, 6652, 8810 }, classes = nil, sourceType = "Dungeon", source = "Атал'Дазар", note = "падает с Вол'каала; Пелерина преданного вассала: плащ с гнездом, скорость и искусность, все три основные характеристики", ilvl = 23, armor = 4, sockets = 1, socketTypes = { "prismatic" }, socketBonus = nil, stats = { str = 4, agi = 4, int = 4, stam = 6, haste = 4, iskus = 3 } },
+    -- Кинжал разбойникам: игроки просят его вместо оружия Путешествия во
+    -- времени. Мировой дроп, 0,53 % (Wowhead), чаще всего с Рохха Молчаливого.
+    { itemID = 4446, bonusIDs = { 6710, 6652 }, classes = nil, sourceType = "World", source = "Классические земли (мировой дроп)", note = "Клинок Черного яда: кинжал на ловкость, при ударе яд; мировой дроп 0,53 %, чаще с Рохха Молчаливого", ilvl = 23, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { agi = 8 } },
+    -- Аксессуар охотнику «Выживание» (совет Коли). Версия Путешествия во времени
+    -- (32 ур.) уже в Timewalk.lua, но в симе её эффект не срабатывает, а у этой
+    -- работает. На Wowhead помечен героическим; у двадцатки в армори - 23 ур.
+    { itemID = 50198, bonusIDs = { 6710, 6652 }, classes = nil, sourceType = "Dungeon", source = "Кузня Душ", note = "[ДД] падает с Пожирателя Душ; Покрытый иглами скорпион: крит, криты ускоряют на 10 сек (6,4 %)", ilvl = 23, armor = nil, sockets = 0, socketTypes = {  }, socketBonus = nil, stats = { crit = 9 } },
 }

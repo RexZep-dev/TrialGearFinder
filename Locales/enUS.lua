@@ -884,6 +884,9 @@ D["января"] = "January"
 D["— двуручное"] = "— two-handed"
 
 -- Заметки к вещам, по номеру вещи
+N[4446] = "Blackvenom Blade: Agility dagger, poisons on hit; world drop 0.53%, most often from Rohh the Silent"
+N[50198] = "[DPS] drops from the Devourer of Souls; Needle-Encrusted Scorpion: Critical Strike, crits grant Haste for 10 sec (6.4%)"
+N[158375] = "drops from Vol'kaal; Drape of the Loyal Vassal: cloak with a socket, Haste and Mastery, all three primary stats"
 N[128978] = "[DPS] Prophetic Tarot: three secondaries at once - crit, vers, mastery. Unique-equipped on-use"
 N[127661] = "[DPS] Fang of Rasthe: three secondaries at once - crit, haste, mastery. Drops from Rasthe, daily rare"
 N[127660] = "[DPS] Contained Flame: three secondaries at once - crit, vers, mastery. Drops from Cindral the Wildfire, daily rare"
