@@ -7,7 +7,7 @@
 ## X-Curse-Project-ID: 1681964
 ## Category: LvL20
 ## IconTexture: Interface\AddOns\TrialGearFinder\icon
-## Version: 1.1.3
+## Version: 1.1.4
 ## SavedVariables: TrialGearFinderDB, TwinkGearFinderDB
 ## SavedVariablesPerCharacter: TrialGearFinderCharDB
 
@@ -17,7 +17,6 @@ Locales\[TextLocale].lua
 Data.lua
 BiS_Community.lua
 Timewalk.lua
-TrinketTiers.lua
 Pins.lua
 Core.lua
 Copy.lua

@@ -283,9 +283,12 @@ function ns.MakeChatCopyButton()
         -- окна сравнения, открытого над чатом (пользователь 1 октября).
         chatBtn:SetFrameStrata(cf:GetFrameStrata())
         chatBtn:SetFrameLevel(cf:GetFrameLevel() + 10)
-        chatBtn:Show()
+        -- Значок - только с галочкой «Отладка» (пользователь 8 октября): игроку
+        -- он не нужен, окно копирования открывают кнопки «Сборок».
+        chatBtn:SetShown(TrialGearFinderDB and TrialGearFinderDB.dev and true or false)
     end
     place()
+    ns.ApplyChatCopyButton = place
     if _G.FCFDock_SelectWindow then
         hooksecurefunc("FCFDock_SelectWindow", function(dock)
             if dock == _G.GENERAL_CHAT_DOCK then place() end

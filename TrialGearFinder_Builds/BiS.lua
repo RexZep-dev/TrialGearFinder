@@ -66,6 +66,10 @@ local twoHandID = {} -- itemID -> true, заполняется в BuildBuckets
 -- Спеки, что носят два двуручных сразу (Titan's Grip). В левую руку кладём
 -- вторую двуручку из того же котла, а не запрещаем слот.
 local DUAL_2H_SPEC = { [72] = true } -- Воин, Неистовство
+-- Классы, у которых в левой руке второе одноручное оружие, а держимое
+-- нельзя (2 октября: охотнику на демонов шёл Фонарь Столпа Душ).
+-- Одноручное лежит в котле правой руки - в левую берём следующее после неё.
+local DUAL_1H_CLASS = { DEMONHUNTER = true }
 
 -- Слот экипировки для отметки «этот предмет сейчас надет».
 local SLOT_INV = {
@@ -235,6 +239,66 @@ local function SlotOverride(classFile, specID, slotKey)
     return nil
 end
 
+-- Новые вещи, которые пользователь ещё не сверил для сборок (1 октября:
+-- «не обновляй сборки, когда добавляются новые шмотки, без моего сверения»).
+-- В основном списке они видны, в сборки не идут. Сверил и одобрил - строку
+-- убрать; отклонил - оставить с пометкой. Отсев до сортировки: так котлы
+-- такие же, как до добавления, и равные по очкам вещи не переставляются.
+local NOT_IN_BUILDS = {
+    [104403] = true, -- Свинорез Адского Крика (второй номер фамильной вещи)
+    [104404] = true, -- Колун Адского Крика (второй номер фамильной вещи)
+    [105684] = true, -- Бритва Адского Крика (второй номер фамильной вещи)
+    [105688] = true, -- Боевая палица Адского Крика (второй номер фамильной вещи)
+    [105689] = true, -- Фолиант разрушения Адского Крика (второй номер фамильной вещи)
+    [105691] = true, -- Роковой клинок Адского Крика (второй номер фамильной вещи)
+    [105692] = true, -- Лабрисса Адского Крика (второй номер фамильной вещи)
+    [105693] = true, -- Осадный щит Адского Крика (второй номер фамильной вещи)
+    [141589] = true, -- Накидка Треи ручной работы (отклонено 1 октября: «не надо, оставь что было»)
+    [141582] = true, -- Кольцо неуступчивости Франа (одобрено, но на 23 ур. ни одна сборка не берёт, а в котле переставляет равные кольца)
+    [28278] = true, -- Клобук ведуна
+    [27796] = true, -- Пропитанный маной наплеч
+    [24397] = true, -- Облачение божественного командования
+    [27414] = true, -- Звериная маска клана Мок'Натал
+    [132561] = true, -- Кольцо оскверненного Хранителя
+    [27802] = true, -- Наплечные щитки Яростного прилива
+    [24357] = true, -- Жилет живого света
+    [27428] = true, -- Рукавицы Грозового фронта
+    [37182] = true, -- Шлем Конструктора
+    [27771] = true, -- Наплечные щитки Роковой Брони
+    [27497] = true, -- Рукавицы Роковой Брони
+    [18722] = true, -- Хватки смерти
+    [88273] = true, -- Запечатанный медальон Воителя
+    [9447] = true, -- Гайка Электроразителя
+    [88265] = true, -- Кольцо укротителя зверей
+    [34792] = true, -- Плащ обманутого
+    [141583] = true, -- Перстень видений Самида
+    [161446] = true, -- Печатка бурлящего моря
+    [160985] = true, -- Кольцо Ненасытня
+    [160987] = true, -- Кольцо скорого пищеварения
+    [155560] = true, -- Кольцо ленивого пекаря
+    [154857] = true, -- Кольцо из осколков костей
+    [154411] = true, -- Ружье корпуса Влароса
+    [27846] = true, -- Коготь Стража
+    [35633] = true, -- Посох короля рептилий
+    [104405] = true, -- Лабрисса Адского Крика
+    [105686] = true, -- Свинорез Адского Крика
+    [104401] = true, -- Роковой клинок Адского Крика
+    [105685] = true, -- Колун Адского Крика
+    [104400] = true, -- Бритва Адского Крика
+    [104402] = true, -- Боевая палица Адского Крика
+    [104408] = true, -- Фолиант разрушения Адского Крика
+    [104407] = true, -- Осадный щит Адского Крика
+    [43402] = true, -- Наголенники Уничтожителя (отклонено 1 октября: одно гнездо хуже двух у сапог на скорость)
+    [155884] = true, -- Плащ из перьев попугая
+    [161219] = true, -- Перчатки из шкуры ящера-патриарха
+    [28176] = true, -- Скованные Ша'тар наголенники
+    [27545] = true, -- Чешуйчатые поножи Менну
+    [28401] = true, -- Хауберк опустошения
+    [29341] = true, -- Одеяние аукенайского отшельника
+    [28212] = true, -- Волшебные брюки Арана
+    [141580] = true, -- Огромное кольцо
+}
+
 -- Ключ кэша включает состояние тумблера: при выключенном комьюнити котлы
 -- другие, и старые брать нельзя.
 local bucketCache = {}
@@ -244,7 +308,10 @@ local function BuildBuckets(classFile)
     if bucketCache[ckey] then return bucketCache[ckey] end
     local buckets = {}
     for _, item in ipairs(AllItems()) do
-        if (withComm or not ExtraId(item.itemID)) and ClassAllowed(item, classFile) then
+        -- Фамильные (их нет у всех) в сборки не идут - отсеиваются ниже,
+        -- после сортировки.
+        if (withComm or not ExtraId(item.itemID)) and not NOT_IN_BUILDS[item.itemID]
+            and ClassAllowed(item, classFile) then
             local _, _, _, equipLoc = C_Item.GetItemInfoInstant(item.itemID)
             local slotKey = equipLoc and EQUIPLOC_SLOT[equipLoc]
             if slotKey then
@@ -1294,7 +1361,23 @@ local function RenderSlots()
         for _, it in ipairs(items) do
             if RoleAllowed(it, role) then copy[#copy + 1] = it end
         end
-        table.sort(copy, function(a, b) return ScoreItem(a, w) > ScoreItem(b, w) end)
+        -- Ничья по очкам (2 октября, пользователь): выше вещь с бОльшим числом
+        -- гнёзд - в них можно вставить камни с нужным статом; дальше - по
+        -- номеру вещи, чтобы выбор не скакал от любой новой записи в базе
+        -- (table.sort неустойчив).
+        table.sort(copy, function(a, b)
+            local sa, sb = ScoreItem(a, w), ScoreItem(b, w)
+            if sa ~= sb then return sa > sb end
+            local ga, gb = a.sockets or 0, b.sockets or 0
+            if ga ~= gb then return ga > gb end
+            return a.itemID < b.itemID
+        end)
+        -- Фамильные убираем ПОСЛЕ сортировки: table.sort неустойчив, и убрав
+        -- их до неё, мы переставили бы равные по очкам вещи - сборки
+        -- поменялись бы без спроса (так было с аксессуарами 1 октября).
+        for i = #copy, 1, -1 do
+            if copy[i].source == "Фамильные вещи" then table.remove(copy, i) end
+        end
         ranked[slotKey] = copy
     end
 
@@ -1345,7 +1428,7 @@ local function RenderSlots()
         end
     end
 
-    local mhIs2H = false
+    local mhIs2H, mhPick = false, nil
     for i, slot in ipairs(SLOTS) do
         local row = panel.slotRows[i]
         local bkey = PAIR_BUCKET[slot.key] or slot.key
@@ -1376,6 +1459,12 @@ local function RenderSlots()
                 chosen[i] = { pick = pick, mark = MarkFor(ranked["MAINHAND"], pick) }
             elseif mhIs2H then
                 chosen[i] = { pick = nil, twoHand = true } -- уже посчитан в правой
+            elseif DUAL_1H_CLASS[state.classFile] and not pick then
+                local mhl = ranked["MAINHAND"]
+                for _, it in ipairs(mhl or {}) do
+                    if not twoHandID[it.itemID] and it ~= mhPick then pick = it; break end
+                end
+                chosen[i] = { pick = pick, mark = MarkFor(mhl, pick) }
             else
                 chosen[i] = { pick = pick, mark = MarkFor(list, pick) }
             end
@@ -1385,6 +1474,7 @@ local function RenderSlots()
         -- MAINHAND идёт раньше OFFHAND в SLOTS, флаг успеет проставиться.
         if slot.key == "MAINHAND" then
             mhIs2H = pick ~= nil and twoHandID[pick.itemID] == true
+            mhPick = pick
         end
     end
 

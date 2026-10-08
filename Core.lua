@@ -967,7 +967,11 @@ local COL_VERS_X = COL_ISKUS_X + COL_STAT_W + COL_STAT_GAP
 local COL_SOURCE_X = COL_VERS_X + COL_STAT_W + 16
 local COL_SOURCE_W = ROW_WIDTH - COL_SOURCE_X - 10
 
-AddHeaderLabel(4, COL_RANK_W, "TIER", "CENTER", "tier", "TRINKET_TIER_SPEC_S_BEST")
+-- Колонка рангов - только если TrinketTiers.lua загружен (в 1.1.4 не идёт:
+-- ранги не доработаны, пользователь 9 октября).
+if ns.TrinketTier then
+    AddHeaderLabel(4, COL_RANK_W, "TIER", "CENTER", "tier", "TRINKET_TIER_SPEC_S_BEST")
+end
 AddHeaderLabel(COL_NAME_X, COL_NAME_W, "ITEM", "CENTER") -- по центру своей рамки, как «Источник»
 AddHeaderLabel(COL_STR_X, COL_STAT_W, "COL_STR", "CENTER", "str", "STRENGTH")
 AddHeaderLabel(COL_AGI_X, COL_STAT_W, "COL_AGI", "CENTER", "agi", "AGILITY")
@@ -2695,10 +2699,16 @@ ns.WeaponSkill = {
 }
 -- Щит (броня, подкласс 6) - только паладину, шаману и воину.
 ns.ShieldClasses = { PALADIN = true, SHAMAN = true, WARRIOR = true }
+-- Держимое в левой руке (фонари, книги) - не для этих пяти: окно сборок
+-- ставило охотнику на демонов Фонарь Столпа Душ (2 октября). Сверено по
+-- армори: из 161 персонажа этих классов держимое не носит ни один, носят
+-- жрецы, чернокнижники, маги, друиды, пробудители, монахи.
+ns.NoHoldableClasses = { DEATHKNIGHT = true, DEMONHUNTER = true, HUNTER = true, ROGUE = true, WARRIOR = true }
 function ns.ClassCanWield(classFile, itemID)
     local skill = classFile and ns.WeaponSkill[classFile]
     if not (skill and itemID) then return true end
-    local _, _, _, _, _, classID, subclassID = C_Item.GetItemInfoInstant(itemID)
+    local _, _, _, equipLoc, _, classID, subclassID = C_Item.GetItemInfoInstant(itemID)
+    if equipLoc == "INVTYPE_HOLDABLE" then return not ns.NoHoldableClasses[classFile] end
     if classID == 2 and subclassID ~= 14 and subclassID ~= 20 then return skill[subclassID] == true end
     if classID == 4 and subclassID == 6 then return ns.ShieldClasses[classFile] == true end
     return true
@@ -3595,6 +3605,7 @@ SlashCmdList["TRIALGEARFINDER"] = function(msg)
         print(string.format(ns.L"DEVELOPER_COMMANDS",
             TrialGearFinderDB.dev and ns.L"ON" or ns.L"OFF"))
         if ns.ApplyDevButtons then ns.ApplyDevButtons() end -- кнопка SimC в окне BiS
+        if ns.ApplyChatCopyButton then ns.ApplyChatCopyButton() end -- значок у чата
         return
     end
     if not (TrialGearFinderDB and TrialGearFinderDB.dev) then

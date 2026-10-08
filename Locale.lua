@@ -237,8 +237,30 @@ local function BuildOptions()
             TrialGearFinderDB = TrialGearFinderDB or {}
             TrialGearFinderDB.dev = value and true or nil
             if ns.ApplyDevButtons then ns.ApplyDevButtons() end
+            if ns.ApplyChatCopyButton then ns.ApplyChatCopyButton() end
         end)
     Settings.CreateCheckbox(category, devSetting, L"OPT_DEBUG_DESC")
+
+    -- Модуль Forsaken Dungeons+ (3 октября): весь блок рейтинга в подсказке и
+    -- отдельно таблица по ключам. Флаги - в ForsakenIOSettings модуля; модуль
+    -- выключен в списке аддонов - галочки есть, но ничего не делают.
+    local function FioFlag(key)
+        return not ForsakenIOSettings or ForsakenIOSettings[key] ~= false
+    end
+    local function SetFioFlag(key, value)
+        ForsakenIOSettings = ForsakenIOSettings or {}
+        ForsakenIOSettings[key] = value and true or false
+    end
+    local fioSetting = Settings.RegisterProxySetting(category, "TRIALGEARFINDER_FIO_TOOLTIP",
+        Settings.VarType.Boolean, L"OPT_FIO_TOOLTIP", true,
+        function() return FioFlag("tooltipEnabled") end,
+        function(value) SetFioFlag("tooltipEnabled", value) end)
+    Settings.CreateCheckbox(category, fioSetting, L"OPT_FIO_TOOLTIP_DESC")
+    local tiersSetting = Settings.RegisterProxySetting(category, "TRIALGEARFINDER_FIO_TIERS",
+        Settings.VarType.Boolean, L"OPT_FIO_TIERS", true,
+        function() return FioFlag("tiersEnabled") end,
+        function(value) SetFioFlag("tiersEnabled", value) end)
+    Settings.CreateCheckbox(category, tiersSetting, L"OPT_FIO_TIERS_DESC")
 
     Settings.RegisterAddOnCategory(category)
 end
