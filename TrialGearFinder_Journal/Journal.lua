@@ -32,6 +32,7 @@ local replacing
 local scanning
 local emptyPanel, emptyText
 local nextEvent
+local calendarActive -- идущая неделя по календарю, если баффа нет
 local calendarAsked
 
 -- nil в сохранённых настройках — включено: так было до тумблеров.
@@ -194,6 +195,8 @@ local function ExpansionLabel(tier, fallback)
     return fallback
 end
 
+local ScanCalendar
+
 local function GetActiveTimewalk()
     if C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID then
         for spellID, tier in pairs(TW_AURA_TIER) do
@@ -207,10 +210,16 @@ local function GetActiveTimewalk()
             end
         end
     end
-    return nil
+    -- Баффа нет - смотрим календарь: неделя уже идёт (началась и не
+    -- кончилась). У части игроков бафф не висит, и вкладка писала «событие
+    -- не идёт, следующее - Дренор», хотя неделя Пандарии шла (тестеры,
+    -- 11 октября). У события календаря есть начало и конец (endTime,
+    -- CalendarDocumentation в исходниках Blizzard).
+    if not nextEvent and not calendarActive then ScanCalendar() end
+    return calendarActive
 end
 
-local function ScanCalendar()
+function ScanCalendar()
     if scanning then return end
     if not C_Calendar or not C_Calendar.GetDayEvent then return end
     local now = C_DateAndTime and C_DateAndTime.GetCurrentCalendarTime and C_DateAndTime.GetCurrentCalendarTime()
@@ -224,7 +233,7 @@ local function ScanCalendar()
         C_Calendar.SetAbsMonth(now.month, now.year)
     end
 
-    local upcomingNamed, upcomingAny
+    local upcomingNamed, upcomingAny, active
     local seen = {}
     for monthOffset = 0, 2 do
         local monthInfo = C_Calendar.GetMonthInfo and C_Calendar.GetMonthInfo(monthOffset)
@@ -253,6 +262,10 @@ local function ScanCalendar()
                                 tier = TitleToTier(hol.name or "") or TitleToTier(hol.description or "")
                             end
                         end
+                        local en = EventStamp(e.endTime)
+                        if s and s <= nowStamp and en and en > nowStamp and tier then
+                            active = { tier = tier, name = title }
+                        end
                         if s and s > nowStamp then
                             local rec = {
                                 title = title,
@@ -276,6 +289,7 @@ local function ScanCalendar()
         C_Calendar.SetAbsMonth(shown.month, shown.year)
     end
     nextEvent = upcomingNamed or upcomingAny
+    calendarActive = active
     scanning = false
 end
 
@@ -291,6 +305,7 @@ local function NextTimewalk()
     return nextEvent
 end
 ns.NextTimewalk = NextTimewalk -- дымовой проверке
+ns.ActiveTimewalk = GetActiveTimewalk -- ей же
 
 local function AskCalendar()
     if calendarAsked then return end
