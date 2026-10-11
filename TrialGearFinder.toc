@@ -21,3 +21,4 @@ TrinketTiers.lua
 Pins.lua
 Core.lua
 Copy.lua
+PlayerMarks.lua

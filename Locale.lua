@@ -227,6 +227,17 @@ local function BuildOptions()
         function(value) SetJournalFlag("journalTWSeason", value) end)
     Settings.CreateCheckbox(category, seasonSetting, L"OPT_TW_SEASON_DESC")
 
+    -- Плашки «20» над игроками (PlayerMarks.lua). Выключены, пока не включат.
+    local marksSetting = Settings.RegisterProxySetting(category, "TRIALGEARFINDER_PLAYER_MARKS",
+        Settings.VarType.Boolean, L"OPT_PLAYER_MARKS", false,
+        function() return TrialGearFinderDB and TrialGearFinderDB.playerMarks and true or false end,
+        function(value)
+            TrialGearFinderDB = TrialGearFinderDB or {}
+            TrialGearFinderDB.playerMarks = value and true or nil
+            if ns.RefreshPlayerMarks then ns.RefreshPlayerMarks() end
+        end)
+    Settings.CreateCheckbox(category, marksSetting, L"OPT_PLAYER_MARKS_DESC")
+
     -- Отладка: команды разработчика (/tgf debug, ui, names, pins) и кнопка
     -- SimC в окне «Сборки». Тот же флаг, что у /tgf dev (пользователь 1 октября:
     -- «пусть работают, когда в параметрах стоит галочка»).

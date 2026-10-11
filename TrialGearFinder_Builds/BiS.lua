@@ -706,7 +706,11 @@ function ns.FixTooltipGems(gemIDs, primary)
         if line.type == socketType then
             n = n + 1
             local g = gemByID and gemByID[gemIDs[n] or 0] or GemByID(gemIDs[n] or 0)
-            local text = g and g.stats and GemText(g, primary)
+            -- Мета-камень не трогаем: игра сама пишет его верно, вместе с
+            -- эффектом («+2 к интеллекту и вероятность восполнить ману при
+            -- применении заклинаний»), а наша строка эффект теряла (тестер
+            -- Коля и пользователь, 11 октября: «оставим как в оригинале»).
+            local text = g and g.stats and g.socket ~= "meta" and GemText(g, primary)
             local fs = _G["GameTooltipTextLeft" .. i]
             if text and fs then
                 -- Белый у строки гнезда - код цвета внутри текста, а сама
